@@ -10,3 +10,4 @@ license = "MIT"
 keywords = ["bitcoin", "wallet", "bdk", "utreexo", "floresta"]
 
 [dependencies]
+iced = "0.13.1"
