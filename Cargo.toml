@@ -2,7 +2,7 @@
 name = "bonsai_wallet"
 version = "0.1.0"
 edition = "2024"
-authors = ["Luis Schwab <luisschwab@protonmail.com"]
+authors = ["Luis Schwab <luisschwab@protonmail.com>"]
 description = "Bonsai [盆栽] is a desktop Bitcoin wallet powered by bdk_floresta. Coming soon™."
 repository = "https://github.com/luisschwab/bonsai"
 readme = "README.md"
