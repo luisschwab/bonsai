@@ -9,5 +9,13 @@ readme = "README.md"
 license = "MIT"
 keywords = ["bitcoin", "wallet", "bdk", "utreexo", "floresta"]
 
+[[bin]]
+name = "bonsai"
+path = "src/main.rs"
+
+[package.metadata.bundle]
+name = "bonsai"
+icon = ["assets/icon/bonsai.icns"]
+
 [dependencies]
-iced = "0.13.1"
+iced = { version = "0.13.1", features = ["image"] }
