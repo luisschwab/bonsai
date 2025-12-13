@@ -83,8 +83,8 @@ impl Node {
             text("").size(10),
             text(format!("STATUS: {}", status_text)).font(Font::MONOSPACE),
             text(format!("IBD: {}", in_ibd)).font(Font::MONOSPACE),
-            text(format!("CHAIN HEIGHT: {}", chain_height)).font(Font::MONOSPACE),
-            text(format!("VALIDATED HEIGHT: {}", validated_height)).font(Font::MONOSPACE),
+            text(format!("HEADERS: {}", chain_height)).font(Font::MONOSPACE),
+            text(format!("BLOCKS: {}", validated_height)).font(Font::MONOSPACE),
             text(format!(
                 "UTREEXO ACCUMULATOR LEAVES: {}",
                 accumulator.leaves
