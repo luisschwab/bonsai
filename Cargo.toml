@@ -11,7 +11,7 @@ keywords = ["bitcoin", "wallet", "bdk", "utreexo", "floresta"]
 
 [[bin]]
 name = "bonsai"
-path = "src/main.rs"
+path = "src/bonsai.rs"
 
 [package.metadata.bundle]
 name = "bonsai"
