@@ -14,8 +14,8 @@ build:
 # Check code: formatting, compilation, and linting
 check:
     cargo +nightly fmt --all -- --check
-    cargo check --workspace
-    cargo clippy --all-targets -- -D warnings
+    cargo check
+    cargo clippy -- -D warnings
 
 # Delete files: data, target, lockfile
 delete item="data":

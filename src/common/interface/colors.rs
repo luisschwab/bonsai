@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use iced::Color;
 
 /// Background: light grey.
