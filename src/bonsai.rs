@@ -145,6 +145,9 @@ impl Bonsai {
 }
 
 fn main() -> iced::Result {
+    // Setup the logger.
+    setup_logger();
+
     // Create a Tokio runtime for the underlying node to run on.
     let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
