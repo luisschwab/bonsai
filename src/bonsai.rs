@@ -8,6 +8,7 @@ use iced::window::{Icon, Level, Position, Settings};
 use iced::{Element, Font, Length, Size, Subscription, Task, Theme};
 
 use common::interface::colors::{BACKGROUND, FOREGROUND, GREEN, ORANGE, RED};
+use common::logger::setup_logger;
 use node::control::Node;
 use node::control::{set_runtime_handle, start_node, stop_node};
 use node::error::BonsaiNodeError;
@@ -55,7 +56,6 @@ impl Bonsai {
             }
             BonsaiMessage::CloseRequested => {
                 if self.node.handle.is_some() {
-                    // Send ShuttingDown to update UI
                     let stopping_task = Task::done(BonsaiMessage::Node(NodeMessage::ShuttingDown));
                     self.node.unsubscribe();
 

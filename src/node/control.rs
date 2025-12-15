@@ -6,7 +6,7 @@ use bdk_floresta::builder::FlorestaBuilder;
 use bdk_floresta::{FlorestaNode, UtreexoNodeConfig};
 use bdk_wallet::bitcoin::Network;
 use iced::Task;
-use iced::widget::{column, text};
+use iced::widget::{button, column, row, text};
 use iced::{Element, Font, Subscription};
 use tokio::runtime::Handle;
 use tokio::sync::RwLock;
@@ -18,7 +18,7 @@ use crate::node::statistics::fetch_stats;
 
 pub const DATA_DIR: &str = "./data/";
 pub const NETWORK: Network = Network::Signet;
-pub const FETCH_STATISTICS_TIME: u64 = 5;
+pub const FETCH_STATISTICS_TIME: u64 = 1;
 
 static RUNTIME_HANDLE: OnceLock<Handle> = OnceLock::new();
 
@@ -48,6 +48,10 @@ pub(crate) struct Node {
 impl Node {
     pub fn update(&mut self, message: NodeMessage) -> Task<NodeMessage> {
         match message {
+            NodeMessage::Start => Task::perform(start_node(), |res| match res {
+                Ok(handle) => NodeMessage::Running(handle),
+                Err(e) => NodeMessage::Error(BonsaiNodeError::from(e)),
+            }),
             NodeMessage::Starting => {
                 self.subscription_active = false;
                 Task::none()
@@ -58,19 +62,65 @@ impl Node {
                 self.subscription_active = true;
                 Task::none()
             }
+            NodeMessage::Shutdown => {
+                // Stop the node without closing the window
+                self.subscription_active = false;
+                self.is_shutting_down = true;
+
+                if let Some(node_handle) = self.handle.take() {
+                    let rt_handle = get_runtime_handle().clone();
+
+                    Task::future(async move {
+                        eprintln!("Stopping node...");
+                        let result = rt_handle
+                            .spawn(async move { stop_node(node_handle).await })
+                            .await;
+
+                        match result {
+                            Ok(Ok(_)) => {
+                                eprintln!("Node stopped successfully");
+                                NodeMessage::ShutdownComplete
+                            }
+                            Ok(Err(e)) => {
+                                eprintln!("Error stopping node: {}", e);
+                                NodeMessage::Error(BonsaiNodeError::from(e))
+                            }
+                            Err(e) => {
+                                eprintln!("Task error: {}", e);
+                                NodeMessage::Error(BonsaiNodeError::Generic(e.to_string()))
+                            }
+                        }
+                    })
+                } else {
+                    Task::done(NodeMessage::ShutdownComplete)
+                }
+            }
             NodeMessage::ShuttingDown => {
                 self.subscription_active = false;
                 self.is_shutting_down = true;
+
+                if let Some(stats) = &mut self.stats {
+                    stats.peer_info.clear();
+                }
+
                 Task::none()
             }
             NodeMessage::ShutdownComplete => {
                 self.subscription_active = false;
                 self.is_shutting_down = false;
+
+                if let Some(stats) = &mut self.stats {
+                    stats.peer_info.clear();
+                }
+
                 Task::none()
             }
             NodeMessage::Statistics(stats) => {
-                self.stats = Some(stats);
-                self.error = None;
+                if !self.is_shutting_down {
+                    self.stats = Some(stats);
+                    self.error = None;
+                }
+
                 Task::none()
             }
             NodeMessage::Error(err) => {
@@ -120,12 +170,36 @@ impl Node {
     pub fn view(&self) -> Element<'_, NodeMessage> {
         let status_text = if let Some(err) = &self.error {
             format!("Error: {}", err)
-        } else if self.is_shutting_down {
-            "Shutting Down...".to_string()
-        } else if self.handle.is_none() {
-            "Starting...".to_string()
         } else {
-            "Running".to_string()
+            match (
+                self.handle.is_some(),
+                self.subscription_active,
+                self.is_shutting_down,
+            ) {
+                (_, _, true) => "Shutting Down...".to_string(),
+                (true, true, false) => "Running".to_string(),
+                (true, false, false) => "Starting...".to_string(),
+                (false, _, false) => "Stopped".to_string(),
+            }
+        };
+
+        let control_buttons = if self.handle.is_some() && !self.is_shutting_down {
+            // Node is running, show stop button
+            row![
+                button(text("Stop Node").font(Font::MONOSPACE))
+                    .on_press(NodeMessage::Shutdown)
+                    .style(button::danger)
+            ]
+        } else if self.handle.is_none() && !self.is_shutting_down {
+            // Node is stopped, show start button
+            row![
+                button(text("Start Node").font(Font::MONOSPACE))
+                    .on_press(NodeMessage::Start)
+                    .style(button::success)
+            ]
+        } else {
+            // Node is shutting down, no buttons
+            row![]
         };
 
         let in_ibd = self.stats.as_ref().map(|s| s.in_ibd).unwrap_or(true);
@@ -136,10 +210,16 @@ impl Node {
             .clone()
             .map(|s| s.accumulator)
             .unwrap_or_default();
-        let peer_info = self.stats.clone().map(|s| s.peer_info).unwrap_or_default();
+        let peer_info = if self.handle.is_some() && self.subscription_active && !self.is_shutting_down {
+            self.stats.as_ref().map(|s| s.peer_info.clone()).unwrap_or_default()
+        } else {
+            Vec::new()
+        };
 
         let mut stats_column = column![
             text("Node").size(32).font(Font::MONOSPACE),
+            text("").size(10),
+            control_buttons,
             text("").size(10),
             text(format!("STATUS: {}", status_text)).font(Font::MONOSPACE),
             text(format!("IBD: {}", in_ibd)).font(Font::MONOSPACE),
