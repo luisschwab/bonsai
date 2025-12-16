@@ -65,33 +65,21 @@ impl Bonsai {
                     let rt_handle = node::control::get_runtime_handle().clone();
 
                     let shutdown_task = Task::future(async move {
-                        eprintln!("Shutdown task started");
-                        let shutdown_result = rt_handle
+                        let _ = rt_handle
                             .spawn(async move { stop_node(node_handle).await })
                             .await;
-
-                        match shutdown_result {
-                            Ok(Ok(_)) => eprintln!("Node stopped successfully"),
-                            Ok(Err(e)) => eprintln!("Error stopping node: {}", e),
-                            Err(e) => eprintln!("Task error: {}", e),
-                        }
-                        eprintln!("Shutdown complete, now closing window");
 
                         BonsaiMessage::CloseWindow
                     });
 
                     Task::batch([stopping_task, shutdown_task])
                 } else {
-                    eprintln!("No node handle, closing window immediately");
                     Task::done(BonsaiMessage::CloseWindow)
                 }
             }
-            BonsaiMessage::CloseWindow => {
-                eprintln!("CloseWindow message received");
-                window::get_latest()
-                    .and_then(window::close::<BonsaiMessage>)
-                    .discard()
-            }
+            BonsaiMessage::CloseWindow => window::oldest()
+                .and_then(window::close::<BonsaiMessage>)
+                .discard(),
         }
     }
 
@@ -180,27 +168,15 @@ fn main() -> iced::Result {
         icon: Some(icon),
         platform_specific: PlatformSpecific::default(),
         exit_on_close_request: false,
+        maximized: false,
+        fullscreen: false,
+        closeable: true,
+        minimizable: true,
+        blur: false,
     };
 
-    iced::application("bonsai", Bonsai::update, Bonsai::view)
-        .window(window_settings)
-        .theme(|_| {
-            Theme::custom(
-                "GruvboxDarkHard".to_string(),
-                iced::theme::Palette {
-                    background: BACKGROUND,
-                    text: FOREGROUND,
-                    primary: ORANGE,
-                    success: GREEN,
-                    danger: RED,
-                },
-            )
-        })
-        .font(include_bytes!("../assets/font/BerkeleyMono-Bold.ttf").as_slice())
-        .font(include_bytes!("../assets/font/BerkeleyMono-Regular.ttf").as_slice())
-        .default_font(BERKELEY_MONO_REGULAR)
-        .subscription(Bonsai::subscription)
-        .run_with(|| {
+    iced::application(
+        || {
             (
                 Bonsai::default(),
                 Task::batch([
@@ -211,5 +187,27 @@ fn main() -> iced::Result {
                     }),
                 ]),
             )
-        })
+        },
+        Bonsai::update,
+        Bonsai::view,
+    )
+    .window(window_settings)
+    .theme(|_: &Bonsai| {
+        Theme::custom(
+            "GruvboxDarkHard".to_string(),
+            iced::theme::Palette {
+                background: BACKGROUND,
+                text: FOREGROUND,
+                primary: ORANGE,
+                success: GREEN,
+                danger: RED,
+                warning: RED,
+            },
+        )
+    })
+    .font(include_bytes!("../assets/font/BerkeleyMono-Bold.ttf").as_slice())
+    .font(include_bytes!("../assets/font/BerkeleyMono-Regular.ttf").as_slice())
+    .default_font(BERKELEY_MONO_REGULAR)
+    .subscription(Bonsai::subscription)
+    .run()
 }
