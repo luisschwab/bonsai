@@ -15,7 +15,8 @@ use node::control::{start_node, stop_node};
 use node::error::BonsaiNodeError;
 use node::message::NodeMessage;
 use tokio::runtime::Handle;
-use wallet::placeholder::{Wallet, WalletMessage};
+use wallet::bdk::placeholder::{BDKWallet, BDKWalletMessage};
+use wallet::phoenixd::placeholder::{Phoenixd, PhoenixdMessage};
 
 mod common;
 mod node;
@@ -27,7 +28,8 @@ const START_NODE_AUTO: bool = false;
 pub(crate) enum BonsaiMessage {
     SelectTab(Tab),
     Node(NodeMessage),
-    Wallet(WalletMessage),
+    BdkWallet(BDKWalletMessage),
+    Phoenixd(PhoenixdMessage),
     CloseRequested,
     CloseWindow,
 }
@@ -36,14 +38,16 @@ pub(crate) enum BonsaiMessage {
 pub(crate) enum Tab {
     #[default]
     Node,
-    Wallet,
+    BDKWallet,
+    Phoenixd,
 }
 
 #[derive(Default)]
 pub(crate) struct Bonsai {
     active_tab: Tab,
     node: Node,
-    wallet: Wallet,
+    onchain_wallet: BDKWallet,
+    lightning_wallet: Phoenixd,
 }
 
 impl Bonsai {
@@ -54,8 +58,8 @@ impl Bonsai {
                 Task::none()
             }
             BonsaiMessage::Node(msg) => self.node.update(msg).map(BonsaiMessage::Node),
-            BonsaiMessage::Wallet(msg) => {
-                self.wallet.update(msg);
+            BonsaiMessage::BdkWallet(msg) => {
+                self.onchain_wallet.update(msg);
                 Task::none()
             }
             BonsaiMessage::CloseRequested => {
@@ -95,9 +99,16 @@ impl Bonsai {
                 } else {
                     button::secondary
                 }),
-            button(text("Wallet"))
-                .on_press(BonsaiMessage::SelectTab(Tab::Wallet))
-                .style(if self.active_tab == Tab::Wallet {
+            button(text("BDK Wallet"))
+                .on_press(BonsaiMessage::SelectTab(Tab::BDKWallet))
+                .style(if self.active_tab == Tab::BDKWallet {
+                    button::primary
+                } else {
+                    button::secondary
+                }),
+            button(text("Phoenixd"))
+                .on_press(BonsaiMessage::SelectTab(Tab::Phoenixd))
+                .style(if self.active_tab == Tab::Phoenixd {
                     button::primary
                 } else {
                     button::secondary
@@ -107,7 +118,8 @@ impl Bonsai {
 
         let content = match self.active_tab {
             Tab::Node => self.node.view().map(BonsaiMessage::Node),
-            Tab::Wallet => self.wallet.view().map(BonsaiMessage::Wallet),
+            Tab::BDKWallet => self.onchain_wallet.view().map(BonsaiMessage::BdkWallet),
+            Tab::Phoenixd => self.lightning_wallet.view().map(BonsaiMessage::Phoenixd),
         };
 
         container(column![tabs, content].spacing(20).padding(20))
@@ -129,7 +141,8 @@ impl Bonsai {
 
         let tab_subscription = match self.active_tab {
             Tab::Node => self.node.subscribe().map(BonsaiMessage::Node),
-            Tab::Wallet => Subscription::none(),
+            Tab::BDKWallet => Subscription::none(),
+            Tab::Phoenixd => Subscription::none(),
         };
 
         Subscription::batch([window_events, tab_subscription])
