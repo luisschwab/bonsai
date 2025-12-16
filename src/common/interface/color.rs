@@ -2,15 +2,22 @@
 
 use iced::Color;
 
-/// Background: light grey.
-pub(crate) const BACKGROUND: Color = Color::from_rgb(
+/// Light Grey.
+pub(crate) const LIGHT_GREY: Color = Color::from_rgb(
     0x1d as f32 / 255.0,
     0x20 as f32 / 255.0,
     0x21 as f32 / 255.0,
 );
 
-/// Foreground: off-white.
-pub(crate) const FOREGROUND: Color = Color::from_rgb(
+/// Dark Grey.
+pub(crate) const DARK_GREY: Color = Color::from_rgb(
+    0x14 as f32 / 255.0,
+    0x14 as f32 / 255.0,
+    0x14 as f32 / 255.0,
+);
+
+/// Off White.
+pub(crate) const OFF_WHITE: Color = Color::from_rgb(
     0xeb as f32 / 255.0,
     0xdb as f32 / 255.0,
     0xb2 as f32 / 255.0,

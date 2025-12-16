@@ -1,20 +1,29 @@
 use core::fmt::Debug;
 
+use iced::theme::Palette;
 use iced::widget::{button, column, container, row, text};
 use iced::window;
 use iced::window::icon;
 use iced::window::settings::PlatformSpecific;
 use iced::window::{Icon, Level, Position, Settings};
 use iced::{Element, Length, Size, Subscription, Task, Theme};
+use tokio::runtime::Handle;
 
-use common::interface::color::{BACKGROUND, FOREGROUND, GREEN, ORANGE, RED};
-use common::interface::font::BERKELEY_MONO_REGULAR;
+use common::interface::color::{DARK_GREY, GREEN, OFF_WHITE, ORANGE, RED};
+use common::interface::container::content::{CONTENT_PADDING, CONTENT_SPACING, content_container};
+use common::interface::container::header::{HEADER_HEIGHT, HEADER_PADDING, header_container};
+use common::interface::container::sidebar::{
+    SIDEBAR_BUTTON_SPACING, SIDEBAR_PADDING, SIDEBAR_WIDTH, sidebar_container,
+};
+use common::interface::container::window::{WINDOW_PADDING, window_container};
+use common::interface::font::{BERKELEY_MONO_BOLD, BERKELEY_MONO_REGULAR};
 use common::logger::setup_logger;
+
 use node::control::Node;
 use node::control::{start_node, stop_node};
 use node::error::BonsaiNodeError;
 use node::message::NodeMessage;
-use tokio::runtime::Handle;
+
 use wallet::bdk::placeholder::{BDKWallet, BDKWalletMessage};
 use wallet::phoenixd::placeholder::{Phoenixd, PhoenixdMessage};
 
@@ -23,6 +32,8 @@ mod node;
 mod wallet;
 
 const START_NODE_AUTO: bool = false;
+const APP_NAME: &str = "Bonsai";
+const APP_VERSION: &str = "0.1.0-beta";
 
 #[derive(Debug, Clone)]
 pub(crate) enum BonsaiMessage {
@@ -36,10 +47,10 @@ pub(crate) enum BonsaiMessage {
 
 #[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Tab {
-    #[default]
-    Node,
     BDKWallet,
     Phoenixd,
+    #[default]
+    Node,
 }
 
 #[derive(Default)]
@@ -51,6 +62,79 @@ pub(crate) struct Bonsai {
 }
 
 impl Bonsai {
+    fn view(&self) -> Element<'_, BonsaiMessage> {
+        let header = container(row![
+            text(APP_NAME).size(42).font(BERKELEY_MONO_BOLD),
+            text(APP_VERSION).size(12),
+        ])
+        .padding(5.0)
+        .width(Length::Fill)
+        .height(Length::Fixed(HEADER_HEIGHT))
+        .style(header_container());
+
+        let tabs = column![
+            button(text("BDK Wallet"))
+                .on_press(BonsaiMessage::SelectTab(Tab::BDKWallet))
+                .width(Length::Fill)
+                .style(if self.active_tab == Tab::BDKWallet {
+                    button::primary
+                } else {
+                    button::secondary
+                }),
+            button(text("Phoenixd"))
+                .on_press(BonsaiMessage::SelectTab(Tab::Phoenixd))
+                .width(Length::Fill)
+                .style(if self.active_tab == Tab::Phoenixd {
+                    button::primary
+                } else {
+                    button::secondary
+                }),
+            button(text("Node"))
+                .on_press(BonsaiMessage::SelectTab(Tab::Node))
+                .width(Length::Fill)
+                .style(if self.active_tab == Tab::Node {
+                    button::primary
+                } else {
+                    button::secondary
+                }),
+        ]
+        .spacing(SIDEBAR_BUTTON_SPACING);
+
+        let sidebar = container(tabs)
+            .padding(SIDEBAR_PADDING)
+            .width(Length::Fixed(SIDEBAR_WIDTH))
+            .height(Length::Fill)
+            .style(sidebar_container());
+
+        let content = match self.active_tab {
+            Tab::Node => self.node.view().map(BonsaiMessage::Node),
+            Tab::BDKWallet => self.onchain_wallet.view().map(BonsaiMessage::BdkWallet),
+            Tab::Phoenixd => self.lightning_wallet.view().map(BonsaiMessage::Phoenixd),
+        };
+
+        let content_area = container(content)
+            .padding(CONTENT_PADDING)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .style(content_container());
+
+        let main_layout = row![sidebar, content_area].spacing(CONTENT_SPACING);
+
+        let body = column![header, main_layout].spacing(CONTENT_SPACING);
+
+        let inner = container(body)
+            .padding(WINDOW_PADDING)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .style(window_container());
+
+        container(inner)
+            .padding(WINDOW_PADDING)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
+    }
+
     fn update(&mut self, message: BonsaiMessage) -> Task<BonsaiMessage> {
         match message {
             BonsaiMessage::SelectTab(tab) => {
@@ -88,44 +172,6 @@ impl Bonsai {
                 .and_then(window::close::<BonsaiMessage>)
                 .discard(),
         }
-    }
-
-    fn view(&self) -> Element<'_, BonsaiMessage> {
-        let tabs = row![
-            button(text("Node"))
-                .on_press(BonsaiMessage::SelectTab(Tab::Node))
-                .style(if self.active_tab == Tab::Node {
-                    button::primary
-                } else {
-                    button::secondary
-                }),
-            button(text("BDK Wallet"))
-                .on_press(BonsaiMessage::SelectTab(Tab::BDKWallet))
-                .style(if self.active_tab == Tab::BDKWallet {
-                    button::primary
-                } else {
-                    button::secondary
-                }),
-            button(text("Phoenixd"))
-                .on_press(BonsaiMessage::SelectTab(Tab::Phoenixd))
-                .style(if self.active_tab == Tab::Phoenixd {
-                    button::primary
-                } else {
-                    button::secondary
-                }),
-        ]
-        .spacing(10);
-
-        let content = match self.active_tab {
-            Tab::Node => self.node.view().map(BonsaiMessage::Node),
-            Tab::BDKWallet => self.onchain_wallet.view().map(BonsaiMessage::BdkWallet),
-            Tab::Phoenixd => self.lightning_wallet.view().map(BonsaiMessage::Phoenixd),
-        };
-
-        container(column![tabs, content].spacing(20).padding(20))
-            .width(Length::Fill)
-            .height(Length::Fill)
-            .into()
     }
 
     fn subscription(&self) -> Subscription<BonsaiMessage> {
@@ -210,10 +256,10 @@ fn main() -> iced::Result {
     .window(window_settings)
     .theme(|_: &Bonsai| {
         Theme::custom(
-            "GruvboxDarkHard".to_string(),
-            iced::theme::Palette {
-                background: BACKGROUND,
-                text: FOREGROUND,
+            "Bonsai".to_string(),
+            Palette {
+                background: DARK_GREY,
+                text: OFF_WHITE,
                 primary: ORANGE,
                 success: GREEN,
                 danger: RED,

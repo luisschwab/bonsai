@@ -13,11 +13,8 @@ impl BDKWallet {
     }
 
     pub fn view(&self) -> Element<'_, BDKWalletMessage> {
-        column![
-            text("BDK Wallet").size(24),
-            text("TODO, coming soon™"),
-        ]
-        .spacing(20)
-        .into()
+        column![text("BDK Wallet").size(24), text("TODO, coming soon™"),]
+            .spacing(20)
+            .into()
     }
 }
