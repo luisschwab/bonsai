@@ -13,6 +13,9 @@ keywords = ["bitcoin", "wallet", "bdk", "utreexo", "floresta"]
 name = "bonsai"
 path = "src/bonsai.rs"
 
+[features]
+hot-reloading = ["iced/hot"]
+
 [package.metadata.bundle]
 name = "bonsai"
 icon = ["assets/icon/bonsai.icns"]

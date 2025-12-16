@@ -3,6 +3,7 @@ alias c := check
 alias d := delete
 alias f := fmt
 alias r := run
+alias h := hot
 
 _default:
     @just --list --list-heading $'bonsai\n'
@@ -28,6 +29,10 @@ fmt:
 # Run the code
 run:
     cargo run
+
+# Run with experimental hot-reloading
+hot:
+    cargo hot --features hot-reloading
 
 _delete-data:
     rm -rf data/

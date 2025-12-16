@@ -20,6 +20,8 @@ mod common;
 mod node;
 mod wallet;
 
+const START_NODE_AUTO: bool = false;
+
 #[derive(Debug, Clone)]
 pub(crate) enum BonsaiMessage {
     SelectTab(Tab),
@@ -177,16 +179,19 @@ fn main() -> iced::Result {
 
     iced::application(
         || {
-            (
-                Bonsai::default(),
+            let tasks = if START_NODE_AUTO {
                 Task::batch([
                     Task::done(BonsaiMessage::Node(NodeMessage::Starting)),
                     Task::perform(start_node(), |result| match result {
                         Ok(handle) => BonsaiMessage::Node(NodeMessage::Running(handle)),
                         Err(e) => BonsaiMessage::Node(NodeMessage::Error(BonsaiNodeError::from(e))),
                     }),
-                ]),
-            )
+                ])
+            } else {
+                Task::none()
+            };
+
+            (Bonsai::default(), tasks)
         },
         Bonsai::update,
         Bonsai::view,
