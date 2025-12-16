@@ -11,9 +11,10 @@ use common::interface::color::{BACKGROUND, FOREGROUND, GREEN, ORANGE, RED};
 use common::interface::font::BERKELEY_MONO_REGULAR;
 use common::logger::setup_logger;
 use node::control::Node;
-use node::control::{set_runtime_handle, start_node, stop_node};
+use node::control::{start_node, stop_node};
 use node::error::BonsaiNodeError;
 use node::message::NodeMessage;
+use tokio::runtime::Handle;
 use wallet::placeholder::{Wallet, WalletMessage};
 
 mod common;
@@ -64,7 +65,7 @@ impl Bonsai {
 
                     // Take the handle for shutdown
                     let node_handle = self.node.handle.take().unwrap();
-                    let rt_handle = node::control::get_runtime_handle().clone();
+                    let rt_handle = Handle::current();
 
                     let shutdown_task = Task::future(async move {
                         let _ = rt_handle
@@ -146,9 +147,6 @@ fn main() -> iced::Result {
         .thread_name("bonsai-rt")
         .build()
         .unwrap();
-    // Get Tokio's runtime handle and set it
-    let rt_handle = rt.handle().clone();
-    set_runtime_handle(rt_handle);
     // Get a guard to the runtime so it keeps running.
     let _guard = rt.enter();
     std::mem::forget(rt);

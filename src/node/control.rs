@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::sync::OnceLock;
 use std::time::Duration;
 
 use bdk_floresta::builder::FlorestaBuilder;
@@ -18,22 +17,6 @@ use crate::node::statistics::fetch_stats;
 pub const DATA_DIR: &str = "./data/";
 pub const NETWORK: Network = Network::Signet;
 pub const FETCH_STATISTICS_TIME: u64 = 1;
-
-static RUNTIME_HANDLE: OnceLock<Handle> = OnceLock::new();
-
-/// Set `runtime_handle` as Tokio's runtime [`Handle`].
-pub fn set_runtime_handle(runtime_handle: Handle) {
-    RUNTIME_HANDLE
-        .set(runtime_handle)
-        .expect("Tokio's runtime handle is already set");
-}
-
-/// Get Tokio's runtime [`Handle`].
-pub fn get_runtime_handle() -> &'static Handle {
-    RUNTIME_HANDLE
-        .get()
-        .expect("Tokio's runtime handle is not set")
-}
 
 #[derive(Default)]
 pub(crate) struct Node {
@@ -67,27 +50,17 @@ impl Node {
                 self.is_shutting_down = true;
 
                 if let Some(node_handle) = self.handle.take() {
-                    let rt_handle = get_runtime_handle().clone();
+                    let rt_handle = Handle::current();
 
                     Task::future(async move {
-                        eprintln!("Stopping node...");
                         let result = rt_handle
                             .spawn(async move { stop_node(node_handle).await })
                             .await;
 
                         match result {
-                            Ok(Ok(_)) => {
-                                eprintln!("Node stopped successfully");
-                                NodeMessage::ShutdownComplete
-                            }
-                            Ok(Err(e)) => {
-                                eprintln!("Error stopping node: {}", e);
-                                NodeMessage::Error(BonsaiNodeError::from(e))
-                            }
-                            Err(e) => {
-                                eprintln!("Task error: {}", e);
-                                NodeMessage::Error(BonsaiNodeError::Generic(e.to_string()))
-                            }
+                            Ok(Ok(_)) => NodeMessage::ShutdownComplete,
+                            Ok(Err(e)) => NodeMessage::Error(BonsaiNodeError::from(e)),
+                            Err(e) => NodeMessage::Error(BonsaiNodeError::Generic(e.to_string())),
                         }
                     })
                 } else {
@@ -131,7 +104,7 @@ impl Node {
                 if self.subscription_active {
                     if let Some(handle) = &self.handle {
                         let handle = handle.clone();
-                        let rt_handle = get_runtime_handle().clone();
+                        let rt_handle = Handle::current();
 
                         Task::future(async move {
                             rt_handle
@@ -185,7 +158,7 @@ impl Node {
         let control_buttons = if self.handle.is_some() && !self.is_shutting_down {
             // Node is running, show stop button
             row![
-                button(text("Stop Node"))
+                button(text("Stop Node").font(iced::Font::MONOSPACE))
                     .on_press(NodeMessage::Shutdown)
                     .style(button::danger)
             ]
@@ -253,7 +226,7 @@ impl Node {
 }
 
 pub(crate) async fn start_node() -> Result<Arc<RwLock<FlorestaNode>>, String> {
-    let rt_handle = get_runtime_handle();
+    let rt_handle = Handle::current();
 
     rt_handle
         .spawn(async {
