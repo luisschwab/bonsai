@@ -5,9 +5,10 @@ use iced::window;
 use iced::window::icon;
 use iced::window::settings::PlatformSpecific;
 use iced::window::{Icon, Level, Position, Settings};
-use iced::{Element, Font, Length, Size, Subscription, Task, Theme};
+use iced::{Element, Length, Size, Subscription, Task, Theme};
 
-use common::interface::colors::{BACKGROUND, FOREGROUND, GREEN, ORANGE, RED};
+use common::interface::color::{BACKGROUND, FOREGROUND, GREEN, ORANGE, RED};
+use common::interface::font::BERKELEY_MONO_REGULAR;
 use common::logger::setup_logger;
 use node::control::Node;
 use node::control::{set_runtime_handle, start_node, stop_node};
@@ -96,14 +97,14 @@ impl Bonsai {
 
     fn view(&self) -> Element<'_, BonsaiMessage> {
         let tabs = row![
-            button(text("Node").font(Font::MONOSPACE))
+            button(text("Node"))
                 .on_press(BonsaiMessage::SelectTab(Tab::Node))
                 .style(if self.active_tab == Tab::Node {
                     button::primary
                 } else {
                     button::secondary
                 }),
-            button(text("Wallet").font(Font::MONOSPACE))
+            button(text("Wallet"))
                 .on_press(BonsaiMessage::SelectTab(Tab::Wallet))
                 .style(if self.active_tab == Tab::Wallet {
                     button::primary
@@ -195,6 +196,9 @@ fn main() -> iced::Result {
                 },
             )
         })
+        .font(include_bytes!("../assets/font/BerkeleyMono-Bold.ttf").as_slice())
+        .font(include_bytes!("../assets/font/BerkeleyMono-Regular.ttf").as_slice())
+        .default_font(BERKELEY_MONO_REGULAR)
         .subscription(Bonsai::subscription)
         .run_with(|| {
             (

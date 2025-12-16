@@ -5,9 +5,8 @@ use std::time::Duration;
 use bdk_floresta::builder::FlorestaBuilder;
 use bdk_floresta::{FlorestaNode, UtreexoNodeConfig};
 use bdk_wallet::bitcoin::Network;
-use iced::Task;
 use iced::widget::{button, column, row, text};
-use iced::{Element, Font, Subscription};
+use iced::{Element, Subscription, Task};
 use tokio::runtime::Handle;
 use tokio::sync::RwLock;
 
@@ -186,14 +185,14 @@ impl Node {
         let control_buttons = if self.handle.is_some() && !self.is_shutting_down {
             // Node is running, show stop button
             row![
-                button(text("Stop Node").font(Font::MONOSPACE))
+                button(text("Stop Node"))
                     .on_press(NodeMessage::Shutdown)
                     .style(button::danger)
             ]
         } else if self.handle.is_none() && !self.is_shutting_down {
             // Node is stopped, show start button
             row![
-                button(text("Start Node").font(Font::MONOSPACE))
+                button(text("Start Node"))
                     .on_press(NodeMessage::Start)
                     .style(button::success)
             ]
@@ -210,44 +209,43 @@ impl Node {
             .clone()
             .map(|s| s.accumulator)
             .unwrap_or_default();
-        let peer_info = if self.handle.is_some() && self.subscription_active && !self.is_shutting_down {
-            self.stats.as_ref().map(|s| s.peer_info.clone()).unwrap_or_default()
-        } else {
-            Vec::new()
-        };
+        let peer_info =
+            if self.handle.is_some() && self.subscription_active && !self.is_shutting_down {
+                self.stats
+                    .as_ref()
+                    .map(|s| s.peer_info.clone())
+                    .unwrap_or_default()
+            } else {
+                Vec::new()
+            };
 
         let mut stats_column = column![
-            text("Node").size(32).font(Font::MONOSPACE),
+            text("Node").size(32),
             text("").size(10),
             control_buttons,
             text("").size(10),
-            text(format!("STATUS: {}", status_text)).font(Font::MONOSPACE),
-            text(format!("IBD: {}", in_ibd)).font(Font::MONOSPACE),
-            text(format!("HEADERS: {}", chain_height)).font(Font::MONOSPACE),
-            text(format!("BLOCKS: {}", validated_height)).font(Font::MONOSPACE),
+            text(format!("STATUS: {}", status_text)),
+            text(format!("IBD: {}", in_ibd)),
+            text(format!("HEADERS: {}", chain_height)),
+            text(format!("BLOCKS: {}", validated_height)),
             text(format!(
                 "UTREEXO ACCUMULATOR LEAVES: {}",
                 accumulator.leaves
-            ))
-            .font(Font::MONOSPACE),
-            text("UTREEXO ROOTS:").font(Font::MONOSPACE),
+            )),
+            text("UTREEXO ROOTS:"),
         ]
         .spacing(10);
 
         for (i, root) in accumulator.roots.iter().enumerate() {
-            stats_column =
-                stats_column.push(text(format!(" [{}] {}", i, root)).font(Font::MONOSPACE));
+            stats_column = stats_column.push(text(format!(" [{}] {}", i, root)));
         }
 
-        stats_column = stats_column.push(text("PEERS:").font(Font::MONOSPACE));
+        stats_column = stats_column.push(text("PEERS:"));
         for (i, peer) in peer_info.iter().enumerate() {
-            stats_column = stats_column.push(
-                text(format!(
-                    " [{}] addr={} transport={:?} user_agent={}",
-                    i, peer.address, peer.transport_protocol, peer.user_agent
-                ))
-                .font(Font::MONOSPACE),
-            );
+            stats_column = stats_column.push(text(format!(
+                " [{}] addr={} transport={:?} user_agent={}",
+                i, peer.address, peer.transport_protocol, peer.user_agent
+            )));
         }
 
         stats_column.into()

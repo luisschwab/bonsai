@@ -1,1 +1,2 @@
-pub(crate) mod colors;
+pub(crate) mod color;
+pub(crate) mod font;

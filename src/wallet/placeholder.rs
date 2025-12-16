@@ -1,5 +1,5 @@
+use iced::Element;
 use iced::widget::{column, text};
-use iced::{Element, Font};
 
 #[derive(Default)]
 pub struct Wallet {}
@@ -14,8 +14,8 @@ impl Wallet {
 
     pub fn view(&self) -> Element<'_, WalletMessage> {
         column![
-            text("Wallet Tab").size(24).font(Font::MONOSPACE),
-            text("BDK-based wallet goes here").font(Font::MONOSPACE),
+            text("Wallet Tab").size(24),
+            text("BDK-based wallet goes here"),
         ]
         .spacing(20)
         .into()
