@@ -1,5 +1,4 @@
-use bdk_floresta::error::BuilderError;
-use bdk_floresta::error::NodeError;
+use bdk_floresta::error::{BuilderError, NodeError};
 use thiserror::Error;
 
 #[derive(Clone, Debug, Error)]

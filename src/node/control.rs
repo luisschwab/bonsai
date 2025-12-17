@@ -1,15 +1,18 @@
+use core::fmt::Display;
+
 use std::sync::Arc;
 use std::time::Duration;
 
 use bdk_floresta::builder::FlorestaBuilder;
 use bdk_floresta::{FlorestaNode, UtreexoNodeConfig};
 use bdk_wallet::bitcoin::Network;
-use iced::widget::{button, column, row, text};
 use iced::{Element, Subscription, Task};
 use tokio::runtime::Handle;
 use tokio::sync::RwLock;
 
+use crate::Tab;
 use crate::node::error::BonsaiNodeError;
+use crate::node::logger::LogCapture;
 use crate::node::message::NodeMessage;
 use crate::node::statistics::NodeStatistics;
 use crate::node::statistics::fetch_stats;
@@ -19,33 +22,61 @@ pub const NETWORK: Network = Network::Signet;
 pub const FETCH_STATISTICS_TIME: u64 = 1;
 
 #[derive(Default)]
+pub(crate) enum NodeStatus {
+    #[default]
+    Inactive,
+    Starting,
+    Running,
+    ShuttingDown,
+    Failed(BonsaiNodeError),
+}
+
+impl Display for NodeStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self {
+            Self::Inactive => write!(f, "INACTIVE"),
+            Self::Starting => write!(f, "STARTING"),
+            Self::Running => write!(f, "RUNNING"),
+            Self::ShuttingDown => write!(f, "SHUTTING DOWN"),
+            Self::Failed(_) => write!(f, "FAILED"),
+        }
+    }
+}
+
+#[derive(Default)]
 pub(crate) struct Node {
     pub(crate) handle: Option<Arc<RwLock<FlorestaNode>>>,
-    pub(crate) stats: Option<NodeStatistics>,
-    pub(crate) error: Option<BonsaiNodeError>,
-    subscription_active: bool,
-    is_shutting_down: bool,
+    pub(crate) status: NodeStatus,
+    pub(crate) statistics: Option<NodeStatistics>,
+    pub(crate) subscription_active: bool,
+    pub(crate) is_shutting_down: bool,
+    pub(crate) log_capture: LogCapture,
 }
 
 impl Node {
     pub fn update(&mut self, message: NodeMessage) -> Task<NodeMessage> {
         match message {
-            NodeMessage::Start => Task::perform(start_node(), |res| match res {
-                Ok(handle) => NodeMessage::Running(handle),
-                Err(e) => NodeMessage::Error(BonsaiNodeError::from(e)),
-            }),
+            NodeMessage::Start => {
+                self.status = NodeStatus::Starting;
+                Task::perform(start_node(), |res| match res {
+                    Ok(handle) => NodeMessage::Running(handle),
+                    Err(e) => NodeMessage::Error(BonsaiNodeError::from(e)),
+                })
+            }
             NodeMessage::Starting => {
+                self.status = NodeStatus::Starting;
                 self.subscription_active = false;
                 Task::none()
             }
             NodeMessage::Running(handle) => {
                 self.handle = Some(handle);
-                self.error = None;
+                self.status = NodeStatus::Running;
                 self.subscription_active = true;
+                self.is_shutting_down = false;
                 Task::none()
             }
             NodeMessage::Shutdown => {
-                // Stop the node without closing the window
+                self.status = NodeStatus::ShuttingDown;
                 self.subscription_active = false;
                 self.is_shutting_down = true;
 
@@ -68,35 +99,38 @@ impl Node {
                 }
             }
             NodeMessage::ShuttingDown => {
+                self.status = NodeStatus::ShuttingDown;
                 self.subscription_active = false;
                 self.is_shutting_down = true;
 
-                if let Some(stats) = &mut self.stats {
+                if let Some(stats) = &mut self.statistics {
                     stats.peer_info.clear();
                 }
 
                 Task::none()
             }
             NodeMessage::ShutdownComplete => {
+                self.status = NodeStatus::Inactive;
                 self.subscription_active = false;
                 self.is_shutting_down = false;
 
-                if let Some(stats) = &mut self.stats {
+                if let Some(stats) = &mut self.statistics {
                     stats.peer_info.clear();
                 }
 
                 Task::none()
             }
+            NodeMessage::Tick => Task::none(),
             NodeMessage::Statistics(stats) => {
                 if !self.is_shutting_down {
-                    self.stats = Some(stats);
-                    self.error = None;
+                    self.statistics = Some(stats);
+                    // Don't clear error status here
                 }
 
                 Task::none()
             }
             NodeMessage::Error(err) => {
-                self.error = Some(err);
+                self.status = NodeStatus::Failed(err);
                 self.subscription_active = false;
                 Task::none()
             }
@@ -126,12 +160,18 @@ impl Node {
         }
     }
 
-    pub fn subscribe(&self) -> Subscription<NodeMessage> {
+    pub(crate) fn subscribe(&self) -> Subscription<NodeMessage> {
+        let tick_subscription =
+            iced::time::every(Duration::from_millis(300)).map(|_| NodeMessage::Tick);
+
         if self.subscription_active {
-            iced::time::every(Duration::from_secs(FETCH_STATISTICS_TIME))
-                .map(|_| NodeMessage::GetStatistics)
+            Subscription::batch(vec![
+                iced::time::every(Duration::from_secs(FETCH_STATISTICS_TIME))
+                    .map(|_| NodeMessage::GetStatistics),
+                tick_subscription,
+            ])
         } else {
-            Subscription::none()
+            tick_subscription
         }
     }
 
@@ -139,89 +179,37 @@ impl Node {
         self.subscription_active = false;
     }
 
-    pub fn view(&self) -> Element<'_, NodeMessage> {
-        let status_text = if let Some(err) = &self.error {
-            format!("Error: {}", err)
-        } else {
-            match (
-                self.handle.is_some(),
-                self.subscription_active,
-                self.is_shutting_down,
-            ) {
-                (_, _, true) => "Shutting Down...".to_string(),
-                (true, true, false) => "Running".to_string(),
-                (true, false, false) => "Starting...".to_string(),
-                (false, _, false) => "Stopped".to_string(),
-            }
-        };
-
-        let control_buttons = if self.handle.is_some() && !self.is_shutting_down {
-            // Node is running, show stop button
-            row![
-                button(text("Stop Node").font(iced::Font::MONOSPACE))
-                    .on_press(NodeMessage::Shutdown)
-                    .style(button::danger)
-            ]
-        } else if self.handle.is_none() && !self.is_shutting_down {
-            // Node is stopped, show start button
-            row![
-                button(text("Start Node"))
-                    .on_press(NodeMessage::Start)
-                    .style(button::success)
-            ]
-        } else {
-            // Node is shutting down, no buttons
-            row![]
-        };
-
-        let in_ibd = self.stats.as_ref().map(|s| s.in_ibd).unwrap_or(true);
-        let chain_height = self.stats.as_ref().map(|s| s.chain_height).unwrap_or(0);
-        let validated_height = self.stats.as_ref().map(|s| s.validated_height).unwrap_or(0);
-        let accumulator = self
-            .stats
-            .clone()
-            .map(|s| s.accumulator)
-            .unwrap_or_default();
-        let peer_info =
-            if self.handle.is_some() && self.subscription_active && !self.is_shutting_down {
-                self.stats
-                    .as_ref()
-                    .map(|s| s.peer_info.clone())
-                    .unwrap_or_default()
-            } else {
-                Vec::new()
-            };
-
-        let mut stats_column = column![
-            text("Node").size(32),
-            text("").size(10),
-            control_buttons,
-            text("").size(10),
-            text(format!("STATUS: {}", status_text)),
-            text(format!("IBD: {}", in_ibd)),
-            text(format!("HEADERS: {}", chain_height)),
-            text(format!("BLOCKS: {}", validated_height)),
-            text(format!(
-                "UTREEXO ACCUMULATOR LEAVES: {}",
-                accumulator.leaves
-            )),
-            text("UTREEXO ROOTS:"),
-        ]
-        .spacing(10);
-
-        for (i, root) in accumulator.roots.iter().enumerate() {
-            stats_column = stats_column.push(text(format!(" [{}] {}", i, root)));
+    pub(crate) fn view_tab(&self, tab: Tab) -> Element<'_, NodeMessage> {
+        match tab {
+            Tab::NodeOverview => self.view_overview(),
+            Tab::NodeP2P => self.view_p2p(),
+            Tab::NodeBlocks => self.view_blocks(),
+            Tab::NodeUtreexo => self.view_utreexo(),
+            Tab::NodeSettings => self.view_settings(),
+            _ => unreachable!(),
         }
+    }
 
-        stats_column = stats_column.push(text("PEERS:"));
-        for (i, peer) in peer_info.iter().enumerate() {
-            stats_column = stats_column.push(text(format!(
-                " [{}] addr={} transport={:?} user_agent={}",
-                i, peer.address, peer.transport_protocol, peer.user_agent
-            )));
-        }
+    fn view_overview(&self) -> Element<'_, NodeMessage> {
+        use crate::node::interface::container::overview;
+        overview::view_overview(&self.status, &self.statistics, &self.log_capture)
+    }
 
-        stats_column.into()
+    pub(crate) fn view_p2p(&self) -> Element<'_, NodeMessage> {
+        use crate::node::interface::container::p2p;
+        p2p::view_p2p(&self.status, &self.statistics)
+    }
+
+    pub(crate) fn view_blocks(&self) -> Element<'_, NodeMessage> {
+        unimplemented!()
+    }
+
+    pub(crate) fn view_utreexo(&self) -> Element<'_, NodeMessage> {
+        unimplemented!()
+    }
+
+    pub(crate) fn view_settings(&self) -> Element<'_, NodeMessage> {
+        unimplemented!()
     }
 }
 

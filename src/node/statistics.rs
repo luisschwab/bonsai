@@ -16,9 +16,9 @@ pub struct NodeStatistics {
     pub peer_info: Vec<PeerInfo>,
 }
 
-pub(crate) async fn fetch_stats(handle: Arc<RwLock<FlorestaNode>>) -> NodeMessage {
+pub(crate) async fn fetch_stats(node_handle: Arc<RwLock<FlorestaNode>>) -> NodeMessage {
     let result = async {
-        let node_handle = handle.read().await;
+        let node_handle = node_handle.read().await;
 
         Ok(NodeStatistics {
             in_ibd: node_handle.in_ibd().unwrap(),

@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 use iced::font::{Family, Font, Weight};
 
 pub(crate) const BERKELEY_MONO_REGULAR: Font = Font {
