@@ -3,10 +3,10 @@ use iced::widget::container;
 use iced::{Border, Theme};
 
 use crate::common::interface::color::OFF_WHITE;
-use crate::common::interface::container::common::{BORDER_RADIUS, BORDER_WIDTH, SHADOW};
+use crate::common::interface::container::common::{BORDER_RADIUS, BORDER_WIDTH};
 
 pub(crate) const CONTENT_PADDING: f32 = 10.0;
-pub(crate) const CONTENT_SPACING: f32 = 5.0;
+pub(crate) const CONTENT_SPACING: f32 = 8.0;
 
 pub(crate) fn content_container() -> impl Fn(&Theme) -> container::Style {
     |_theme| container::Style {
@@ -15,7 +15,6 @@ pub(crate) fn content_container() -> impl Fn(&Theme) -> container::Style {
             width: BORDER_WIDTH,
             radius: Radius::new(BORDER_RADIUS),
         },
-        shadow: SHADOW,
         ..Default::default()
     }
 }

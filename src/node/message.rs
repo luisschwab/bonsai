@@ -19,6 +19,9 @@ pub(crate) enum NodeMessage {
     Tick,
     GetStatistics,
     Statistics(NodeStatistics),
+    AddPeerInputChanged(String),
+    AddPeer,
+    PeerConnected(String),
     Error(BonsaiNodeError),
 }
 
@@ -34,6 +37,9 @@ impl Debug for NodeMessage {
             Self::Tick => write!(f, "Tick"),
             Self::GetStatistics => write!(f, "Get Stats"),
             Self::Statistics(_) => write!(f, "Node Statistics"),
+            Self::AddPeerInputChanged(peer) => write!(f, "AddPeerInputChanged({peer})"),
+            Self::AddPeer => write!(f, "AddPeer"),
+            Self::PeerConnected(peer) => write!(f, "PeerConnected({peer})"),
             Self::Error(_) => write!(f, "Node Error"),
         }
     }

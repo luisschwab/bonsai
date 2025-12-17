@@ -1,6 +1,6 @@
 use iced::border::Radius;
-use iced::widget::container::Style;
 use iced::widget::container::Style as ContainerStyle;
+use iced::widget::text_input::Style as TextInputStyle;
 use iced::{Border, Padding, Theme};
 
 use crate::common::interface::color::OFF_WHITE;
@@ -25,7 +25,7 @@ pub(crate) fn title_container() -> impl Fn(&Theme) -> ContainerStyle {
     }
 }
 
-pub(crate) fn table_cell() -> impl Fn(&Theme) -> Style {
+pub(crate) fn table_cell() -> impl Fn(&Theme) -> ContainerStyle {
     move |_theme| {
         let border = Border {
             color: OFF_WHITE,
@@ -33,9 +33,24 @@ pub(crate) fn table_cell() -> impl Fn(&Theme) -> Style {
             radius: Radius::new(BORDER_RADIUS),
         };
 
-        Style {
+        ContainerStyle {
             border,
             ..Default::default()
         }
+    }
+}
+
+pub(crate) fn input_field() -> impl Fn(&Theme, iced::widget::text_input::Status) -> TextInputStyle {
+    move |_theme, _status| TextInputStyle {
+        background: iced::Background::Color(iced::Color::TRANSPARENT),
+        border: Border {
+            color: OFF_WHITE,
+            width: BORDER_WIDTH,
+            radius: Radius::new(0.0),
+        },
+        icon: OFF_WHITE,
+        placeholder: iced::Color::from_rgba(OFF_WHITE.r, OFF_WHITE.g, OFF_WHITE.b, 0.5),
+        value: OFF_WHITE,
+        selection: OFF_WHITE,
     }
 }

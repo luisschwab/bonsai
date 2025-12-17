@@ -1,11 +1,11 @@
 use iced::border::Radius;
 use iced::widget::container::Style as ContainerStyle;
-use iced::widget::{button, column, container, row, scrollable, text};
+use iced::widget::{Container, button, column, container, row, scrollable, text};
 use iced::{Border, Theme};
 use iced::{Element, Length, Padding};
 
 use crate::common::interface::color::{BLUE, GREEN, OFF_WHITE, ORANGE, RED};
-use crate::common::interface::container::common::{BORDER_RADIUS, BORDER_WIDTH};
+use crate::common::interface::container::common::{BORDER_RADIUS, BORDER_WIDTH, SHADOW};
 use crate::node::control::{NETWORK, NodeStatus};
 use crate::node::interface::container::common::{TITLE_PADDING, table_cell, title_container};
 use crate::node::logger::LogCapture;
@@ -19,6 +19,7 @@ pub(crate) fn log_container() -> impl Fn(&Theme) -> ContainerStyle {
             width: BORDER_WIDTH,
             radius: Radius::new(BORDER_RADIUS),
         },
+        shadow: SHADOW,
         ..Default::default()
     }
 }
@@ -54,14 +55,17 @@ pub fn view_overview(
     };
 
     let in_ibd = statistics.as_ref().map(|s| s.in_ibd).unwrap_or(true);
-    let chain_height = statistics.as_ref().map(|s| s.chain_height).unwrap_or(0);
-    let validated_height = statistics.as_ref().map(|s| s.validated_height).unwrap_or(0);
+    let chain_height = statistics.as_ref().map(|s| s.headers).unwrap_or(0);
+    let validated_height = statistics.as_ref().map(|s| s.blocks).unwrap_or(0);
     let progress = if chain_height > 0 {
         (validated_height as f64 / chain_height as f64) * 100.0
     } else {
         0.0
     };
-    let peer_count = statistics.as_ref().map(|s| s.peer_info.len()).unwrap_or(0);
+    let peer_count = statistics
+        .as_ref()
+        .map(|s| s.peer_informations.len())
+        .unwrap_or(0);
     let uptime = if let Some(stats) = statistics {
         let total_secs = stats.uptime.as_secs();
         let hours = total_secs / 3600;
@@ -72,7 +76,7 @@ pub fn view_overview(
         "00h 00m 00s".to_string()
     };
 
-    let title = container(text("NODE OVERVIEW").size(25))
+    let title: Container<'_, NodeMessage> = container(text("NODE OVERVIEW").size(25))
         .style(title_container())
         .padding(TITLE_PADDING);
 
@@ -96,7 +100,7 @@ pub fn view_overview(
                 .padding(10)
                 .width(Length::FillPortion(1))
                 .style(table_cell()),
-            container(text(format!("{}", NETWORK.to_string().to_uppercase())).size(14))
+            container(text(NETWORK.to_string().to_uppercase()).size(14))
                 .padding(10)
                 .width(Length::FillPortion(1))
                 .style(table_cell()),
@@ -152,11 +156,41 @@ pub fn view_overview(
                 .style(table_cell()),
         ],
         row![
+            container(text("USER AGENT").size(14))
+                .padding(10)
+                .width(Length::FillPortion(1))
+                .style(table_cell()),
+            container(text("TODO").size(14))
+                .padding(10)
+                .width(Length::FillPortion(1))
+                .style(table_cell()),
+        ],
+        row![
             container(text("UPTIME").size(14))
                 .padding(10)
                 .width(Length::FillPortion(1))
                 .style(table_cell()),
             container(text(uptime).size(14))
+                .padding(10)
+                .width(Length::FillPortion(1))
+                .style(table_cell()),
+        ],
+        row![
+            container(text("MEMORY [USED]").size(14))
+                .padding(10)
+                .width(Length::FillPortion(1))
+                .style(table_cell()),
+            container(text("NULL").size(14).wrapping(text::Wrapping::None))
+                .padding(10)
+                .width(Length::FillPortion(1))
+                .style(table_cell()),
+        ],
+        row![
+            container(text("MEMORY [ALLOCATED]").size(14))
+                .padding(10)
+                .width(Length::FillPortion(1))
+                .style(table_cell()),
+            container(text("NULL").size(14))
                 .padding(10)
                 .width(Length::FillPortion(1))
                 .style(table_cell()),

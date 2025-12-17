@@ -8,7 +8,7 @@ use iced::{Border, Color, Shadow, Theme};
 use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::container::common::{BORDER_RADIUS, BORDER_WIDTH};
 
-pub(crate) const SIDEBAR_WIDTH: f32 = 180.0;
+pub(crate) const SIDEBAR_WIDTH: f32 = 200.0;
 pub(crate) const SIDEBAR_PADDING: f32 = 10.0;
 pub(crate) const SIDEBAR_BUTTON_HEIGHT: f32 = 30.0;
 pub(crate) const SIDEBAR_BUTTON_SPACING: f32 = 10.0;

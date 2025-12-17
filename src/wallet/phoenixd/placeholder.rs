@@ -16,10 +16,9 @@ impl Phoenixd {
 
     pub fn view(&self) -> Element<'_, PhoenixdMessage> {
         column![
-            text("Phoenixd LN Wallet").size(24),
-            text("TODO, coming soon™"),
+            text("LIGHTNING WALLET [TODO]").size(24),
+            text("Powered by phoenixd").size(12)
         ]
-        .spacing(20)
         .into()
     }
 }

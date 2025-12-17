@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use core::fmt::Debug;
 
 use iced::theme::Palette;
@@ -9,11 +11,12 @@ use iced::window::{Icon, Level, Position, Settings};
 use iced::{Element, Length, Size, Subscription, Task, Theme};
 use tokio::runtime::Handle;
 
-use common::interface::color::{DARK_GREY, GREEN, OFF_WHITE, ORANGE, RED};
+use common::interface::color::{DARK_GREY, GREEN, OFF_WHITE, ORANGE, RED, WHITE, YELLOW};
 use common::interface::container::content::{CONTENT_PADDING, CONTENT_SPACING, content_container};
 use common::interface::container::header::{HEADER_HEIGHT, HEADER_PADDING, header_container};
 use common::interface::container::sidebar::{
-    SIDEBAR_BUTTON_SPACING, SIDEBAR_PADDING, SIDEBAR_WIDTH, sidebar_button, sidebar_container,
+    SIDEBAR_BUTTON_HEIGHT, SIDEBAR_BUTTON_SPACING, SIDEBAR_PADDING, SIDEBAR_WIDTH, sidebar_button,
+    sidebar_container,
 };
 use common::interface::container::window::WINDOW_PADDING;
 use common::interface::font::{BERKELEY_MONO_BOLD, BERKELEY_MONO_REGULAR};
@@ -27,15 +30,12 @@ use node::message::NodeMessage;
 use wallet::bdk::placeholder::{BDKWallet, BDKWalletMessage};
 use wallet::phoenixd::placeholder::{Phoenixd, PhoenixdMessage};
 
-use crate::common::interface::color::BLUE;
-use crate::common::interface::container::sidebar::SIDEBAR_BUTTON_HEIGHT;
-
 mod common;
 mod node;
 mod wallet;
 
 const START_NODE_AUTO: bool = false;
-const APP_NAME: &str = "Bonsai 盆栽";
+const APP_NAME: &str = "Bonsai[盆栽]";
 const APP_VERSION: &str = concat!("v", env!("CARGO_PKG_VERSION"));
 
 #[derive(Debug, Clone)]
@@ -85,37 +85,37 @@ impl Bonsai {
         .style(header_container());
 
         let tabs = column![
-            button(text("BDK WALLET"))
+            button(text("ONCHAIN WALLET"))
                 .on_press(BonsaiMessage::SelectTab(Tab::BDKWallet))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::BDKWallet, ORANGE)),
-            button(text("PHOENIXD"))
+            button(text("LIGHTNING WALLET"))
                 .on_press(BonsaiMessage::SelectTab(Tab::Phoenixd))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::Phoenixd, BLUE)),
-            button(text("NODE OVERVIEW"))
+                .style(sidebar_button(self.active_tab == Tab::Phoenixd, YELLOW)),
+            button(text("[NODE] OVERVIEW"))
                 .on_press(BonsaiMessage::SelectTab(Tab::NodeOverview))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::NodeOverview, GREEN)),
-            button(text("NODE P2P"))
+            button(text("[NODE] P2P"))
                 .on_press(BonsaiMessage::SelectTab(Tab::NodeP2P))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::NodeP2P, GREEN)),
-            button(text("NODE BLOCKS"))
+            button(text("[NODE] BLOCKS"))
                 .on_press(BonsaiMessage::SelectTab(Tab::NodeBlocks))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::NodeBlocks, GREEN)),
-            button(text("NODE UTREEXO"))
+            button(text("[NODE] UTREEXO"))
                 .on_press(BonsaiMessage::SelectTab(Tab::NodeUtreexo))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::NodeUtreexo, GREEN)),
-            button(text("NODE SETTINGS"))
+            button(text("[NODE] SETTINGS"))
                 .on_press(BonsaiMessage::SelectTab(Tab::NodeSettings))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
@@ -124,7 +124,7 @@ impl Bonsai {
                 .on_press(BonsaiMessage::SelectTab(Tab::About))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::About, OFF_WHITE)),
+                .style(sidebar_button(self.active_tab == Tab::About, WHITE)),
         ]
         .spacing(SIDEBAR_BUTTON_SPACING);
 
@@ -251,9 +251,9 @@ fn main() -> iced::Result {
 
     // Define some window [`Settings`].
     let window_settings: Settings = Settings {
-        size: Size::new(1000.0, 800.0),
+        size: Size::new(1200.0, 800.0),
         position: Position::Default,
-        min_size: Some(Size::new(900.0, 600.0)),
+        min_size: Some(Size::new(1200.0, 600.0)),
         max_size: None,
         visible: true,
         resizable: true,

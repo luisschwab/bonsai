@@ -1,5 +1,6 @@
 use core::fmt::Display;
 
+use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -52,6 +53,7 @@ pub(crate) struct Node {
     pub(crate) is_shutting_down: bool,
     pub(crate) log_capture: LogCapture,
     pub(crate) start_time: Option<Instant>,
+    pub(crate) peer_input: String,
 }
 
 impl Node {
@@ -107,7 +109,7 @@ impl Node {
                 self.is_shutting_down = true;
 
                 if let Some(stats) = &mut self.statistics {
-                    stats.peer_info.clear();
+                    stats.peer_informations.clear();
                 }
 
                 Task::none()
@@ -118,7 +120,7 @@ impl Node {
                 self.is_shutting_down = false;
 
                 if let Some(stats) = &mut self.statistics {
-                    stats.peer_info.clear();
+                    stats.peer_informations.clear();
                 }
 
                 Task::none()
@@ -161,6 +163,58 @@ impl Node {
                     Task::none()
                 }
             }
+            NodeMessage::AddPeerInputChanged(peer) => {
+                self.peer_input = peer;
+                Task::none()
+            }
+            NodeMessage::AddPeer => {
+                let peer_address = self.peer_input.clone();
+
+                if let Some(handle) = &self.handle {
+                    let handle = handle.clone();
+                    let rt_handle = Handle::current();
+
+                    Task::future(async move {
+                        let result = rt_handle
+                            .spawn(async move {
+                                // Parse the address
+                                let addr: SocketAddr = match peer_address.parse() {
+                                    Ok(addr) => addr,
+                                    Err(e) => {
+                                        return NodeMessage::Error(BonsaiNodeError::Generic(
+                                            format!("Invalid peer address: {}", e),
+                                        ));
+                                    }
+                                };
+
+                                // Connect to the peer
+                                let node = handle.read().await;
+                                match node.connect_peer(&addr).await {
+                                    Ok(true) => NodeMessage::PeerConnected(peer_address),
+                                    Ok(false) => NodeMessage::Error(BonsaiNodeError::Generic(
+                                        "Failed to connect to peer".to_string(),
+                                    )),
+                                    Err(e) => NodeMessage::Error(BonsaiNodeError::from(e)),
+                                }
+                            })
+                            .await;
+
+                        result.unwrap_or_else(|e| {
+                            NodeMessage::Error(BonsaiNodeError::Generic(e.to_string()))
+                        })
+                    })
+                } else {
+                    Task::done(NodeMessage::Error(BonsaiNodeError::Generic(
+                        "Node not running".to_string(),
+                    )))
+                }
+            }
+            NodeMessage::PeerConnected(peer) => {
+                // Clear the input field on success
+                self.peer_input.clear();
+                // Maybe show a success message or update peer list
+                Task::none()
+            }
         }
     }
 
@@ -201,7 +255,7 @@ impl Node {
 
     pub(crate) fn view_p2p(&self) -> Element<'_, NodeMessage> {
         use crate::node::interface::container::p2p;
-        p2p::view_p2p(&self.status, &self.statistics)
+        p2p::view_p2p(&self.status, &self.statistics, &self.peer_input)
     }
 
     pub(crate) fn view_blocks(&self) -> Element<'_, NodeMessage> {
