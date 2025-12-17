@@ -45,7 +45,12 @@ pub fn view_overview(
                     .style(button::success)
             ]
         }
-        NodeStatus::Starting | NodeStatus::ShuttingDown => row![],
+        NodeStatus::ShuttingDown => {
+            row![button(text("SHUTTING DOWN")).style(button::secondary)]
+        }
+        NodeStatus::Starting => {
+            row![button(text("STARTING")).style(button::secondary)]
+        }
     };
 
     let in_ibd = statistics.as_ref().map(|s| s.in_ibd).unwrap_or(true);
@@ -57,6 +62,15 @@ pub fn view_overview(
         0.0
     };
     let peer_count = statistics.as_ref().map(|s| s.peer_info.len()).unwrap_or(0);
+    let uptime = if let Some(stats) = statistics {
+        let total_secs = stats.uptime.as_secs();
+        let hours = total_secs / 3600;
+        let minutes = (total_secs % 3600) / 60;
+        let seconds = total_secs % 60;
+        format!("{:02}h {:02}m {:02}s", hours, minutes, seconds)
+    } else {
+        "00h 00m 00s".to_string()
+    };
 
     let title = container(text("NODE OVERVIEW").size(25))
         .style(title_container())
@@ -133,6 +147,16 @@ pub fn view_overview(
                 .width(Length::FillPortion(1))
                 .style(table_cell()),
             container(text(peer_count).size(14))
+                .padding(10)
+                .width(Length::FillPortion(1))
+                .style(table_cell()),
+        ],
+        row![
+            container(text("UPTIME").size(14))
+                .padding(10)
+                .width(Length::FillPortion(1))
+                .style(table_cell()),
+            container(text(uptime).size(14))
                 .padding(10)
                 .width(Length::FillPortion(1))
                 .style(table_cell()),

@@ -1,7 +1,7 @@
 use core::fmt::Display;
 
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use bdk_floresta::builder::FlorestaBuilder;
 use bdk_floresta::{FlorestaNode, UtreexoNodeConfig};
@@ -51,6 +51,7 @@ pub(crate) struct Node {
     pub(crate) subscription_active: bool,
     pub(crate) is_shutting_down: bool,
     pub(crate) log_capture: LogCapture,
+    pub(crate) start_time: Option<Instant>,
 }
 
 impl Node {
@@ -73,12 +74,14 @@ impl Node {
                 self.status = NodeStatus::Running;
                 self.subscription_active = true;
                 self.is_shutting_down = false;
+                self.start_time = Some(Instant::now());
                 Task::none()
             }
             NodeMessage::Shutdown => {
                 self.status = NodeStatus::ShuttingDown;
                 self.subscription_active = false;
                 self.is_shutting_down = true;
+                self.start_time = None;
 
                 if let Some(node_handle) = self.handle.take() {
                     let rt_handle = Handle::current();
@@ -139,10 +142,11 @@ impl Node {
                     if let Some(handle) = &self.handle {
                         let handle = handle.clone();
                         let rt_handle = Handle::current();
+                        let start_time = self.start_time;
 
                         Task::future(async move {
                             rt_handle
-                                .spawn(async move { fetch_stats(handle).await })
+                                .spawn(async move { fetch_stats(handle, start_time).await })
                                 .await
                                 .unwrap_or_else(|_| {
                                     NodeMessage::Error(BonsaiNodeError::Generic(
