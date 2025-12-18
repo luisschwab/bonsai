@@ -1,13 +1,8 @@
-use iced::border::Radius;
-use iced::widget::container::Style as ContainerStyle;
-use iced::widget::{Container, button, column, container, row, scrollable, text, text_input};
-use iced::{Border, Theme};
-use iced::{Element, Length, Padding};
+use iced::widget::{Container, button, column, container, row, text, text_input};
+use iced::{Element, Length};
 
-use crate::common::interface::color::{BLUE, GREEN, OFF_WHITE, ORANGE, RED};
-use crate::common::interface::container::common::{BORDER_RADIUS, BORDER_WIDTH};
-use crate::node::control::{NETWORK, NodeStatus};
-use crate::node::interface::container::common::{
+use crate::node::control::NodeStatus;
+use crate::node::interface::common::{
     TITLE_PADDING, input_field, table_cell, title_container,
 };
 use crate::node::message::NodeMessage;
@@ -41,7 +36,6 @@ pub fn view_p2p<'a>(
 
     let peer_row = row![add_peer_field, add_button].spacing(10);
 
-    // Empty box for left side (for future use)
     let left_content_box = container(column![])
         .style(table_cell())
         .padding(10)

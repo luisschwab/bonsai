@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 use core::fmt::Debug;
 
 use iced::theme::Palette;
@@ -11,7 +9,7 @@ use iced::window::{Icon, Level, Position, Settings};
 use iced::{Element, Length, Size, Subscription, Task, Theme};
 use tokio::runtime::Handle;
 
-use common::interface::color::{DARK_GREY, GREEN, OFF_WHITE, ORANGE, RED, WHITE, YELLOW};
+use common::interface::color::{DARK_GREY, GREEN, OFF_WHITE, ORANGE, RED, WHITE, PURPLE, YELLOW};
 use common::interface::container::content::{CONTENT_PADDING, CONTENT_SPACING, content_container};
 use common::interface::container::header::{HEADER_HEIGHT, HEADER_PADDING, header_container};
 use common::interface::container::sidebar::{
@@ -27,6 +25,7 @@ use node::control::{start_node, stop_node};
 use node::error::BonsaiNodeError;
 use node::message::NodeMessage;
 
+use wallet::ark::placeholder::{ArkWallet, ArkWalletMessage};
 use wallet::bdk::placeholder::{BDKWallet, BDKWalletMessage};
 use wallet::phoenixd::placeholder::{Phoenixd, PhoenixdMessage};
 
@@ -45,6 +44,7 @@ pub(crate) enum BonsaiMessage {
     CloseWindow,
     BdkWallet(BDKWalletMessage),
     Phoenixd(PhoenixdMessage),
+    ArkWallet(ArkWalletMessage),
     Node(NodeMessage),
 }
 
@@ -52,6 +52,7 @@ pub(crate) enum BonsaiMessage {
 pub(crate) enum Tab {
     BDKWallet,
     Phoenixd,
+    Ark,
     #[default]
     NodeOverview,
     NodeP2P,
@@ -67,6 +68,7 @@ pub(crate) struct Bonsai {
     pub(crate) node: Node,
     pub(crate) onchain_wallet: BDKWallet,
     pub(crate) lightning_wallet: Phoenixd,
+    pub(crate) ark_wallet: ArkWallet,
 }
 
 impl Bonsai {
@@ -95,6 +97,11 @@ impl Bonsai {
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::Phoenixd, YELLOW)),
+            button(text("ARK WALLET"))
+                .on_press(BonsaiMessage::SelectTab(Tab::Ark))
+                .height(SIDEBAR_BUTTON_HEIGHT)
+                .width(Length::Fill)
+                .style(sidebar_button(self.active_tab == Tab::Ark, PURPLE)),
             button(text("[NODE] OVERVIEW"))
                 .on_press(BonsaiMessage::SelectTab(Tab::NodeOverview))
                 .height(SIDEBAR_BUTTON_HEIGHT)
@@ -137,6 +144,7 @@ impl Bonsai {
         let content = match self.active_tab {
             Tab::BDKWallet => self.onchain_wallet.view().map(BonsaiMessage::BdkWallet),
             Tab::Phoenixd => self.lightning_wallet.view().map(BonsaiMessage::Phoenixd),
+            Tab::Ark => self.ark_wallet.view().map(BonsaiMessage::ArkWallet),
             Tab::NodeOverview
             | Tab::NodeP2P
             | Tab::NodeBlocks
@@ -218,7 +226,7 @@ impl Bonsai {
         });
 
         let tab_subscription = match self.active_tab {
-            Tab::BDKWallet | Tab::Phoenixd => Subscription::none(),
+            Tab::BDKWallet | Tab::Phoenixd | Tab::Ark => Subscription::none(),
             Tab::NodeOverview
             | Tab::NodeP2P
             | Tab::NodeBlocks
@@ -280,6 +288,7 @@ fn main() -> iced::Result {
                 },
                 onchain_wallet: BDKWallet::default(),
                 lightning_wallet: Phoenixd::default(),
+                ark_wallet: ArkWallet::default(),
             };
 
             let tasks = if START_NODE_AUTO {

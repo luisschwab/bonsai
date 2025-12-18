@@ -209,10 +209,11 @@ impl Node {
                     )))
                 }
             }
-            NodeMessage::PeerConnected(peer) => {
-                // Clear the input field on success
+            NodeMessage::PeerConnected(_peer) => {
+                // Clear the input field after button press.
                 self.peer_input.clear();
-                // Maybe show a success message or update peer list
+
+                // TODO(@luisschwab): add a success notification on top-right corner.
                 Task::none()
             }
         }
@@ -249,13 +250,13 @@ impl Node {
     }
 
     fn view_overview(&self) -> Element<'_, NodeMessage> {
-        use crate::node::interface::container::overview;
-        overview::view_overview(&self.status, &self.statistics, &self.log_capture)
+        use crate::node::interface::overview::view;
+        view::view_overview(&self.status, &self.statistics, &self.log_capture)
     }
 
     pub(crate) fn view_p2p(&self) -> Element<'_, NodeMessage> {
-        use crate::node::interface::container::p2p;
-        p2p::view_p2p(&self.status, &self.statistics, &self.peer_input)
+        use crate::node::interface::p2p::view;
+        view::view_p2p(&self.status, &self.statistics, &self.peer_input)
     }
 
     pub(crate) fn view_blocks(&self) -> Element<'_, NodeMessage> {

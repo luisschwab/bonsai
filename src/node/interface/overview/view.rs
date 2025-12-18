@@ -1,36 +1,19 @@
-use iced::border::Radius;
-use iced::widget::container::Style as ContainerStyle;
 use iced::widget::{Container, button, column, container, row, scrollable, text};
-use iced::{Border, Theme};
 use iced::{Element, Length, Padding};
 
 use crate::common::interface::color::{BLUE, GREEN, OFF_WHITE, ORANGE, RED};
-use crate::common::interface::container::common::{BORDER_RADIUS, BORDER_WIDTH, SHADOW};
 use crate::node::control::{NETWORK, NodeStatus};
-use crate::node::interface::container::common::{TITLE_PADDING, table_cell, title_container};
+use crate::node::interface::common::{TITLE_PADDING, table_cell, title_container};
 use crate::node::logger::LogCapture;
 use crate::node::message::NodeMessage;
 use crate::node::statistics::NodeStatistics;
+use crate::node::interface::overview::container::log_container;
 
-pub(crate) fn log_container() -> impl Fn(&Theme) -> ContainerStyle {
-    |_theme| ContainerStyle {
-        border: Border {
-            color: OFF_WHITE,
-            width: BORDER_WIDTH,
-            radius: Radius::new(BORDER_RADIUS),
-        },
-        shadow: SHADOW,
-        ..Default::default()
-    }
-}
-
-pub fn view_overview(
+pub(crate) fn view_overview(
     status: &NodeStatus,
     statistics: &Option<NodeStatistics>,
     log_capture: &LogCapture,
 ) -> Element<'static, NodeMessage> {
-    let status_text = status.to_string();
-
     let control_button = match status {
         NodeStatus::Running => {
             row![
@@ -82,15 +65,14 @@ pub fn view_overview(
 
     let left = column![
         title,
-        text("").size(10),
         control_button,
-        text("").size(10),
+        column![
         row![
             container(text("STATUS").size(14))
                 .padding(10)
                 .width(Length::FillPortion(1))
                 .style(table_cell()),
-            container(text(status_text).size(14))
+            container(text(status.to_string()).size(14))
                 .padding(10)
                 .width(Length::FillPortion(1))
                 .style(table_cell()),
@@ -195,8 +177,9 @@ pub fn view_overview(
                 .width(Length::FillPortion(1))
                 .style(table_cell()),
         ],
+    ].spacing(0)
     ]
-    .spacing(0)
+    .spacing(30)
     .width(Length::FillPortion(4));
 
     let log_title = container(text("LOGS").size(24));

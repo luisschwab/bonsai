@@ -64,3 +64,10 @@ pub(crate) const BLUE: Color = Color::from_rgb(
     0x61 as f32 / 255.0,
     0x9c as f32 / 255.0,
 );
+
+/// Bright Purple.
+pub(crate) const PURPLE: Color = Color::from_rgb(
+    0xBF as f32 / 255.0,
+    0x40 as f32 / 255.0,
+    0xBF as f32 / 255.0,
+);
