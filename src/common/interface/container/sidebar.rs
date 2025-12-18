@@ -57,6 +57,7 @@ pub fn sidebar_button(
                 border,
                 background,
                 text_color,
+                shadow,
                 ..Default::default()
             },
             Hovered => ButtonStyle {

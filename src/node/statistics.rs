@@ -75,9 +75,7 @@ pub(crate) async fn fetch_stats(
         let uptime = start_time
             .map(|t| t.elapsed())
             .unwrap_or(Duration::from_secs(0));
-
         let peer_infos_raw = node_handle.get_peer_info().await.unwrap_or_default();
-
         let peer_informations = process_peer_infos(peer_infos_raw);
 
         Ok(NodeStatistics {

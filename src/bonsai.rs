@@ -9,7 +9,7 @@ use iced::window::{Icon, Level, Position, Settings};
 use iced::{Element, Length, Size, Subscription, Task, Theme};
 use tokio::runtime::Handle;
 
-use common::interface::color::{DARK_GREY, GREEN, OFF_WHITE, ORANGE, RED, WHITE, PURPLE, YELLOW};
+use common::interface::color::{DARK_GREY, GREEN, OFF_WHITE, ORANGE, PURPLE, RED, WHITE, YELLOW};
 use common::interface::container::content::{CONTENT_PADDING, CONTENT_SPACING, content_container};
 use common::interface::container::header::{HEADER_HEIGHT, HEADER_PADDING, header_container};
 use common::interface::container::sidebar::{
@@ -102,33 +102,33 @@ impl Bonsai {
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::Ark, PURPLE)),
-            button(text("[NODE] OVERVIEW"))
+            button(text("NODE OVERVIEW"))
                 .on_press(BonsaiMessage::SelectTab(Tab::NodeOverview))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::NodeOverview, GREEN)),
-            button(text("[NODE] P2P"))
+            button(text("NODE P2P"))
                 .on_press(BonsaiMessage::SelectTab(Tab::NodeP2P))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::NodeP2P, GREEN)),
-            button(text("[NODE] BLOCKS"))
-                .on_press(BonsaiMessage::SelectTab(Tab::NodeBlocks))
+            button(text("NODE BLOCKS"))
+                //.on_press(BonsaiMessage::SelectTab(Tab::NodeBlocks))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::NodeBlocks, GREEN)),
-            button(text("[NODE] UTREEXO"))
-                .on_press(BonsaiMessage::SelectTab(Tab::NodeUtreexo))
+            button(text("NODE UTREEXO"))
+                //.on_press(BonsaiMessage::SelectTab(Tab::NodeUtreexo))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::NodeUtreexo, GREEN)),
-            button(text("[NODE] SETTINGS"))
-                .on_press(BonsaiMessage::SelectTab(Tab::NodeSettings))
+            button(text("NODE SETTINGS"))
+                //.on_press(BonsaiMessage::SelectTab(Tab::NodeSettings))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::NodeSettings, GREEN)),
-            button(text("ABOUT"))
-                .on_press(BonsaiMessage::SelectTab(Tab::About))
+            button(text("ABOUT BONSAI"))
+                //.on_press(BonsaiMessage::SelectTab(Tab::About))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::About, WHITE)),

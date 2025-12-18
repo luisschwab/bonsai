@@ -15,10 +15,9 @@ pub(crate) fn setup_logger() -> LogCapture {
     let (non_blocking_file, _guard) = tracing_appender::non_blocking(file_appender);
     std::mem::forget(_guard);
 
-    let log_capture = LogCapture::new(500); // Keep last 500 logs
+    let log_capture = LogCapture::new(10_000); // Keep the last 10_000 logs
     let capture_layer = LogCaptureLayer::new(log_capture.clone());
 
-    // Build the subscriber
     tracing_subscriber::registry()
         .with(EnvFilter::try_from_default_env().unwrap_or_else(|_| {
             EnvFilter::new(

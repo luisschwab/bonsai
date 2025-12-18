@@ -2,9 +2,7 @@ use iced::widget::{Container, button, column, container, row, text, text_input};
 use iced::{Element, Length};
 
 use crate::node::control::NodeStatus;
-use crate::node::interface::common::{
-    TITLE_PADDING, input_field, table_cell, title_container,
-};
+use crate::node::interface::common::{TITLE_PADDING, input_field, table_cell, title_container};
 use crate::node::message::NodeMessage;
 use crate::node::statistics::NodeStatistics;
 
@@ -13,7 +11,7 @@ const TABLE_HEADER_FONT_SIZE: u32 = 16;
 const TABLE_CELL_FONT_SIZE: u32 = 12;
 
 pub fn view_p2p<'a>(
-    status: &'a NodeStatus,
+    _status: &'a NodeStatus,
     statistics: &'a Option<NodeStatistics>,
     peer_input: &'a str,
 ) -> Element<'a, NodeMessage> {

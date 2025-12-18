@@ -11,6 +11,7 @@ use crate::node::statistics::NodeStatistics;
 pub(crate) enum NodeMessage {
     #[allow(unused)]
     Start,
+    Restart,
     Starting,
     Running(Arc<RwLock<FlorestaNode>>),
     Shutdown,
@@ -29,6 +30,7 @@ impl Debug for NodeMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Start => write!(f, "Start Node"),
+            Self::Restart => write!(f, "Restart"),
             Self::Starting => write!(f, "Node Starting"),
             Self::Running(_) => write!(f, "Node Running"),
             Self::Shutdown => write!(f, "Stop Node"),

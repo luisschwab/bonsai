@@ -30,6 +30,13 @@ pub(crate) const WHITE: Color = Color::from_rgb(
     0xff as f32 / 255.0,
 );
 
+/// Black.
+pub(crate) const BLACK: Color = Color::from_rgb(
+    0x00 as f32 / 255.0,
+    0x00 as f32 / 255.0,
+    0x00 as f32 / 255.0,
+);
+
 /// Gold.
 pub(crate) const YELLOW: Color = Color::from_rgb(
     0xff as f32 / 255.0,

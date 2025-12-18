@@ -22,7 +22,7 @@ pub const DATA_DIR: &str = "./data/";
 pub const NETWORK: Network = Network::Signet;
 pub const FETCH_STATISTICS_TIME: u64 = 1;
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub(crate) enum NodeStatus {
     #[default]
     Inactive,
@@ -65,6 +65,30 @@ impl Node {
                     Ok(handle) => NodeMessage::Running(handle),
                     Err(e) => NodeMessage::Error(BonsaiNodeError::from(e)),
                 })
+            }
+            NodeMessage::Restart => {
+                self.status = NodeStatus::ShuttingDown;
+                self.subscription_active = false;
+                self.is_shutting_down = true;
+                self.start_time = None;
+
+                if let Some(node_handle) = self.handle.take() {
+                    let rt_handle = Handle::current();
+
+                    Task::future(async move {
+                        let result = rt_handle
+                            .spawn(async move { stop_node(node_handle).await })
+                            .await;
+
+                        match result {
+                            Ok(Ok(_)) => NodeMessage::Start,
+                            Ok(Err(e)) => NodeMessage::Error(BonsaiNodeError::from(e)),
+                            Err(e) => NodeMessage::Error(BonsaiNodeError::Generic(e.to_string())),
+                        }
+                    })
+                } else {
+                    Task::done(NodeMessage::Start)
+                }
             }
             NodeMessage::Starting => {
                 self.status = NodeStatus::Starting;
