@@ -49,7 +49,7 @@ pub(crate) fn input_field() -> impl Fn(&Theme, iced::widget::text_input::Status)
             radius: Radius::new(0.0),
         },
         icon: OFF_WHITE,
-        placeholder: iced::Color::from_rgba(OFF_WHITE.r, OFF_WHITE.g, OFF_WHITE.b, 0.5),
+        placeholder: OFF_WHITE.scale_alpha(0.5),
         value: OFF_WHITE,
         selection: OFF_WHITE,
     }

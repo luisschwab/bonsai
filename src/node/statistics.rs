@@ -1,22 +1,38 @@
+use core::fmt::Display;
+
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use bdk_floresta::FlorestaNode;
 use bdk_floresta::rustreexo::accumulator::stump::Stump;
 use bdk_floresta::{ConnectionKind, PeerInfo, PeerStatus};
+use regex::Regex;
 use tokio::sync::RwLock;
 
 use crate::node::message::NodeMessage;
 
 #[derive(Clone, Default, Debug)]
-pub(crate) enum BitcoinImplementation {
-    Core,
-    Knots,
+pub(crate) enum NodeImpl {
     Btcd,
-    Utreexod,
+    Core,
     Floresta,
+    Utreexod,
+    Knots,
     #[default]
     Unknown,
+}
+
+impl Display for NodeImpl {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self {
+            Self::Btcd => write!(f, "btcd"),
+            Self::Core => write!(f, "Bitcoin Core"),
+            Self::Floresta => write!(f, "Floresta"),
+            Self::Utreexod => write!(f, "Utreexod"),
+            Self::Knots => write!(f, "Bitcoin Knots"),
+            Self::Unknown => writeln!(f, "Unknown"),
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -24,7 +40,7 @@ pub(crate) struct PeerInformation {
     pub(crate) address: String,
     pub(crate) services: String,
     pub(crate) user_agent: String,
-    pub(crate) implementation: BitcoinImplementation,
+    pub(crate) node_impl: NodeImpl,
     pub(crate) initial_height: u32,
     pub(crate) peer_status: PeerStatus,
     pub(crate) connection_kind: ConnectionKind,
@@ -41,16 +57,30 @@ pub(crate) struct NodeStatistics {
     pub(crate) uptime: Duration,
 }
 
-fn process_peer_infos(peer_infos: Vec<PeerInfo>) -> Vec<PeerInformation> {
-    // TODO regex user agent into [`BitcoinImplementation`].
+fn regex_user_agent(user_agent: &str) -> NodeImpl {
+    if Regex::new(r"Satoshi.*Knots").unwrap().is_match(user_agent) {
+        NodeImpl::Knots
+    } else if Regex::new(r"Satoshi").unwrap().is_match(user_agent) {
+        NodeImpl::Core
+    } else if user_agent.contains("btcd") {
+        NodeImpl::Btcd
+    } else if user_agent.contains("utreexod") {
+        NodeImpl::Utreexod
+    } else if user_agent.contains("floresta") {
+        NodeImpl::Floresta
+    } else {
+        NodeImpl::Unknown
+    }
+}
 
+fn process_peer_infos(peer_infos: Vec<PeerInfo>) -> Vec<PeerInformation> {
     let mut peer_informations: Vec<PeerInformation> = Vec::new();
     for peer_info in peer_infos {
         let peer_information = PeerInformation {
             address: peer_info.address,
             services: peer_info.services,
+            node_impl: regex_user_agent(&peer_info.user_agent),
             user_agent: peer_info.user_agent,
-            implementation: BitcoinImplementation::Unknown,
             initial_height: peer_info.initial_height,
             peer_status: peer_info.state,
             connection_kind: peer_info.kind,

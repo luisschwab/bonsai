@@ -5,15 +5,17 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use bdk_floresta::builder::FlorestaBuilder;
-use bdk_floresta::{FlorestaNode, UtreexoNodeConfig};
+use bdk_floresta::{ChainParams, FlorestaNode, UtreexoNodeConfig};
 use bdk_wallet::bitcoin::Network;
 use iced::{Element, Subscription, Task};
 use tokio::runtime::Handle;
 use tokio::sync::RwLock;
+use tracing::error;
 
 use crate::Tab;
 use crate::node::error::BonsaiNodeError;
-use crate::node::logger::LogCapture;
+use crate::node::geoip::GeoIpReader;
+use crate::node::log_capture::LogCapture;
 use crate::node::message::NodeMessage;
 use crate::node::statistics::NodeStatistics;
 use crate::node::statistics::fetch_stats;
@@ -39,7 +41,7 @@ impl Display for NodeStatus {
             Self::Starting => write!(f, "STARTING"),
             Self::Running => write!(f, "RUNNING"),
             Self::ShuttingDown => write!(f, "SHUTTING DOWN"),
-            Self::Failed(_) => write!(f, "FAILED"),
+            Self::Failed(e) => write!(f, "FAILED [{}]", e),
         }
     }
 }
@@ -52,8 +54,10 @@ pub(crate) struct Node {
     pub(crate) subscription_active: bool,
     pub(crate) is_shutting_down: bool,
     pub(crate) log_capture: LogCapture,
+    pub(crate) last_log_version: usize,
     pub(crate) start_time: Option<Instant>,
     pub(crate) peer_input: String,
+    pub(crate) geoip_reader: Option<GeoIpReader>,
 }
 
 impl Node {
@@ -149,7 +153,15 @@ impl Node {
 
                 Task::none()
             }
-            NodeMessage::Tick => Task::none(),
+            // `Tick` is useful for triggering an UI re-render.
+            NodeMessage::Tick => {
+                let current_version = self.log_capture.version();
+                if current_version != self.last_log_version {
+                    self.last_log_version = current_version;
+                }
+
+                Task::none()
+            }
             NodeMessage::Statistics(stats) => {
                 if !self.is_shutting_down {
                     self.statistics = Some(stats);
@@ -158,9 +170,11 @@ impl Node {
 
                 Task::none()
             }
-            NodeMessage::Error(err) => {
-                self.status = NodeStatus::Failed(err);
-                self.subscription_active = false;
+            NodeMessage::Error(e) => {
+                //TODO fix this
+                //self.status = NodeStatus::Failed(err);
+                //self.subscription_active = false;
+                error!("Node Error: {e}");
                 Task::none()
             }
             NodeMessage::GetStatistics => {
@@ -280,7 +294,12 @@ impl Node {
 
     pub(crate) fn view_p2p(&self) -> Element<'_, NodeMessage> {
         use crate::node::interface::p2p::view;
-        view::view_p2p(&self.status, &self.statistics, &self.peer_input)
+        view::view_p2p(
+            &self.status,
+            &self.statistics,
+            &self.peer_input,
+            &self.geoip_reader,
+        )
     }
 
     pub(crate) fn view_blocks(&self) -> Element<'_, NodeMessage> {
@@ -304,6 +323,7 @@ pub(crate) async fn start_node() -> Result<Arc<RwLock<FlorestaNode>>, String> {
             let config = UtreexoNodeConfig {
                 network: NETWORK,
                 datadir: format!("{}{}", DATA_DIR, NETWORK),
+                assume_utreexo: Some(ChainParams::get_assume_utreexo(NETWORK)),
                 ..Default::default()
             };
 

@@ -5,7 +5,7 @@ use iced::widget::container;
 use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::container::common::{BORDER_RADIUS, BORDER_WIDTH};
 
-pub(crate) const HEADER_HEIGHT: f32 = 60.0;
+pub(crate) const HEADER_HEIGHT: f32 = 80.0;
 pub(crate) const HEADER_PADDING: f32 = 10.0;
 
 pub fn header_container() -> impl Fn(&iced::Theme) -> container::Style {

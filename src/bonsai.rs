@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use core::fmt::Debug;
 
 use iced::theme::Palette;
@@ -29,6 +31,8 @@ use wallet::ark::placeholder::{ArkWallet, ArkWalletMessage};
 use wallet::bdk::placeholder::{BDKWallet, BDKWalletMessage};
 use wallet::phoenixd::placeholder::{Phoenixd, PhoenixdMessage};
 
+use crate::node::geoip::GeoIpReader;
+
 mod common;
 mod node;
 mod wallet;
@@ -36,6 +40,8 @@ mod wallet;
 const START_NODE_AUTO: bool = false;
 const APP_NAME: &str = "Bonsai[盆栽]";
 const APP_VERSION: &str = concat!("v", env!("CARGO_PKG_VERSION"));
+const GEOIP_ASN_DB: &str = "./assets/geoip/GeoLite2-ASN.mmdb";
+const GEOIP_CITY_DB: &str = "./assets/geoip/GeoLite2-City.mmdb";
 
 #[derive(Debug, Clone)]
 pub(crate) enum BonsaiMessage {
@@ -58,6 +64,7 @@ pub(crate) enum Tab {
     NodeP2P,
     NodeBlocks,
     NodeUtreexo,
+    NodeMempool,
     NodeSettings,
     About,
 }
@@ -122,6 +129,11 @@ impl Bonsai {
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::NodeUtreexo, GREEN)),
+            button(text("NODE MEMPOOL"))
+                //.on_press(BonsaiMessage::SelectTab(Tab::NodeMempool))
+                .height(SIDEBAR_BUTTON_HEIGHT)
+                .width(Length::Fill)
+                .style(sidebar_button(self.active_tab == Tab::NodeMempool, GREEN)),
             button(text("NODE SETTINGS"))
                 //.on_press(BonsaiMessage::SelectTab(Tab::NodeSettings))
                 .height(SIDEBAR_BUTTON_HEIGHT)
@@ -149,6 +161,7 @@ impl Bonsai {
             | Tab::NodeP2P
             | Tab::NodeBlocks
             | Tab::NodeUtreexo
+            | Tab::NodeMempool
             | Tab::NodeSettings => self.node.view_tab(self.active_tab).map(BonsaiMessage::Node),
             Tab::About => unimplemented!(),
         };
@@ -231,6 +244,7 @@ impl Bonsai {
             | Tab::NodeP2P
             | Tab::NodeBlocks
             | Tab::NodeUtreexo
+            | Tab::NodeMempool
             | Tab::NodeSettings => self.node.subscribe().map(BonsaiMessage::Node),
             Tab::About => unimplemented!(),
         };
@@ -284,6 +298,7 @@ fn main() -> iced::Result {
                 active_tab: Tab::default(),
                 node: Node {
                     log_capture: log_capture.clone(),
+                    geoip_reader: GeoIpReader::new(GEOIP_ASN_DB, GEOIP_CITY_DB).ok(),
                     ..Node::default()
                 },
                 onchain_wallet: BDKWallet::default(),

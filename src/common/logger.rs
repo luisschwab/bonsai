@@ -4,18 +4,19 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
 use crate::node::control::DATA_DIR;
-use crate::node::logger::{LogCapture, LogCaptureLayer};
+use crate::node::control::NETWORK;
+use crate::node::log_capture::{LogCapture, LogCaptureLayer};
 
 pub(crate) fn setup_logger() -> LogCapture {
     // Create the data directory, if needed.
-    let data_dir = format!("{}signet", DATA_DIR);
+    let data_dir = format!("{}{}", DATA_DIR, NETWORK);
     std::fs::create_dir_all(&data_dir).expect("Failed to create data directory");
 
     let file_appender = tracing_appender::rolling::daily(&data_dir, "bonsai.log");
     let (non_blocking_file, _guard) = tracing_appender::non_blocking(file_appender);
     std::mem::forget(_guard);
 
-    let log_capture = LogCapture::new(10_000); // Keep the last 10_000 logs
+    let log_capture = LogCapture::new(1_000_000); // Keep the last 1_000_000 logs
     let capture_layer = LogCaptureLayer::new(log_capture.clone());
 
     tracing_subscriber::registry()
@@ -39,7 +40,7 @@ pub(crate) fn setup_logger() -> LogCapture {
         .with(capture_layer)
         .init();
 
-    tracing::info!("Bonsai logging initialized");
+    tracing::info!("Setup tracing subscriber");
 
     log_capture
 }

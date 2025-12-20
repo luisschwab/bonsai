@@ -8,7 +8,7 @@ use crate::common::interface::color::{BLUE, GREEN, OFF_WHITE, ORANGE, RED};
 use crate::node::control::{NETWORK, NodeStatus};
 use crate::node::interface::common::{TITLE_PADDING, table_cell, title_container};
 use crate::node::interface::overview::style::{ActionButton, action_button, log_container};
-use crate::node::logger::LogCapture;
+use crate::node::log_capture::LogCapture;
 use crate::node::message::NodeMessage;
 use crate::node::statistics::NodeStatistics;
 
@@ -197,6 +197,10 @@ pub(crate) fn view_overview<'a>(
     .style(title_container());
     let metrics = column![metrics_title, metrics_table].spacing(0);
 
+    let left = column![title, action_button, metrics]
+        .spacing(20)
+        .width(Length::FillPortion(4));
+
     // Logs Section.
     let log_title = container(text("LOGS").size(24));
 
@@ -210,7 +214,7 @@ pub(crate) fn view_overview<'a>(
     let logs = log_capture.get_logs();
 
     if logs.is_empty() {
-        log_column = log_column.push(text("No logs yet...").size(12));
+        log_column = log_column.push(text("").size(12));
     } else {
         for log in logs.into_iter().take(100) {
             let color = if log.contains("ERROR") {
@@ -241,9 +245,6 @@ pub(crate) fn view_overview<'a>(
         .height(Length::Fill)
         .width(Length::FillPortion(6));
 
-    let left = column![title, action_button, metrics]
-        .spacing(20)
-        .width(Length::FillPortion(4));
     let right = column![log_title, logs_container];
 
     row![left, right].spacing(20).into()

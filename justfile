@@ -3,6 +3,7 @@ alias c := check
 alias d := delete
 alias f := fmt
 alias r := run
+alias rr := run-release
 alias h := hot
 
 _default:
@@ -29,6 +30,10 @@ fmt:
 # Run the code
 run:
     cargo run
+
+# Run the code in release mode
+run-release:
+    cargo run --release
 
 # Run with experimental hot-reloading
 hot:
