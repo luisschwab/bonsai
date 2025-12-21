@@ -2,16 +2,19 @@
 
 use core::fmt::Debug;
 
+use bdk_wallet::bitcoin::Network;
 use iced::theme::Palette;
-use iced::widget::{Space, button, column, container, row, text};
+use iced::widget::{Space, button, column, container, image, row, text};
 use iced::window;
 use iced::window::icon;
 use iced::window::settings::PlatformSpecific;
 use iced::window::{Icon, Level, Position, Settings};
-use iced::{Element, Length, Size, Subscription, Task, Theme};
+use iced::{Element, Length, Padding, Size, Subscription, Task, Theme};
 use tokio::runtime::Handle;
 
-use common::interface::color::{DARK_GREY, GREEN, OFF_WHITE, ORANGE, PURPLE, RED, WHITE, YELLOW};
+use common::interface::color::{
+    BLUE, DARK_GREY, GREEN, OFF_WHITE, ORANGE, PURPLE, RED, WHITE, YELLOW,
+};
 use common::interface::container::content::{CONTENT_PADDING, CONTENT_SPACING, content_container};
 use common::interface::container::header::{HEADER_HEIGHT, HEADER_PADDING, header_container};
 use common::interface::container::sidebar::{
@@ -21,8 +24,10 @@ use common::interface::container::sidebar::{
 use common::interface::container::window::WINDOW_PADDING;
 use common::interface::font::{BERKELEY_MONO_BOLD, BERKELEY_MONO_REGULAR};
 use common::logger::setup_logger;
+use common::util::format_thousands;
 
-use node::control::Node;
+use node::control::NETWORK;
+use node::control::{Node, NodeStatus};
 use node::control::{start_node, stop_node};
 use node::error::BonsaiNodeError;
 use node::message::NodeMessage;
@@ -32,13 +37,13 @@ use wallet::bdk::placeholder::{BDKWallet, BDKWalletMessage};
 use wallet::phoenixd::placeholder::{Phoenixd, PhoenixdMessage};
 
 use crate::node::geoip::GeoIpReader;
+use crate::node::interface::common::table_cell;
 
 mod common;
 mod node;
 mod wallet;
 
 const START_NODE_AUTO: bool = false;
-const APP_NAME: &str = "Bonsai[盆栽]";
 const APP_VERSION: &str = concat!("v", env!("CARGO_PKG_VERSION"));
 const GEOIP_ASN_DB: &str = "./assets/geoip/GeoLite2-ASN.mmdb";
 const GEOIP_CITY_DB: &str = "./assets/geoip/GeoLite2-City.mmdb";
@@ -80,13 +85,83 @@ pub(crate) struct Bonsai {
 
 impl Bonsai {
     fn view(&self) -> Element<'_, BonsaiMessage> {
+        let node_status = &self.node.status;
+        let status_color = match node_status {
+            NodeStatus::Starting | NodeStatus::Running => GREEN,
+            NodeStatus::Inactive => OFF_WHITE,
+            NodeStatus::ShuttingDown | NodeStatus::Failed(_) => RED,
+        };
+        let blocks = self.node.statistics.as_ref().map(|s| s.blocks).unwrap_or(0);
+        let network_color = match NETWORK {
+            Network::Bitcoin => ORANGE,
+            Network::Signet => PURPLE,
+            Network::Testnet | Network::Testnet4 => BLUE,
+            Network::Regtest => OFF_WHITE,
+        };
+
         let header = container(
-            row![
-                text(APP_NAME).size(36).font(BERKELEY_MONO_BOLD),
-                Space::new().width(Length::Fill),
-                text(APP_VERSION).size(16),
-            ]
-            .align_y(iced::Alignment::Center),
+            container(
+                row![
+                    // Left.
+                    container(
+                        row![
+                            container(image("assets/icon/bonsai.png").height(Length::Fill))
+                                .padding(5)
+                                .style(table_cell()),
+                            column![
+                                row![
+                                    text("BONSAI").size(36).font(BERKELEY_MONO_BOLD),
+                                    text("盆栽").size(32).font(BERKELEY_MONO_REGULAR),
+                                ]
+                                .spacing(10)
+                                .align_y(iced::Alignment::Center),
+                                Space::new().height(Length::Fill),
+                                text("UTREEXO-AWARE BITCOIN WALLET").size(12)
+                            ]
+                            .spacing(-5.0)
+                            .height(Length::Fill),
+                        ]
+                        .spacing(10)
+                        .height(Length::Fill),
+                    )
+                    .padding(Padding::from([0, 5]))
+                    .height(Length::Fill),
+                    Space::new().width(Length::Fill),
+                    // Right.
+                    row![
+                        column![
+                            text(node_status.to_string())
+                                .size(12)
+                                .font(BERKELEY_MONO_BOLD)
+                                .color(status_color),
+                            text(NETWORK.to_string().to_uppercase())
+                                .size(12)
+                                .font(BERKELEY_MONO_BOLD)
+                                .color(network_color),
+                            text(format_thousands(blocks))
+                                .size(12)
+                                .font(BERKELEY_MONO_BOLD),
+                            text(APP_VERSION).size(12).font(BERKELEY_MONO_BOLD),
+                        ]
+                        .spacing(2)
+                        .align_x(iced::Alignment::End),
+                        column![
+                            text("STATUS").size(12),
+                            text("NETWORK").size(12),
+                            text("HEIGHT").size(12),
+                            text("VERSION").size(12),
+                        ]
+                        .spacing(2)
+                        .align_x(iced::Alignment::Start),
+                    ]
+                    .spacing(4)
+                    .padding(0)
+                    .align_y(iced::Alignment::Center),
+                ]
+                .align_y(iced::Alignment::Center),
+            )
+            .width(Length::Fill)
+            .height(Length::Fill),
         )
         .height(Length::Fixed(HEADER_HEIGHT))
         .width(Length::Fill)
@@ -275,7 +350,7 @@ fn main() -> iced::Result {
     let window_settings: Settings = Settings {
         size: Size::new(1200.0, 800.0),
         position: Position::Default,
-        min_size: Some(Size::new(1200.0, 600.0)),
+        min_size: Some(Size::new(1200.0, 800.0)),
         max_size: None,
         visible: true,
         resizable: true,

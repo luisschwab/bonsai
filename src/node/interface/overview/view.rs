@@ -6,21 +6,13 @@ use iced::widget::{Container, button, column, container, row, scrollable, text};
 use iced::{Element, Length, Padding};
 
 use crate::common::interface::color::{BLUE, GREEN, OFF_WHITE, ORANGE, PURPLE, RED};
+use crate::common::util::{format_duration, format_thousands};
 use crate::node::control::{NETWORK, NodeStatus};
 use crate::node::interface::common::{TITLE_PADDING, table_cell, title_container};
 use crate::node::interface::overview::style::{ControlButton, action_button, log_container};
 use crate::node::log_capture::LogCapture;
 use crate::node::message::NodeMessage;
 use crate::node::statistics::NodeStatistics;
-
-/// Format a [`Duration`] to HH:MM:SS.
-fn format_duration(duration: Duration) -> String {
-    let total_secs = duration.as_secs();
-    let hours = total_secs / 3600;
-    let minutes = (total_secs % 3600) / 60;
-    let seconds = total_secs % 60;
-    format!("{:02}h {:02}m {:02}s", hours, minutes, seconds)
-}
 
 /// Calculate IBD progress from
 fn calculate_progress(headers: u32, blocks: u32) -> f64 {
@@ -194,7 +186,7 @@ pub(crate) fn view_overview<'a>(
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
-                container(text(headers).size(14))
+                container(text(format_thousands(headers)).size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
@@ -204,7 +196,7 @@ pub(crate) fn view_overview<'a>(
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
-                container(text(blocks).size(14))
+                container(text(format_thousands(blocks)).size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
