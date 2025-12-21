@@ -99,16 +99,16 @@ impl Bonsai {
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::BDKWallet, ORANGE)),
-            button(text("LIGHTNING WALLET"))
-                .on_press(BonsaiMessage::SelectTab(Tab::Phoenixd))
-                .height(SIDEBAR_BUTTON_HEIGHT)
-                .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::Phoenixd, YELLOW)),
-            button(text("ARK WALLET"))
-                .on_press(BonsaiMessage::SelectTab(Tab::Ark))
-                .height(SIDEBAR_BUTTON_HEIGHT)
-                .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::Ark, PURPLE)),
+            //button(text("LIGHTNING WALLET"))
+            //    .on_press(BonsaiMessage::SelectTab(Tab::Phoenixd))
+            //    .height(SIDEBAR_BUTTON_HEIGHT)
+            //    .width(Length::Fill)
+            //    .style(sidebar_button(self.active_tab == Tab::Phoenixd, YELLOW)),
+            //button(text("ARK WALLET"))
+            //    .on_press(BonsaiMessage::SelectTab(Tab::Ark))
+            //    .height(SIDEBAR_BUTTON_HEIGHT)
+            //    .width(Length::Fill)
+            //    .style(sidebar_button(self.active_tab == Tab::Ark, PURPLE)),
             button(text("NODE OVERVIEW"))
                 .on_press(BonsaiMessage::SelectTab(Tab::NodeOverview))
                 .height(SIDEBAR_BUTTON_HEIGHT)

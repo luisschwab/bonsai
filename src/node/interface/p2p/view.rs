@@ -4,10 +4,13 @@ use bdk_floresta::TransportProtocol;
 use iced::widget::{Container, button, column, container, image, row, text, text_input, tooltip};
 use iced::{Element, Length, Padding};
 
+use crate::common::interface::color::BLACK;
 use crate::node::control::NodeStatus;
 use crate::node::geoip::GeoIpReader;
 use crate::node::interface::common::{TITLE_PADDING, input_field, table_cell, title_container};
-use crate::node::interface::p2p::style::peer_info_table_container;
+use crate::node::interface::p2p::style::{
+    ban_button, disconnect_button, peer_info_table_container,
+};
 use crate::node::message::NodeMessage;
 use crate::node::statistics::{NodeImpl, NodeStatistics};
 
@@ -127,7 +130,7 @@ pub fn view_p2p<'a>(
     .align_y(iced::alignment::Vertical::Center)
     .height(Length::Fill);
     let add_peer_button = container(
-        button(text("CONNECT").size(12))
+        button(text("CONNECT").size(12).color(BLACK))
             .on_press(NodeMessage::AddPeer)
             .padding(10),
     )
@@ -178,10 +181,12 @@ pub fn view_p2p<'a>(
         container(text("TRANSPORT").size(TABLE_HEADER_FONT_SIZE))
             .padding(10)
             .width(Length::FillPortion(1))
+            .align_x(iced::alignment::Horizontal::Center)
             .style(table_cell()),
         container(text("ACTION").size(TABLE_HEADER_FONT_SIZE))
             .padding(10)
             .width(Length::FillPortion(1))
+            .align_x(iced::alignment::Horizontal::Center)
             .style(table_cell()),
     ]);
 
@@ -196,6 +201,13 @@ pub fn view_p2p<'a>(
         if let Some(peer) = peers.get(i) {
             let disconnect_button = button(text("DISCONNECT").size(10))
                 .on_press(NodeMessage::DisconnectPeer(peer.address.clone()))
+                .style(disconnect_button())
+                .padding(5);
+
+            // TODO: add peer banning logic on `floresta-wire`.
+            let ban_button = button(text("BAN").size(10))
+                .on_press(NodeMessage::Tick) // TODO: change this
+                .style(ban_button())
                 .padding(5);
 
             peer_info_table = peer_info_table.push(row![
@@ -215,9 +227,10 @@ pub fn view_p2p<'a>(
                     .height(CELL_HEIGHT)
                     .width(Length::FillPortion(1))
                     .style(table_cell())
+                    .align_x(iced::alignment::Horizontal::Center)
                     .align_y(iced::alignment::Vertical::Center),
-                container(disconnect_button)
-                    .padding(0)
+                container(row![disconnect_button, ban_button].spacing(4))
+                    .padding(2)
                     .height(CELL_HEIGHT)
                     .width(Length::FillPortion(1))
                     .style(table_cell())

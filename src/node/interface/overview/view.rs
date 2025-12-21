@@ -1,10 +1,11 @@
 use std::time::Duration;
 
+use bdk_wallet::bitcoin::Network;
 use iced::Length::Fill;
 use iced::widget::{Container, button, column, container, row, scrollable, text};
 use iced::{Element, Length, Padding};
 
-use crate::common::interface::color::{BLUE, GREEN, OFF_WHITE, ORANGE, RED};
+use crate::common::interface::color::{BLUE, GREEN, OFF_WHITE, ORANGE, PURPLE, RED};
 use crate::node::control::{NETWORK, NodeStatus};
 use crate::node::interface::common::{TITLE_PADDING, table_cell, title_container};
 use crate::node::interface::overview::style::{ControlButton, action_button, log_container};
@@ -62,6 +63,7 @@ pub(crate) fn view_overview<'a>(
     node_status: &'a NodeStatus,
     statistics: &'a Option<NodeStatistics>,
     log_capture: &'a LogCapture,
+    animation_tick: usize,
 ) -> Element<'a, NodeMessage> {
     // Tab Title.
     let title: Container<'_, NodeMessage> = container(text("NODE OVERVIEW").size(25))
@@ -105,7 +107,7 @@ pub(crate) fn view_overview<'a>(
     let user_agent = statistics
         .as_ref()
         .map(|s| s.user_agent.clone())
-        .unwrap_or("Unknown".to_string());
+        .unwrap_or("NULL".to_string());
     let peer_count = statistics
         .as_ref()
         .map(|s| s.peer_informations.len())
@@ -115,6 +117,31 @@ pub(crate) fn view_overview<'a>(
         .map(|stats| format_duration(stats.uptime))
         .unwrap_or("00h 00m 00s".to_string());
 
+    let status_color = match node_status {
+        NodeStatus::Starting | NodeStatus::Running => GREEN,
+        NodeStatus::Inactive => OFF_WHITE,
+        NodeStatus::Failed(_) => RED,
+        NodeStatus::ShuttingDown => {
+            // Pulse with sine wave
+            let time = (animation_tick as f32) * 32.0;
+
+            // Pulse with 1 second period (1000ms)
+            let pulse = ((time / 1000.0) * std::f32::consts::PI * 2.0).sin();
+
+            // Map sine wave (-1 to 1) to alpha range (0.7 to 1.0)
+            let alpha = 0.7 + ((pulse + 1.0) / 2.0) * 0.7;
+
+            RED.scale_alpha(alpha)
+        }
+    };
+
+    let network_color = match NETWORK {
+        Network::Bitcoin => ORANGE,
+        Network::Signet => PURPLE,
+        Network::Testnet | Network::Testnet4 => BLUE,
+        Network::Regtest => OFF_WHITE,
+    };
+
     let metrics_title = container(text("METRICS").size(24));
     let metrics_table = container(
         column![
@@ -123,7 +150,7 @@ pub(crate) fn view_overview<'a>(
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
-                container(text(node_status.to_string()).size(14))
+                container(text(node_status.to_string()).size(14).color(status_color))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
@@ -133,10 +160,14 @@ pub(crate) fn view_overview<'a>(
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
-                container(text(NETWORK.to_string().to_uppercase()).size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
+                container(
+                    text(NETWORK.to_string().to_uppercase())
+                        .size(14)
+                        .color(network_color)
+                )
+                .padding(10)
+                .width(Length::FillPortion(1))
+                .style(table_cell()),
             ],
             row![
                 container(text("IBD").size(14))

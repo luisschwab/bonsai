@@ -24,7 +24,7 @@ pub const DATA_DIR: &str = "./data/";
 pub const NETWORK: Network = Network::Signet;
 pub const FETCH_STATISTICS_TIME: u64 = 1;
 
-#[derive(Clone, Default)]
+#[derive(Clone, Debug, Default)]
 pub(crate) enum NodeStatus {
     #[default]
     Inactive,
@@ -58,11 +58,23 @@ pub(crate) struct Node {
     pub(crate) start_time: Option<Instant>,
     pub(crate) peer_input: String,
     pub(crate) geoip_reader: Option<GeoIpReader>,
+    pub(crate) animation_tick: usize,
 }
 
 impl Node {
     pub fn update(&mut self, message: NodeMessage) -> Task<NodeMessage> {
         match message {
+            // `Tick` is useful for triggering an UI re-render.
+            NodeMessage::Tick => {
+                self.animation_tick = self.animation_tick.wrapping_add(1);
+
+                let current_version = self.log_capture.version();
+                if current_version != self.last_log_version {
+                    self.last_log_version = current_version;
+                }
+
+                Task::none()
+            }
             NodeMessage::Start => {
                 self.status = NodeStatus::Starting;
                 Task::perform(start_node(), |res| match res {
@@ -149,15 +161,6 @@ impl Node {
 
                 if let Some(stats) = &mut self.statistics {
                     stats.peer_informations.clear();
-                }
-
-                Task::none()
-            }
-            // `Tick` is useful for triggering an UI re-render.
-            NodeMessage::Tick => {
-                let current_version = self.log_capture.version();
-                if current_version != self.last_log_version {
-                    self.last_log_version = current_version;
                 }
 
                 Task::none()
@@ -299,7 +302,7 @@ impl Node {
 
     pub(crate) fn subscribe(&self) -> Subscription<NodeMessage> {
         let tick_subscription =
-            iced::time::every(Duration::from_millis(300)).map(|_| NodeMessage::Tick);
+            iced::time::every(Duration::from_millis(32)).map(|_| NodeMessage::Tick);
 
         if self.subscription_active {
             Subscription::batch(vec![
@@ -329,7 +332,12 @@ impl Node {
 
     fn view_overview(&self) -> Element<'_, NodeMessage> {
         use crate::node::interface::overview::view;
-        view::view_overview(&self.status, &self.statistics, &self.log_capture)
+        view::view_overview(
+            &self.status,
+            &self.statistics,
+            &self.log_capture,
+            self.animation_tick,
+        )
     }
 
     pub(crate) fn view_p2p(&self) -> Element<'_, NodeMessage> {
