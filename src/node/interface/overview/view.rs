@@ -69,6 +69,7 @@ pub(crate) fn view_overview<'a>(
     let headers = statistics.as_ref().map(|s| s.headers).unwrap_or(0);
     let blocks = statistics.as_ref().map(|s| s.blocks).unwrap_or(0);
     let progress = calculate_progress(headers, blocks);
+    let user_agent = statistics.as_ref().map(|s| s.user_agent.clone()).unwrap_or("Unknown".to_string());
     let peer_count = statistics
         .as_ref()
         .map(|s| s.peer_informations.len())
@@ -155,10 +156,14 @@ pub(crate) fn view_overview<'a>(
                 container(text("USER AGENT").size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
+                    .height(Length::Fixed(60.0))
+                    .align_y(iced::alignment::Vertical::Center)
                     .style(table_cell()),
-                container(text("TODO").size(14))
+                container(text(user_agent).size(12))
                     .padding(10)
                     .width(Length::FillPortion(1))
+                    .height(Length::Fixed(60.0))
+                    .align_y(iced::alignment::Vertical::Center)
                     .style(table_cell()),
             ],
             row![
@@ -216,7 +221,10 @@ pub(crate) fn view_overview<'a>(
     if logs.is_empty() {
         log_column = log_column.push(text("").size(12));
     } else {
-        for log in logs.into_iter().take(100) {
+        // Keep the last 500 logs rendered.
+        let skip_count = logs.len().saturating_sub(500);
+
+        for log in logs.into_iter().skip(skip_count) {
             let color = if log.contains("ERROR") {
                 RED
             } else if log.contains("WARN") {

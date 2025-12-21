@@ -12,11 +12,11 @@ pub(crate) fn setup_logger() -> LogCapture {
     let data_dir = format!("{}{}", DATA_DIR, NETWORK);
     std::fs::create_dir_all(&data_dir).expect("Failed to create data directory");
 
-    let file_appender = tracing_appender::rolling::daily(&data_dir, "bonsai.log");
+    let file_appender = tracing_appender::rolling::never(&data_dir, "bonsai.log");
     let (non_blocking_file, _guard) = tracing_appender::non_blocking(file_appender);
     std::mem::forget(_guard);
 
-    let log_capture = LogCapture::new(1_000_000); // Keep the last 1_000_000 logs
+    let log_capture = LogCapture::new(1_000_000);
     let capture_layer = LogCaptureLayer::new(log_capture.clone());
 
     tracing_subscriber::registry()

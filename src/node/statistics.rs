@@ -53,6 +53,7 @@ pub(crate) struct NodeStatistics {
     pub(crate) headers: u32,
     pub(crate) blocks: u32,
     pub(crate) accumulator: Stump,
+    pub(crate) user_agent: String,
     pub(crate) peer_informations: Vec<PeerInformation>,
     pub(crate) uptime: Duration,
 }
@@ -102,6 +103,7 @@ pub(crate) async fn fetch_stats(
         let headers = node_handle.get_height().unwrap_or(0);
         let blocks = node_handle.get_validation_height().unwrap_or(0);
         let accumulator = node_handle.get_accumulator().unwrap();
+        let user_agent = node_handle.get_config().await.unwrap().user_agent;
         let uptime = start_time
             .map(|t| t.elapsed())
             .unwrap_or(Duration::from_secs(0));
@@ -113,6 +115,7 @@ pub(crate) async fn fetch_stats(
             headers,
             blocks,
             accumulator,
+            user_agent,
             peer_informations,
             uptime,
         })

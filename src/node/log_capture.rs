@@ -31,8 +31,15 @@ impl LogCapture {
         if logs.len() > self.max_logs {
             logs.pop_front();
         }
+        drop(logs);
 
-        *self.version.lock().unwrap() += 1;
+        let mut version = self.version.lock().unwrap();
+        *version = version.wrapping_add(1);
+
+        // Every 100 logs, print debug info
+        if *version % 100 == 0 {
+            eprintln!("LogCapture: {} logs captured, version: {}", self.logs.lock().unwrap().len(), *version);
+        }
     }
 
     pub fn get_logs(&self) -> Vec<String> {

@@ -1493,7 +1493,6 @@ dependencies = [
 [[package]]
 name = "floresta-chain"
 version = "0.4.0"
-source = "git+https://github.com/vinteumorg/Floresta.git?rev=6ca383b4c16ada53f2cd3dfbfe3801f5d294844a#6ca383b4c16ada53f2cd3dfbfe3801f5d294844a"
 dependencies = [
  "bitcoin",
  "floresta-common",
@@ -1509,7 +1508,6 @@ dependencies = [
 [[package]]
 name = "floresta-common"
 version = "0.4.0"
-source = "git+https://github.com/vinteumorg/Floresta.git?rev=6ca383b4c16ada53f2cd3dfbfe3801f5d294844a#6ca383b4c16ada53f2cd3dfbfe3801f5d294844a"
 dependencies = [
  "bitcoin",
  "hashbrown 0.16.1",
@@ -1521,7 +1519,6 @@ dependencies = [
 [[package]]
 name = "floresta-compact-filters"
 version = "0.4.0"
-source = "git+https://github.com/vinteumorg/Floresta.git?rev=6ca383b4c16ada53f2cd3dfbfe3801f5d294844a#6ca383b4c16ada53f2cd3dfbfe3801f5d294844a"
 dependencies = [
  "bitcoin",
  "floresta-chain",
@@ -1530,7 +1527,6 @@ dependencies = [
 [[package]]
 name = "floresta-wire"
 version = "0.4.0"
-source = "git+https://github.com/vinteumorg/Floresta.git?rev=6ca383b4c16ada53f2cd3dfbfe3801f5d294844a#6ca383b4c16ada53f2cd3dfbfe3801f5d294844a"
 dependencies = [
  "ahash",
  "bip324",
