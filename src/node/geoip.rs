@@ -6,7 +6,7 @@ use std::sync::Arc;
 use maxminddb::Reader;
 use maxminddb::geoip2;
 use memmap2::Mmap;
-use tracing::{info, error};
+use tracing::{error, info};
 
 /// A [`Reader`] to GeoIP ASN and City databases.
 pub struct GeoIpReader {

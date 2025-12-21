@@ -23,7 +23,7 @@ pub(crate) fn log_container() -> impl Fn(&Theme) -> ContainerStyle {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub(crate) enum ActionButton {
     Start,
     Restart,

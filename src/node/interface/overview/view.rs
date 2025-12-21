@@ -30,6 +30,33 @@ fn calculate_progress(headers: u32, blocks: u32) -> f64 {
     }
 }
 
+/// Disable the action buttons conditionally depending on [`ActionButton`] and [`NodeStatus`].
+fn action_button_with_disable_logic<'a>(
+    label: &'static str,
+    node_status: &'a NodeStatus,
+    action_type: ActionButton,
+    message: NodeMessage,
+) -> iced::widget::Button<'a, NodeMessage> {
+    let button = button(text(label))
+        .style(action_button(node_status, action_type))
+        .width(Fill);
+
+    // Determine whether the button should be enabled.
+    #[allow(clippy::match_like_matches_macro)]
+    let should_enable = match (node_status, action_type) {
+        (NodeStatus::Inactive | NodeStatus::Failed(_), ActionButton::Start) => true,
+        (NodeStatus::Running, ActionButton::Restart) => true,
+        (NodeStatus::Running, ActionButton::Shutdown) => true,
+        _ => false,
+    };
+
+    if should_enable {
+        button.on_press(message)
+    } else {
+        button
+    }
+}
+
 /// View renderer for the `NODE OVERVIEW` tab.
 pub(crate) fn view_overview<'a>(
     node_status: &'a NodeStatus,
@@ -45,18 +72,24 @@ pub(crate) fn view_overview<'a>(
     let action_button_title: Container<'_, NodeMessage> = container(text("ACTIONS").size(24));
     let action_button_container: Container<'_, NodeMessage> = container(
         row![
-            button(text("START"))
-                .on_press(NodeMessage::Start)
-                .style(action_button(node_status, ActionButton::Start))
-                .width(Fill),
-            button(text("RESTART"))
-                .on_press(NodeMessage::Restart)
-                .style(action_button(node_status, ActionButton::Restart))
-                .width(Fill),
-            button(text("SHUTDOWN"))
-                .on_press(NodeMessage::Shutdown)
-                .style(action_button(node_status, ActionButton::Shutdown))
-                .width(Fill),
+            action_button_with_disable_logic(
+                "START",
+                node_status,
+                ActionButton::Start,
+                NodeMessage::Start
+            ),
+            action_button_with_disable_logic(
+                "RESTART",
+                node_status,
+                ActionButton::Restart,
+                NodeMessage::Restart
+            ),
+            action_button_with_disable_logic(
+                "SHUTDOWN",
+                node_status,
+                ActionButton::Shutdown,
+                NodeMessage::Shutdown
+            ),
         ]
         .spacing(10),
     )
@@ -69,7 +102,10 @@ pub(crate) fn view_overview<'a>(
     let headers = statistics.as_ref().map(|s| s.headers).unwrap_or(0);
     let blocks = statistics.as_ref().map(|s| s.blocks).unwrap_or(0);
     let progress = calculate_progress(headers, blocks);
-    let user_agent = statistics.as_ref().map(|s| s.user_agent.clone()).unwrap_or("Unknown".to_string());
+    let user_agent = statistics
+        .as_ref()
+        .map(|s| s.user_agent.clone())
+        .unwrap_or("Unknown".to_string());
     let peer_count = statistics
         .as_ref()
         .map(|s| s.peer_informations.len())
