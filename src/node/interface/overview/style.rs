@@ -24,7 +24,7 @@ pub(crate) fn log_container() -> impl Fn(&Theme) -> ContainerStyle {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) enum ActionButton {
+pub(crate) enum ControlButton {
     Start,
     Restart,
     Shutdown,
@@ -33,19 +33,19 @@ pub(crate) enum ActionButton {
 /// Style for `ACTION` buttons on the `NODE OVERVIEW` tab.
 pub(crate) fn action_button(
     node_status: &NodeStatus,
-    action_button: ActionButton,
+    action_button: ControlButton,
 ) -> impl Fn(&Theme, ButtonStatus) -> ButtonStyle {
     move |_theme, button_status| {
         let pair = match action_button {
-            ActionButton::Start => Pair {
+            ControlButton::Start => Pair {
                 color: GREEN,
                 text: BLACK,
             },
-            ActionButton::Restart => Pair {
+            ControlButton::Restart => Pair {
                 color: ORANGE,
                 text: BLACK,
             },
-            ActionButton::Shutdown => Pair {
+            ControlButton::Shutdown => Pair {
                 color: RED,
                 text: BLACK,
             },
@@ -54,13 +54,13 @@ pub(crate) fn action_button(
         // Disable the button according to the current [`NodeStatus`].
         #[allow(clippy::match_like_matches_macro)]
         let should_disable = match (&node_status, &action_button) {
-            (NodeStatus::Running, ActionButton::Start) => true,
-            (NodeStatus::Inactive, ActionButton::Restart) => true,
-            (NodeStatus::Inactive, ActionButton::Shutdown) => true,
+            (NodeStatus::Running, ControlButton::Start) => true,
+            (NodeStatus::Inactive, ControlButton::Restart) => true,
+            (NodeStatus::Inactive, ControlButton::Shutdown) => true,
             (NodeStatus::Starting, _) => true,
             (NodeStatus::ShuttingDown, _) => true,
-            (NodeStatus::Failed(_), ActionButton::Restart) => true,
-            (NodeStatus::Failed(_), ActionButton::Shutdown) => true,
+            (NodeStatus::Failed(_), ControlButton::Restart) => true,
+            (NodeStatus::Failed(_), ControlButton::Shutdown) => true,
             _ => false,
         };
 

@@ -23,6 +23,8 @@ pub(crate) enum NodeMessage {
     AddPeerInputChanged(String),
     AddPeer,
     PeerConnected(String),
+    DisconnectPeer(String),
+    PeerDisconnected(String),
     Error(BonsaiNodeError),
 }
 
@@ -42,6 +44,8 @@ impl Debug for NodeMessage {
             Self::AddPeerInputChanged(peer) => write!(f, "AddPeerInputChanged({peer})"),
             Self::AddPeer => write!(f, "AddPeer"),
             Self::PeerConnected(peer) => write!(f, "PeerConnected({peer})"),
+            Self::DisconnectPeer(peer) => write!(f, "RemovePeer({peer})"),
+            Self::PeerDisconnected(peer) => writeln!(f, "PeerRemoved({peer})"),
             Self::Error(_) => write!(f, "Node Error"),
         }
     }

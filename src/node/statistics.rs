@@ -5,7 +5,7 @@ use std::time::{Duration, Instant};
 
 use bdk_floresta::FlorestaNode;
 use bdk_floresta::rustreexo::accumulator::stump::Stump;
-use bdk_floresta::{ConnectionKind, PeerInfo, PeerStatus};
+use bdk_floresta::{ConnectionKind, PeerInfo, PeerStatus, TransportProtocol};
 use regex::Regex;
 use tokio::sync::RwLock;
 
@@ -44,7 +44,7 @@ pub(crate) struct PeerInformation {
     pub(crate) initial_height: u32,
     pub(crate) peer_status: PeerStatus,
     pub(crate) connection_kind: ConnectionKind,
-    //pub(crate) transport_protocol: TransportProtocol,
+    pub(crate) transport_protocol: TransportProtocol,
 }
 
 #[derive(Clone)]
@@ -85,6 +85,7 @@ fn process_peer_infos(peer_infos: Vec<PeerInfo>) -> Vec<PeerInformation> {
             initial_height: peer_info.initial_height,
             peer_status: peer_info.state,
             connection_kind: peer_info.kind,
+            transport_protocol: peer_info.transport_protocol,
         };
         peer_informations.push(peer_information);
     }

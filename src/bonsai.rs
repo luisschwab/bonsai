@@ -119,16 +119,16 @@ impl Bonsai {
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::NodeP2P, GREEN)),
-            button(text("NODE BLOCKS"))
-                //.on_press(BonsaiMessage::SelectTab(Tab::NodeBlocks))
-                .height(SIDEBAR_BUTTON_HEIGHT)
-                .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::NodeBlocks, GREEN)),
             button(text("NODE UTREEXO"))
                 //.on_press(BonsaiMessage::SelectTab(Tab::NodeUtreexo))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::NodeUtreexo, GREEN)),
+            button(text("NODE BLOCKS"))
+                //.on_press(BonsaiMessage::SelectTab(Tab::NodeBlocks))
+                .height(SIDEBAR_BUTTON_HEIGHT)
+                .width(Length::Fill)
+                .style(sidebar_button(self.active_tab == Tab::NodeBlocks, GREEN)),
             button(text("NODE MEMPOOL"))
                 //.on_press(BonsaiMessage::SelectTab(Tab::NodeMempool))
                 .height(SIDEBAR_BUTTON_HEIGHT)

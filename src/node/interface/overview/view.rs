@@ -7,7 +7,7 @@ use iced::{Element, Length, Padding};
 use crate::common::interface::color::{BLUE, GREEN, OFF_WHITE, ORANGE, RED};
 use crate::node::control::{NETWORK, NodeStatus};
 use crate::node::interface::common::{TITLE_PADDING, table_cell, title_container};
-use crate::node::interface::overview::style::{ActionButton, action_button, log_container};
+use crate::node::interface::overview::style::{ControlButton, action_button, log_container};
 use crate::node::log_capture::LogCapture;
 use crate::node::message::NodeMessage;
 use crate::node::statistics::NodeStatistics;
@@ -30,11 +30,11 @@ fn calculate_progress(headers: u32, blocks: u32) -> f64 {
     }
 }
 
-/// Disable the action buttons conditionally depending on [`ActionButton`] and [`NodeStatus`].
-fn action_button_with_disable_logic<'a>(
+/// Disable control buttons conditionally depending on [`ControlButton`] and [`NodeStatus`].
+fn control_button_with_disable_logic<'a>(
     label: &'static str,
     node_status: &'a NodeStatus,
-    action_type: ActionButton,
+    action_type: ControlButton,
     message: NodeMessage,
 ) -> iced::widget::Button<'a, NodeMessage> {
     let button = button(text(label))
@@ -44,9 +44,9 @@ fn action_button_with_disable_logic<'a>(
     // Determine whether the button should be enabled.
     #[allow(clippy::match_like_matches_macro)]
     let should_enable = match (node_status, action_type) {
-        (NodeStatus::Inactive | NodeStatus::Failed(_), ActionButton::Start) => true,
-        (NodeStatus::Running, ActionButton::Restart) => true,
-        (NodeStatus::Running, ActionButton::Shutdown) => true,
+        (NodeStatus::Inactive | NodeStatus::Failed(_), ControlButton::Start) => true,
+        (NodeStatus::Running, ControlButton::Restart) => true,
+        (NodeStatus::Running, ControlButton::Shutdown) => true,
         _ => false,
     };
 
@@ -68,26 +68,26 @@ pub(crate) fn view_overview<'a>(
         .style(title_container())
         .padding(TITLE_PADDING);
 
-    // Action Button Section.
-    let action_button_title: Container<'_, NodeMessage> = container(text("ACTIONS").size(24));
-    let action_button_container: Container<'_, NodeMessage> = container(
+    // Control Button Section.
+    let control_button_title: Container<'_, NodeMessage> = container(text("CONTROL").size(24));
+    let control_button_container: Container<'_, NodeMessage> = container(
         row![
-            action_button_with_disable_logic(
+            control_button_with_disable_logic(
                 "START",
                 node_status,
-                ActionButton::Start,
+                ControlButton::Start,
                 NodeMessage::Start
             ),
-            action_button_with_disable_logic(
+            control_button_with_disable_logic(
                 "RESTART",
                 node_status,
-                ActionButton::Restart,
+                ControlButton::Restart,
                 NodeMessage::Restart
             ),
-            action_button_with_disable_logic(
+            control_button_with_disable_logic(
                 "SHUTDOWN",
                 node_status,
-                ActionButton::Shutdown,
+                ControlButton::Shutdown,
                 NodeMessage::Shutdown
             ),
         ]
@@ -95,7 +95,7 @@ pub(crate) fn view_overview<'a>(
     )
     .style(title_container())
     .padding(10);
-    let action_button = column![action_button_title, action_button_container];
+    let control = column![control_button_title, control_button_container];
 
     // Metrics Section.
     let in_ibd = statistics.as_ref().map(|s| s.in_ibd).unwrap_or(true);
@@ -238,7 +238,7 @@ pub(crate) fn view_overview<'a>(
     .style(title_container());
     let metrics = column![metrics_title, metrics_table].spacing(0);
 
-    let left = column![title, action_button, metrics]
+    let left = column![title, control, metrics]
         .spacing(20)
         .width(Length::FillPortion(4));
 

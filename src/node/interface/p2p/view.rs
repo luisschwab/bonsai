@@ -1,5 +1,6 @@
 use std::net::IpAddr;
 
+use bdk_floresta::TransportProtocol;
 use iced::widget::{Container, button, column, container, image, row, text, text_input, tooltip};
 use iced::{Element, Length, Padding};
 
@@ -78,8 +79,29 @@ fn get_impl_icon<'a>(node_impl: &'a NodeImpl, user_agent: &'a str) -> Element<'a
     .align_y(iced::alignment::Vertical::Center);
 
     tooltip(content, user_agent, tooltip::Position::FollowCursor)
-        .style(container::rounded_box) // Optional: style the tooltip
+        .style(container::rounded_box)
         .into()
+}
+
+fn get_transport_with_tooltip<'a>(transport: &'a TransportProtocol) -> Element<'a, NodeMessage> {
+    let (display_text, tooltip_text) = match transport {
+        TransportProtocol::V1 => (
+            "P2PV1",
+            "Network messages between\nyou and this peer are not encrypted",
+        ),
+        TransportProtocol::V2 => (
+            "P2PV2",
+            "Network messages between you and this peer\nare authenticated and encrypted\nusing ChaCha20Poly1305, per BIP324",
+        ),
+    };
+
+    tooltip(
+        text(display_text).size(TABLE_CELL_FONT_SIZE),
+        text(tooltip_text),
+        tooltip::Position::FollowCursor,
+    )
+    .style(container::rounded_box)
+    .into()
 }
 
 pub fn view_p2p<'a>(
@@ -124,11 +146,13 @@ pub fn view_p2p<'a>(
 
     // P2P Messages (TODO: requires a node hook for P2P messages)
     let p2p_messages_title: Container<'_, NodeMessage> = container(text("P2P MESSAGES").size(24));
-    let p2p_messages_container = container(row![])
-        .style(title_container())
-        .padding(10)
-        .height(Length::Fill)
-        .width(Length::Fill);
+    let p2p_messages_container = container(row![text(
+        "WIP: Requires a node hook for P2P messages on Floresta"
+    )])
+    .style(title_container())
+    .padding(10)
+    .height(Length::Fill)
+    .width(Length::Fill);
     let p2p_messages = column![p2p_messages_title, p2p_messages_container];
 
     // Left Section.
@@ -145,66 +169,71 @@ pub fn view_p2p<'a>(
     peer_info_table = peer_info_table.push(row![
         container(text("ADDRESS").size(TABLE_HEADER_FONT_SIZE))
             .padding(10)
-            .width(Length::FillPortion(1))
+            .width(Length::FillPortion(2))
             .style(table_cell()),
-        //container(text("USER AGENT").size(TABLE_HEADER_FONT_SIZE))
-        //    .padding(10)
-        //    .width(Length::FillPortion(2))
-        //    .style(table_cell()),
         container(text("IMPLEMENTATION").size(TABLE_HEADER_FONT_SIZE))
+            .padding(10)
+            .width(Length::FillPortion(2))
+            .style(table_cell()),
+        container(text("TRANSPORT").size(TABLE_HEADER_FONT_SIZE))
             .padding(10)
             .width(Length::FillPortion(1))
             .style(table_cell()),
-        container(text("SERVICES").size(TABLE_HEADER_FONT_SIZE))
+        container(text("ACTION").size(TABLE_HEADER_FONT_SIZE))
             .padding(10)
             .width(Length::FillPortion(1))
             .style(table_cell()),
     ]);
 
-    // Get peer list
+    // Get peer list.
     let peers = statistics
         .as_ref()
         .map(|s| s.peer_informations.as_slice())
         .unwrap_or(&[]);
 
-    const NUM_ROWS: usize = 15;
+    const NUM_ROWS: usize = 16;
     for i in 0..NUM_ROWS {
         if let Some(peer) = peers.get(i) {
+            let disconnect_button = button(text("DISCONNECT").size(10))
+                .on_press(NodeMessage::DisconnectPeer(peer.address.clone()))
+                .padding(5);
+
             peer_info_table = peer_info_table.push(row![
                 container(get_address_with_asn_tooltip(&peer.address, geoip_reader))
                     .padding(10)
                     .height(CELL_HEIGHT)
-                    .width(Length::FillPortion(1))
+                    .width(Length::FillPortion(2))
                     .style(table_cell()),
-                //container(text(&peer.user_agent).size(TABLE_CELL_FONT_SIZE))
-                //    .padding(10)
-                //    .height(CELL_HEIGHT)
-                //    .width(Length::FillPortion(2))
-                //    .style(table_cell()),
                 container(get_impl_icon(&peer.node_impl, &peer.user_agent))
+                    .padding(10)
+                    .height(CELL_HEIGHT)
+                    .width(Length::FillPortion(2))
+                    .style(table_cell())
+                    .align_y(iced::alignment::Vertical::Center),
+                container(get_transport_with_tooltip(&peer.transport_protocol))
                     .padding(10)
                     .height(CELL_HEIGHT)
                     .width(Length::FillPortion(1))
                     .style(table_cell())
                     .align_y(iced::alignment::Vertical::Center),
-                container(
-                    text(/*peer.services*/ "TODO: change on Floresta").size(TABLE_CELL_FONT_SIZE)
-                )
-                .padding(10)
-                .height(CELL_HEIGHT)
-                .width(Length::FillPortion(1))
-                .style(table_cell()),
+                container(disconnect_button)
+                    .padding(0)
+                    .height(CELL_HEIGHT)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell())
+                    .align_x(iced::alignment::Horizontal::Center)
+                    .align_y(iced::alignment::Vertical::Center),
             ]);
         } else {
             peer_info_table = peer_info_table.push(row![
                 container(text("").size(12))
                     .padding(10)
-                    .width(Length::FillPortion(1))
+                    .width(Length::FillPortion(2))
                     .style(table_cell()),
-                //container(text("").size(12))
-                //    .padding(10)
-                //    .width(Length::FillPortion(2))
-                //    .style(table_cell()),
+                container(text("").size(12))
+                    .padding(10)
+                    .width(Length::FillPortion(2))
+                    .style(table_cell()),
                 container(text("").size(12))
                     .padding(10)
                     .width(Length::FillPortion(1))

@@ -133,7 +133,7 @@ impl Node {
             }
             NodeMessage::ShuttingDown => {
                 self.status = NodeStatus::ShuttingDown;
-                self.subscription_active = false;
+                //self.subscription_active = false;
                 self.is_shutting_down = true;
 
                 if let Some(stats) = &mut self.statistics {
@@ -252,6 +252,46 @@ impl Node {
                 self.peer_input.clear();
 
                 // TODO(@luisschwab): add a success notification on top-right corner.
+                Task::none()
+            }
+            NodeMessage::DisconnectPeer(peer_address) => {
+                if let Some(handle) = &self.handle {
+                    let handle = handle.clone();
+                    let rt_handle = Handle::current();
+
+                    Task::future(async move {
+                        let result = rt_handle
+                            .spawn(async move {
+                                let addr: SocketAddr = match peer_address.parse() {
+                                    Ok(addr) => addr,
+                                    Err(e) => {
+                                        return NodeMessage::Error(BonsaiNodeError::Generic(
+                                            format!("Invalid peer address: {}", e),
+                                        ));
+                                    }
+                                };
+
+                                let node = handle.read().await;
+                                match node.disconnect_peer(&addr).await {
+                                    Ok(_) => NodeMessage::PeerDisconnected(peer_address),
+                                    Err(e) => NodeMessage::Error(BonsaiNodeError::from(e)),
+                                }
+                            })
+                            .await;
+
+                        result.unwrap_or_else(|e| {
+                            NodeMessage::Error(BonsaiNodeError::Generic(e.to_string()))
+                        })
+                    })
+                } else {
+                    Task::done(NodeMessage::Error(BonsaiNodeError::Generic(
+                        "Node not running".to_string(),
+                    )))
+                }
+            }
+
+            NodeMessage::PeerDisconnected(_peer) => {
+                // TODO add success notification
                 Task::none()
             }
         }
