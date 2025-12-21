@@ -110,7 +110,19 @@ pub(crate) fn view_overview<'a>(
         .unwrap_or("00h 00m 00s".to_string());
 
     let status_color = match node_status {
-        NodeStatus::Starting | NodeStatus::Running => GREEN,
+        NodeStatus::Starting => {
+            // Pulse with sine wave
+            let time = (animation_tick as f32) * 32.0;
+
+            // Pulse with 1 second period (1000ms)
+            let pulse = ((time / 1000.0) * std::f32::consts::PI * 2.0).sin();
+
+            // Map sine wave (-1 to 1) to alpha range (0.7 to 1.0)
+            let alpha = 0.7 + ((pulse + 1.0) / 2.0) * 0.7;
+
+            GREEN.scale_alpha(alpha)
+        }
+        NodeStatus::Running => GREEN,
         NodeStatus::Inactive => OFF_WHITE,
         NodeStatus::Failed(_) => RED,
         NodeStatus::ShuttingDown => {

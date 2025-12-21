@@ -6,6 +6,7 @@ use std::time::{Duration, Instant};
 use bdk_floresta::FlorestaNode;
 use bdk_floresta::rustreexo::accumulator::stump::Stump;
 use bdk_floresta::{ConnectionKind, PeerInfo, PeerStatus, TransportProtocol};
+use iced::widget::qr_code;
 use regex::Regex;
 use tokio::sync::RwLock;
 
@@ -53,9 +54,19 @@ pub(crate) struct NodeStatistics {
     pub(crate) headers: u32,
     pub(crate) blocks: u32,
     pub(crate) accumulator: Stump,
+    pub(crate) accumulator_qr_data: Option<String>,
     pub(crate) user_agent: String,
     pub(crate) peer_informations: Vec<PeerInformation>,
     pub(crate) uptime: Duration,
+}
+
+fn encode_stump(stump: &Stump) -> String {
+    let mut buffer = Vec::new();
+    if let Err(e) = stump.serialize(&mut buffer) {
+        tracing::error!("Failed to serialize stump: {}", e);
+        return String::new();
+    }
+    hex::encode(buffer)
 }
 
 fn regex_user_agent(user_agent: &str) -> NodeImpl {
@@ -111,12 +122,20 @@ pub(crate) async fn fetch_stats(
         let peer_infos_raw = node_handle.get_peer_info().await.unwrap_or_default();
         let peer_informations = process_peer_infos(peer_infos_raw);
 
+        let encoded_stump = encode_stump(&accumulator);
+        let accumulator_qr_data = if !encoded_stump.is_empty() {
+            Some(encoded_stump)
+        } else {
+            None
+        };
+
         Ok(NodeStatistics {
             in_ibd,
             headers,
             blocks,
             accumulator,
             user_agent,
+            accumulator_qr_data,
             peer_informations,
             uptime,
         })

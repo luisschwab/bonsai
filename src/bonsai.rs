@@ -116,15 +116,15 @@ impl Bonsai {
                                 .spacing(10)
                                 .align_y(iced::Alignment::Center),
                                 Space::new().height(Length::Fill),
-                                text("UTREEXO-AWARE BITCOIN WALLET").size(12)
+                                text("UTREEXO-AWARE BITCOIN\nWALLET WITH EMBEDDED NODE").size(12)
                             ]
-                            .spacing(-5.0)
+                            .spacing(-1.5)
                             .height(Length::Fill),
                         ]
                         .spacing(10)
                         .height(Length::Fill),
                     )
-                    .padding(Padding::from([0, 5]))
+                    .padding(Padding::from([-4.0, 5.0]))
                     .height(Length::Fill),
                     Space::new().width(Length::Fill),
                     // Right.
@@ -146,7 +146,7 @@ impl Bonsai {
                         .spacing(2)
                         .align_x(iced::Alignment::End),
                         column![
-                            text("STATUS").size(12),
+                            text("NODE").size(12),
                             text("NETWORK").size(12),
                             text("HEIGHT").size(12),
                             text("VERSION").size(12),
@@ -195,7 +195,7 @@ impl Bonsai {
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::NodeP2P, GREEN)),
             button(text("NODE UTREEXO"))
-                //.on_press(BonsaiMessage::SelectTab(Tab::NodeUtreexo))
+                .on_press(BonsaiMessage::SelectTab(Tab::NodeUtreexo))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::NodeUtreexo, GREEN)),

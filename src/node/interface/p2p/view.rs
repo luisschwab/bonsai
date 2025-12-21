@@ -5,6 +5,10 @@ use iced::widget::{Container, button, column, container, image, row, text, text_
 use iced::{Element, Length, Padding};
 
 use crate::common::interface::color::BLACK;
+use crate::common::interface::container::common::{
+    BORDER_RADIUS, BORDER_WIDTH, CELL_HEIGHT, TABLE_CELL_FONT_SIZE, TABLE_CELL_ICON_SIZE,
+    TABLE_HEADER_FONT_SIZE,
+};
 use crate::node::control::NodeStatus;
 use crate::node::geoip::GeoIpReader;
 use crate::node::interface::common::{TITLE_PADDING, input_field, table_cell, title_container};
@@ -13,11 +17,6 @@ use crate::node::interface::p2p::style::{
 };
 use crate::node::message::NodeMessage;
 use crate::node::statistics::{NodeImpl, NodeStatistics};
-
-const CELL_HEIGHT: Length = Length::Fixed(35.0);
-const TABLE_HEADER_FONT_SIZE: u32 = 16;
-const TABLE_CELL_FONT_SIZE: u32 = 12;
-const TABLE_CELL_ICON_SIZE: u32 = 24;
 
 fn get_address_with_asn_tooltip<'a>(
     address: &'a str,
@@ -90,7 +89,7 @@ fn get_transport_with_tooltip<'a>(transport: &'a TransportProtocol) -> Element<'
     let (display_text, tooltip_text) = match transport {
         TransportProtocol::V1 => (
             "P2PV1",
-            "Network messages between\nyou and this peer are not encrypted",
+            "Network messages between you and\nthis peer are not encrypted",
         ),
         TransportProtocol::V2 => (
             "P2PV2",
@@ -167,8 +166,6 @@ pub fn view_p2p<'a>(
     let peer_info_title = container(text("PEERS").size(24));
 
     let mut peer_info_table = column![].spacing(0);
-
-    // Always add header row with all fields
     peer_info_table = peer_info_table.push(row![
         container(text("ADDRESS").size(TABLE_HEADER_FONT_SIZE))
             .padding(10)

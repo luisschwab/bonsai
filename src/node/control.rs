@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 use bdk_floresta::builder::FlorestaBuilder;
 use bdk_floresta::{ChainParams, FlorestaNode, UtreexoNodeConfig};
 use bdk_wallet::bitcoin::Network;
+use iced::widget::qr_code;
 use iced::{Element, Subscription, Task};
 use tokio::runtime::Handle;
 use tokio::sync::RwLock;
@@ -59,6 +60,7 @@ pub(crate) struct Node {
     pub(crate) peer_input: String,
     pub(crate) geoip_reader: Option<GeoIpReader>,
     pub(crate) animation_tick: usize,
+    pub(crate) accumulator_qr_data: Option<qr_code::Data>,
 }
 
 impl Node {
@@ -121,7 +123,7 @@ impl Node {
             }
             NodeMessage::Shutdown => {
                 self.status = NodeStatus::ShuttingDown;
-                self.subscription_active = false;
+                //self.subscription_active = false;
                 self.is_shutting_down = true;
                 self.start_time = None;
 
@@ -167,10 +169,14 @@ impl Node {
             }
             NodeMessage::Statistics(stats) => {
                 if !self.is_shutting_down {
-                    self.statistics = Some(stats);
-                    // Don't clear error status here
-                }
+                    // Update QR data when statistics update
+                    self.accumulator_qr_data = stats
+                        .accumulator_qr_data
+                        .as_ref()
+                        .and_then(|encoded| qr_code::Data::new(encoded).ok());
 
+                    self.statistics = Some(stats);
+                }
                 Task::none()
             }
             NodeMessage::Error(e) => {
@@ -350,11 +356,12 @@ impl Node {
         )
     }
 
-    pub(crate) fn view_blocks(&self) -> Element<'_, NodeMessage> {
-        unimplemented!()
+    pub(crate) fn view_utreexo(&self) -> Element<'_, NodeMessage> {
+        use crate::node::interface::utreexo::view;
+        view::view_utreexo(&self.statistics, &self.accumulator_qr_data)
     }
 
-    pub(crate) fn view_utreexo(&self) -> Element<'_, NodeMessage> {
+    pub(crate) fn view_blocks(&self) -> Element<'_, NodeMessage> {
         unimplemented!()
     }
 
