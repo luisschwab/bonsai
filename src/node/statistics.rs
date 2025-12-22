@@ -1,11 +1,14 @@
 use core::fmt::Display;
-
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use std::time::Instant;
 
+use bdk_floresta::ConnectionKind;
 use bdk_floresta::FlorestaNode;
+use bdk_floresta::PeerInfo;
+use bdk_floresta::PeerStatus;
+use bdk_floresta::TransportProtocol;
 use bdk_floresta::rustreexo::accumulator::stump::Stump;
-use bdk_floresta::{ConnectionKind, PeerInfo, PeerStatus, TransportProtocol};
 use iced::widget::qr_code;
 use regex::Regex;
 use tokio::sync::RwLock;

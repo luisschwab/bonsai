@@ -3,7 +3,8 @@ use iced::border::Radius;
 use iced::widget::container;
 
 use crate::common::interface::color::OFF_WHITE;
-use crate::common::interface::container::common::{BORDER_RADIUS, BORDER_WIDTH};
+use crate::common::interface::container::common::BORDER_RADIUS;
+use crate::common::interface::container::common::BORDER_WIDTH;
 
 pub(crate) const HEADER_HEIGHT: f32 = 90.0;
 pub(crate) const HEADER_PADDING: f32 = 10.0;

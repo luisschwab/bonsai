@@ -1,6 +1,7 @@
 use std::collections::VecDeque;
 use std::fmt::Write;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use std::sync::Mutex;
 
 use tracing::Subscriber;
 use tracing_subscriber::Layer;

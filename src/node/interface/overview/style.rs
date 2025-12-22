@@ -1,13 +1,20 @@
 use iced::Background::Color as BackgroundColor;
+use iced::Border;
+use iced::Theme;
 use iced::border::Radius;
 use iced::theme::palette::Pair;
 use iced::widget::button::Status as ButtonStatus;
 use iced::widget::button::Style as ButtonStyle;
 use iced::widget::container::Style as ContainerStyle;
-use iced::{Border, Theme};
 
-use crate::common::interface::color::{BLACK, GREEN, OFF_WHITE, ORANGE, RED};
-use crate::common::interface::container::common::{BORDER_RADIUS, BORDER_WIDTH, SHADOW};
+use crate::common::interface::color::BLACK;
+use crate::common::interface::color::GREEN;
+use crate::common::interface::color::OFF_WHITE;
+use crate::common::interface::color::ORANGE;
+use crate::common::interface::color::RED;
+use crate::common::interface::container::common::BORDER_RADIUS;
+use crate::common::interface::container::common::BORDER_WIDTH;
+use crate::common::interface::container::common::SHADOW;
 use crate::node::control::NodeStatus;
 
 /// Container for displaying logs through a `tracing_subscriber`.

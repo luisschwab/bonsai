@@ -4,45 +4,75 @@
 use core::fmt::Debug;
 
 use bdk_wallet::bitcoin::Network;
+use iced::Element;
+use iced::Length;
+use iced::Padding;
+use iced::Size;
+use iced::Subscription;
+use iced::Task;
+use iced::Theme;
 use iced::theme::Palette;
-use iced::widget::{Space, button, column, container, image, row, text};
+use iced::widget::Space;
+use iced::widget::button;
+use iced::widget::column;
+use iced::widget::container;
+use iced::widget::image;
+use iced::widget::row;
+use iced::widget::text;
 use iced::window;
+use iced::window::Icon;
+use iced::window::Level;
+use iced::window::Position;
+use iced::window::Settings;
 use iced::window::icon;
 use iced::window::settings::PlatformSpecific;
-use iced::window::{Icon, Level, Position, Settings};
-use iced::{Element, Length, Padding, Size, Subscription, Task, Theme};
 use tokio::runtime::Handle;
 
-use common::interface::color::{
-    BLUE, DARK_GREY, GREEN, OFF_WHITE, ORANGE, PURPLE, RED, WHITE, YELLOW,
-};
-use common::interface::container::content::{CONTENT_PADDING, CONTENT_SPACING, content_container};
-use common::interface::container::header::{HEADER_HEIGHT, HEADER_PADDING, header_container};
-use common::interface::container::sidebar::{
-    SIDEBAR_BUTTON_HEIGHT, SIDEBAR_BUTTON_SPACING, SIDEBAR_PADDING, SIDEBAR_WIDTH, sidebar_button,
-    sidebar_container,
-};
-use common::interface::container::window::WINDOW_PADDING;
-use common::interface::font::{BERKELEY_MONO_BOLD, BERKELEY_MONO_REGULAR};
-use common::logger::setup_logger;
-use common::util::format_thousands;
-
-use node::control::NETWORK;
-use node::control::{Node, NodeStatus};
-use node::control::{start_node, stop_node};
-use node::error::BonsaiNodeError;
-use node::message::NodeMessage;
-
-use wallet::ark::placeholder::{ArkWallet, ArkWalletMessage};
-use wallet::bdk::placeholder::{BDKWallet, BDKWalletMessage};
-use wallet::phoenixd::placeholder::{Phoenixd, PhoenixdMessage};
-
+use crate::common::interface::color::BLUE;
+use crate::common::interface::color::DARK_GREY;
+use crate::common::interface::color::GREEN;
+use crate::common::interface::color::OFF_WHITE;
+use crate::common::interface::color::ORANGE;
+use crate::common::interface::color::PURPLE;
+use crate::common::interface::color::RED;
+use crate::common::interface::color::WHITE;
+use crate::common::interface::color::YELLOW;
+use crate::common::interface::container::content::CONTENT_PADDING;
+use crate::common::interface::container::content::CONTENT_SPACING;
+use crate::common::interface::container::content::content_container;
+use crate::common::interface::container::header::HEADER_HEIGHT;
+use crate::common::interface::container::header::HEADER_PADDING;
+use crate::common::interface::container::header::header_container;
+use crate::common::interface::container::sidebar::SIDEBAR_BUTTON_HEIGHT;
+use crate::common::interface::container::sidebar::SIDEBAR_BUTTON_SPACING;
+use crate::common::interface::container::sidebar::SIDEBAR_PADDING;
+use crate::common::interface::container::sidebar::SIDEBAR_WIDTH;
+use crate::common::interface::container::sidebar::sidebar_button;
+use crate::common::interface::container::sidebar::sidebar_container;
+use crate::common::interface::container::window::WINDOW_PADDING;
+use crate::common::interface::font::BERKELEY_MONO_BOLD;
+use crate::common::interface::font::BERKELEY_MONO_REGULAR;
+use crate::common::logger::setup_logger;
+use crate::common::util::format_thousands;
+use crate::node::control::NETWORK;
+use crate::node::control::Node;
+use crate::node::control::NodeStatus;
+use crate::node::control::start_node;
+use crate::node::control::stop_node;
+use crate::node::error::BonsaiNodeError;
 use crate::node::geoip::GeoIpReader;
 use crate::node::interface::common::table_cell;
+use crate::node::message::NodeMessage;
+use crate::wallet::ark::placeholder::ArkWallet;
+use crate::wallet::ark::placeholder::ArkWalletMessage;
+use crate::wallet::bdk::placeholder::BDKWallet;
+use crate::wallet::bdk::placeholder::BDKWalletMessage;
+use crate::wallet::phoenixd::placeholder::Phoenixd;
+use crate::wallet::phoenixd::placeholder::PhoenixdMessage;
 
-mod common;
-mod node;
-mod wallet;
+pub(crate) mod common;
+pub(crate) mod node;
+pub(crate) mod wallet;
 
 const START_NODE_AUTO: bool = true;
 const APP_VERSION: &str = concat!("v", env!("CARGO_PKG_VERSION"));
@@ -305,7 +335,8 @@ impl Bonsai {
     }
 
     fn subscription(&self) -> Subscription<BonsaiMessage> {
-        use iced::event::{self, Event};
+        use iced::event::Event;
+        use iced::event::{self};
 
         let window_events = event::listen_with(|event, _status, _id| {
             if let Event::Window(window::Event::CloseRequested) = event {

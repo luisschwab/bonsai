@@ -1,15 +1,19 @@
 use core::fmt::Display;
-
 use std::net::SocketAddr;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use std::time::Instant;
 
+use bdk_floresta::ChainParams;
+use bdk_floresta::FlorestaNode;
+use bdk_floresta::UtreexoNodeConfig;
 use bdk_floresta::builder::FlorestaBuilder;
-use bdk_floresta::{ChainParams, FlorestaNode, UtreexoNodeConfig};
 use bdk_wallet::bitcoin::Network;
+use iced::Element;
+use iced::Subscription;
+use iced::Task;
 use iced::clipboard;
 use iced::widget::qr_code;
-use iced::{Element, Subscription, Task};
 use tokio::runtime::Handle;
 use tokio::sync::RwLock;
 use tracing::error;

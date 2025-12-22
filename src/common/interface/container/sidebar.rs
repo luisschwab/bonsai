@@ -1,12 +1,19 @@
+use iced::Border;
+use iced::Color;
+use iced::Shadow;
+use iced::Theme;
 use iced::border::Radius;
 use iced::widget::button::Status as ButtonStatus;
-use iced::widget::button::Status::{Active, Disabled, Hovered, Pressed};
+use iced::widget::button::Status::Active;
+use iced::widget::button::Status::Disabled;
+use iced::widget::button::Status::Hovered;
+use iced::widget::button::Status::Pressed;
 use iced::widget::button::Style as ButtonStyle;
 use iced::widget::container::Style as ContainerStyle;
-use iced::{Border, Color, Shadow, Theme};
 
 use crate::common::interface::color::OFF_WHITE;
-use crate::common::interface::container::common::{BORDER_RADIUS, BORDER_WIDTH};
+use crate::common::interface::container::common::BORDER_RADIUS;
+use crate::common::interface::container::common::BORDER_WIDTH;
 
 pub(crate) const SIDEBAR_WIDTH: f32 = 200.0;
 pub(crate) const SIDEBAR_PADDING: f32 = 10.0;

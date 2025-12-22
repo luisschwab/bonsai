@@ -1,5 +1,4 @@
 use core::fmt::Display;
-
 use std::time::Duration;
 
 /// Format a [`Duration`] to HH:MM:SS.

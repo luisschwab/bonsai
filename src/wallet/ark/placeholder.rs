@@ -1,5 +1,6 @@
 use iced::Element;
-use iced::widget::{column, text};
+use iced::widget::column;
+use iced::widget::text;
 
 #[derive(Default)]
 pub struct ArkWallet {}

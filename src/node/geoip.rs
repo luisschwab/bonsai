@@ -1,12 +1,12 @@
 use core::fmt::Display;
-
 use std::net::IpAddr;
 use std::sync::Arc;
 
 use maxminddb::Reader;
 use maxminddb::geoip2;
 use memmap2::Mmap;
-use tracing::{error, info};
+use tracing::error;
+use tracing::info;
 
 /// A [`Reader`] to GeoIP ASN and City databases.
 pub struct GeoIpReader {

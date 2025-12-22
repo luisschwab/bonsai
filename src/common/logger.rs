@@ -5,7 +5,8 @@ use tracing_subscriber::util::SubscriberInitExt;
 
 use crate::node::control::DATA_DIR;
 use crate::node::control::NETWORK;
-use crate::node::log_capture::{LogCapture, LogCaptureLayer};
+use crate::node::log_capture::LogCapture;
+use crate::node::log_capture::LogCaptureLayer;
 
 pub(crate) fn setup_logger() -> LogCapture {
     // Create the data directory, if needed.

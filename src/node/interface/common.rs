@@ -1,10 +1,14 @@
+use iced::Border;
+use iced::Padding;
+use iced::Theme;
 use iced::border::Radius;
 use iced::widget::container::Style as ContainerStyle;
 use iced::widget::text_input::Style as TextInputStyle;
-use iced::{Border, Padding, Theme};
 
 use crate::common::interface::color::OFF_WHITE;
-use crate::common::interface::container::common::{BORDER_RADIUS, BORDER_WIDTH, SHADOW};
+use crate::common::interface::container::common::BORDER_RADIUS;
+use crate::common::interface::container::common::BORDER_WIDTH;
+use crate::common::interface::container::common::SHADOW;
 
 pub const TITLE_PADDING: Padding = Padding {
     top: 5.0,

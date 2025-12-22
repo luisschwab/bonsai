@@ -1,12 +1,25 @@
 use bdk_floresta::rustreexo::accumulator::stump::Stump;
-use iced::widget::{Container, Space, button, column, container, qr_code, row, text, tooltip};
-use iced::{Alignment, Element, Length, Padding};
+use iced::Alignment;
+use iced::Element;
+use iced::Length;
+use iced::Padding;
+use iced::widget::Container;
+use iced::widget::Space;
+use iced::widget::button;
+use iced::widget::column;
+use iced::widget::container;
+use iced::widget::qr_code;
+use iced::widget::row;
+use iced::widget::text;
+use iced::widget::tooltip;
 
 use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::container::common::CELL_HEIGHT;
 use crate::common::interface::container::content::button_container;
 use crate::common::util::format_thousands;
-use crate::node::interface::common::{TITLE_PADDING, table_cell, title_container};
+use crate::node::interface::common::TITLE_PADDING;
+use crate::node::interface::common::table_cell;
+use crate::node::interface::common::title_container;
 use crate::node::interface::p2p::style::peer_info_table_container;
 use crate::node::interface::utreexo::style::ROOT_CELL_HEIGHT;
 use crate::node::message::NodeMessage;

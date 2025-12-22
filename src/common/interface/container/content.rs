@@ -1,12 +1,14 @@
+use iced::Border;
+use iced::Theme;
 use iced::border::Radius;
 use iced::widget::button::Status as ButtonStatus;
 use iced::widget::button::Style as ButtonStyle;
 use iced::widget::container::Style as ContainerStyle;
-use iced::{Border, Theme};
 
 use crate::common::interface::color::OFF_WHITE;
+use crate::common::interface::container::common::BORDER_RADIUS;
+use crate::common::interface::container::common::BORDER_WIDTH;
 use crate::common::interface::container::common::SHADOW;
-use crate::common::interface::container::common::{BORDER_RADIUS, BORDER_WIDTH};
 
 pub(crate) const CONTENT_PADDING: f32 = 10.0;
 pub(crate) const CONTENT_SPACING: f32 = 8.0;

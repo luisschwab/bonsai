@@ -1,22 +1,38 @@
 use std::net::IpAddr;
 
 use bdk_floresta::TransportProtocol;
-use iced::widget::{Container, button, column, container, image, row, text, text_input, tooltip};
-use iced::{Element, Length, Padding};
+use iced::Element;
+use iced::Length;
+use iced::Padding;
+use iced::widget::Container;
+use iced::widget::button;
+use iced::widget::column;
+use iced::widget::container;
+use iced::widget::image;
+use iced::widget::row;
+use iced::widget::text;
+use iced::widget::text_input;
+use iced::widget::tooltip;
 
 use crate::common::interface::color::BLACK;
-use crate::common::interface::container::common::{
-    BORDER_RADIUS, BORDER_WIDTH, CELL_HEIGHT, TABLE_CELL_FONT_SIZE, TABLE_CELL_ICON_SIZE,
-    TABLE_HEADER_FONT_SIZE,
-};
+use crate::common::interface::container::common::BORDER_RADIUS;
+use crate::common::interface::container::common::BORDER_WIDTH;
+use crate::common::interface::container::common::CELL_HEIGHT;
+use crate::common::interface::container::common::TABLE_CELL_FONT_SIZE;
+use crate::common::interface::container::common::TABLE_CELL_ICON_SIZE;
+use crate::common::interface::container::common::TABLE_HEADER_FONT_SIZE;
 use crate::node::control::NodeStatus;
 use crate::node::geoip::GeoIpReader;
-use crate::node::interface::common::{TITLE_PADDING, input_field, table_cell, title_container};
-use crate::node::interface::p2p::style::{
-    ban_button, disconnect_button, peer_info_table_container,
-};
+use crate::node::interface::common::TITLE_PADDING;
+use crate::node::interface::common::input_field;
+use crate::node::interface::common::table_cell;
+use crate::node::interface::common::title_container;
+use crate::node::interface::p2p::style::ban_button;
+use crate::node::interface::p2p::style::disconnect_button;
+use crate::node::interface::p2p::style::peer_info_table_container;
 use crate::node::message::NodeMessage;
-use crate::node::statistics::{NodeImpl, NodeStatistics};
+use crate::node::statistics::NodeImpl;
+use crate::node::statistics::NodeStatistics;
 
 fn get_address_with_asn_tooltip<'a>(
     address: &'a str,
