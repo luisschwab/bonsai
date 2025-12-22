@@ -1,3 +1,4 @@
+// TODO: remove me after node stuff is done
 #![allow(unused)]
 
 use core::fmt::Debug;
@@ -43,21 +44,10 @@ mod common;
 mod node;
 mod wallet;
 
-const START_NODE_AUTO: bool = false;
+const START_NODE_AUTO: bool = true;
 const APP_VERSION: &str = concat!("v", env!("CARGO_PKG_VERSION"));
 const GEOIP_ASN_DB: &str = "./assets/geoip/GeoLite2-ASN.mmdb";
 const GEOIP_CITY_DB: &str = "./assets/geoip/GeoLite2-City.mmdb";
-
-#[derive(Debug, Clone)]
-pub(crate) enum BonsaiMessage {
-    SelectTab(Tab),
-    CloseRequested,
-    CloseWindow,
-    BdkWallet(BDKWalletMessage),
-    Phoenixd(PhoenixdMessage),
-    ArkWallet(ArkWalletMessage),
-    Node(NodeMessage),
-}
 
 #[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Tab {
@@ -72,6 +62,17 @@ pub(crate) enum Tab {
     NodeMempool,
     NodeSettings,
     About,
+}
+
+#[derive(Debug, Clone)]
+pub(crate) enum BonsaiMessage {
+    SelectTab(Tab),
+    CloseRequested,
+    CloseWindow,
+    BdkWallet(BDKWalletMessage),
+    Phoenixd(PhoenixdMessage),
+    ArkWallet(ArkWalletMessage),
+    Node(NodeMessage),
 }
 
 #[derive(Default)]
@@ -116,7 +117,8 @@ impl Bonsai {
                                 .spacing(10)
                                 .align_y(iced::Alignment::Center),
                                 Space::new().height(Length::Fill),
-                                text("UTREEXO-AWARE BITCOIN\nWALLET WITH EMBEDDED NODE").size(12)
+                                text("UTREEXO-AWARE BITCOIN\nWALLET WITH AN EMBEDDED NODE")
+                                    .size(12)
                             ]
                             .spacing(-1.5)
                             .height(Length::Fill),
@@ -348,9 +350,9 @@ fn main() -> iced::Result {
 
     // Define some window [`Settings`].
     let window_settings: Settings = Settings {
-        size: Size::new(1200.0, 800.0),
+        size: Size::new(1200.0, 850.0),
         position: Position::Default,
-        min_size: Some(Size::new(1200.0, 800.0)),
+        min_size: Some(Size::new(1200.0, 850.0)),
         max_size: None,
         visible: true,
         resizable: true,

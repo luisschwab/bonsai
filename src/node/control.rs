@@ -303,6 +303,15 @@ impl Node {
                 // TODO add success notification
                 Task::none()
             }
+            NodeMessage::CopyAccumulatorData => {
+                if let Some(stats) = &self.statistics
+                    && let Some(data) = &stats.accumulator_qr_data
+                {
+                    return clipboard::write(data.clone());
+                }
+
+                Task::none()
+            }
         }
     }
 

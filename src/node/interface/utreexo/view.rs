@@ -1,18 +1,16 @@
 use bdk_floresta::rustreexo::accumulator::stump::Stump;
-use iced::widget::{Container, column, container, qr_code, row, text};
+use iced::widget::{Container, Space, button, column, container, qr_code, row, text, tooltip};
 use iced::{Alignment, Element, Length, Padding};
 
+use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::container::common::CELL_HEIGHT;
+use crate::common::interface::container::content::button_container;
 use crate::common::util::format_thousands;
 use crate::node::interface::common::{TITLE_PADDING, table_cell, title_container};
 use crate::node::interface::p2p::style::peer_info_table_container;
+use crate::node::interface::utreexo::style::ROOT_CELL_HEIGHT;
 use crate::node::message::NodeMessage;
 use crate::node::statistics::NodeStatistics;
-
-fn encode_stump(stump: &Stump) -> String {
-    // TODO: Implement proper stump encoding
-    format!("{:?}", stump)
-}
 
 pub fn view_utreexo<'a>(
     statistics: &'a Option<NodeStatistics>,
@@ -30,11 +28,10 @@ pub fn view_utreexo<'a>(
 
     let roots = statistics.as_ref().map(|s| s.accumulator.roots.clone());
     let num_roots = roots.clone().unwrap_or_default().len();
-    // 32B per root
     let size_roots = format!("{} BYTES", 32 * num_roots);
 
     // Left: Statistics Table
-    let accumulator_title = container(text("ACCUMULATOR").size(24));
+    let accumulator_title = container(text("ACCUMULATOR STATS").size(24));
     let accumulator_table = container(
         column![
             row![
@@ -67,13 +64,40 @@ pub fn view_utreexo<'a>(
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
             ],
+            row![
+                container(text("CACHE SIZE").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+                container(text("TODO").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+            ],
         ]
         .spacing(0),
     )
     .style(title_container());
     let accumulator = container(column![accumulator_title, accumulator_table]);
 
-    let qr_title = container(text("QR CODE").size(24));
+    let qr_title = container(
+        row![
+            tooltip(
+                text("ACCUMULATOR EXPORT").size(24),
+                text("You can use this QR code to export the validation done\non this device to trustlessly skip IBD on another device").size(12),
+                tooltip::Position::FollowCursor
+            )
+            .style(container::rounded_box),
+            Space::new().width(Length::Fill),
+            button(text("COPY").size(16))
+                .on_press(NodeMessage::CopyAccumulatorData)
+                .style(button_container())
+                .padding(2)
+        ]
+        .spacing(10)
+        .align_y(iced::alignment::Vertical::Center)
+    );
+
     let qr_code = if let Some(data) = qr_data {
         container(qr_code(data).cell_size(4).total_size(350))
             .padding(0)
@@ -83,7 +107,7 @@ pub fn view_utreexo<'a>(
             .center_y(Length::Fill)
             .style(title_container())
     } else {
-        container(text("No QR data available").size(14))
+        container(text("accumulator data unavailable").size(16))
             .padding(0)
             .width(Length::Fill)
             .height(Length::Fill)
@@ -91,34 +115,103 @@ pub fn view_utreexo<'a>(
             .center_y(Length::Fill)
             .style(title_container())
     };
-    let qr = container(column![qr_title, qr_code]);
+    let qr = container(column![qr_title, qr_code].spacing(5));
 
     let left = column![title, accumulator, qr]
         .spacing(20)
-        .width(Length::Fixed(440.0));
+        .width(Length::Fixed(420.0));
 
     let roots_title: Container<'_, NodeMessage> = container(text("ROOTS").size(24));
-    let mut roots_table = column![].spacing(0);
-    if let Some(roots) = roots.as_deref() {
-        for root in roots {
-            roots_table = roots_table.push(row![
-                container(text(hex::encode(**root)).size(12))
-                    .padding(11)
-                    .height(CELL_HEIGHT)
-                    .style(table_cell())
-            ]);
-        }
+    let mut roots_table = column![row![
+        container(text("IDX").size(14))
+            .padding(10)
+            .width(Length::FillPortion(1))
+            .style(table_cell()),
+        container(text("ROOT").size(14))
+            .padding(10)
+            .width(Length::FillPortion(4))
+            .style(table_cell()),
+        container(text("IDX").size(14))
+            .padding(10)
+            .width(Length::FillPortion(1))
+            .style(table_cell()),
+        container(text("ROOT").size(14))
+            .padding(10)
+            .width(Length::FillPortion(4))
+            .style(table_cell()),
+    ]]
+    .spacing(0);
+
+    let roots = roots.as_deref().unwrap_or(&[]);
+    for i in 0..16 {
+        let left_idx = i;
+        let right_idx = i + 16;
+
+        let left_idx_cell = container(text(format!("{:02}", left_idx)).size(14))
+            .padding(10)
+            .height(ROOT_CELL_HEIGHT)
+            .width(Length::FillPortion(1))
+            .style(table_cell());
+
+        let left_root_cell = if let Some(root) = roots.get(left_idx) {
+            let root_hex = hex::encode(**root);
+            let root_hex_split = format!("{}\n{}", &root_hex[..32], &root_hex[32..]);
+
+            container(text(root_hex_split).size(10))
+                .align_y(iced::alignment::Vertical::Center)
+                .align_x(iced::alignment::Horizontal::Center)
+                .height(ROOT_CELL_HEIGHT)
+                .width(Length::FillPortion(4))
+                .style(table_cell())
+        } else {
+            container(text("NULL").size(12).color(OFF_WHITE.scale_alpha(0.5)))
+                .align_y(iced::alignment::Vertical::Center)
+                .align_x(iced::alignment::Horizontal::Center)
+                .height(ROOT_CELL_HEIGHT)
+                .width(Length::FillPortion(4))
+                .style(table_cell())
+        };
+
+        let right_idx_cell = container(text(format!("{:02}", right_idx)).size(14))
+            .padding(10)
+            .height(ROOT_CELL_HEIGHT)
+            .width(Length::FillPortion(1))
+            .style(table_cell());
+
+        let right_root_cell = if let Some(root) = roots.get(right_idx) {
+            let root_hex = hex::encode(**root);
+            let root_hex_split = format!("{}\n{}", &root_hex[..32], &root_hex[32..]);
+
+            container(text(root_hex_split).size(10))
+                .align_y(iced::alignment::Vertical::Center)
+                .align_x(iced::alignment::Horizontal::Center)
+                .height(ROOT_CELL_HEIGHT)
+                .width(Length::FillPortion(4))
+                .style(table_cell())
+        } else {
+            container(text("NULL").size(12).color(OFF_WHITE.scale_alpha(0.5)))
+                .align_y(iced::alignment::Vertical::Center)
+                .align_x(iced::alignment::Horizontal::Center)
+                .height(ROOT_CELL_HEIGHT)
+                .width(Length::FillPortion(4))
+                .style(table_cell())
+        };
+
+        roots_table = roots_table.push(row![
+            left_idx_cell,
+            left_root_cell,
+            right_idx_cell,
+            right_root_cell,
+        ]);
     }
+
     let roots = container(column![
         roots_title,
         container(roots_table).style(peer_info_table_container())
     ])
     .width(Length::Fill);
 
-    let right = column![roots]
-        .padding(Padding::from([30, 0]))
-        .spacing(20)
-        .width(Length::Fill);
+    let right = column![roots].spacing(20).width(Length::Fill);
 
     row![left, right].spacing(20).into()
 }

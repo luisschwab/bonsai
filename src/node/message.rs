@@ -25,6 +25,7 @@ pub(crate) enum NodeMessage {
     PeerConnected(String),
     DisconnectPeer(String),
     PeerDisconnected(String),
+    CopyAccumulatorData,
     Error(BonsaiNodeError),
 }
 
@@ -45,7 +46,8 @@ impl Debug for NodeMessage {
             Self::AddPeer => write!(f, "AddPeer"),
             Self::PeerConnected(peer) => write!(f, "PeerConnected({peer})"),
             Self::DisconnectPeer(peer) => write!(f, "RemovePeer({peer})"),
-            Self::PeerDisconnected(peer) => writeln!(f, "PeerRemoved({peer})"),
+            Self::PeerDisconnected(peer) => write!(f, "PeerRemoved({peer})"),
+            Self::CopyAccumulatorData => write!(f, "CopyAccumulatorData"),
             Self::Error(_) => write!(f, "Node Error"),
         }
     }
