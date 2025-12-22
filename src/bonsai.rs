@@ -3,7 +3,7 @@
 
 use core::fmt::Debug;
 
-use bdk_wallet::bitcoin::Network;
+use bitcoin::Network;
 use iced::Element;
 use iced::Length;
 use iced::Padding;

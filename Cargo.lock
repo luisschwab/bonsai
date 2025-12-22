@@ -712,6 +712,7 @@ version = "0.1.0"
 dependencies = [
  "bdk_floresta",
  "bdk_wallet",
+ "bitcoin",
  "chrono",
  "hex",
  "iced",

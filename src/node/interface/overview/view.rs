@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use bdk_wallet::bitcoin::Network;
+use bitcoin::Network;
 use iced::Element;
 use iced::Length;
 use iced::Length::Fill;

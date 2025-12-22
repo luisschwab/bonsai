@@ -8,7 +8,7 @@ use bdk_floresta::ChainParams;
 use bdk_floresta::FlorestaNode;
 use bdk_floresta::UtreexoNodeConfig;
 use bdk_floresta::builder::FlorestaBuilder;
-use bdk_wallet::bitcoin::Network;
+use bitcoin::Network;
 use iced::Element;
 use iced::Subscription;
 use iced::Task;
