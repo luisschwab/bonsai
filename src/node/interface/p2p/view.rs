@@ -93,7 +93,7 @@ fn get_transport_with_tooltip<'a>(transport: &'a TransportProtocol) -> Element<'
         ),
         TransportProtocol::V2 => (
             "P2PV2",
-            "Network messages between you and this peer\nare authenticated and encrypted\nusing ChaCha20Poly1305, per BIP324",
+            "Network messages between you and this\npeer are encrypted using ChaCha20Poly1305",
         ),
     };
 
@@ -167,7 +167,7 @@ pub fn view_p2p<'a>(
 
     let mut peer_info_table = column![].spacing(0);
     peer_info_table = peer_info_table.push(row![
-        container(text("ADDRESS").size(TABLE_HEADER_FONT_SIZE))
+        container(text("SOCKET").size(TABLE_HEADER_FONT_SIZE))
             .padding(10)
             .width(Length::FillPortion(2))
             .style(table_cell()),

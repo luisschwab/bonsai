@@ -184,11 +184,11 @@ pub(crate) fn view_overview<'a>(
                     .style(table_cell()),
             ],
             row![
-                container(text("PROGRESS").size(14))
+                container(text("BLOCKS").size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
-                container(text(format!("{:.2}%", progress)).size(14))
+                container(text(format_thousands(blocks)).size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
@@ -204,11 +204,11 @@ pub(crate) fn view_overview<'a>(
                     .style(table_cell()),
             ],
             row![
-                container(text("BLOCKS").size(14))
+                container(text("PROGRESS").size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
-                container(text(format_thousands(blocks)).size(14))
+                container(text(format!("{:.2}%", progress)).size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),

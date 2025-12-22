@@ -7,6 +7,7 @@ use std::time::{Duration, Instant};
 use bdk_floresta::builder::FlorestaBuilder;
 use bdk_floresta::{ChainParams, FlorestaNode, UtreexoNodeConfig};
 use bdk_wallet::bitcoin::Network;
+use iced::clipboard;
 use iced::widget::qr_code;
 use iced::{Element, Subscription, Task};
 use tokio::runtime::Handle;
