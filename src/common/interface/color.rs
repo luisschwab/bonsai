@@ -1,6 +1,27 @@
 #![allow(unused)]
 
+use std::f32::consts::PI;
+
+use bitcoin::Network;
 use iced::Color;
+
+/// Get the corresponding [`Color`] to a [`Network`];
+pub(crate) fn network_color(network: Network) -> Color {
+    match network {
+        Network::Bitcoin => ORANGE,
+        Network::Signet => PURPLE,
+        Network::Testnet | Network::Testnet4 => BLUE,
+        Network::Regtest => OFF_WHITE,
+    }
+}
+
+/// Pulse a [`Color`] in a sinusoidal manner according to a timer;
+pub(crate) fn pulse_color(base_color: Color, animation_tick: usize) -> Color {
+    let time = (animation_tick as f32) * 32.0;
+    let pulse = ((time / 1000.0) * PI * 2.0).sin();
+    let alpha = 0.7 + ((pulse + 1.0) / 2.0) * 0.3;
+    base_color.scale_alpha(alpha)
+}
 
 /// Light Grey.
 pub(crate) const LIGHT_GREY: Color = Color::from_rgb(

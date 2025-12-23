@@ -5,6 +5,7 @@ use iced::border::Radius;
 use iced::widget::container::Style as ContainerStyle;
 use iced::widget::text_input::Style as TextInputStyle;
 
+use crate::common::interface::color::BLACK;
 use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::container::common::BORDER_RADIUS;
 use crate::common::interface::container::common::BORDER_WIDTH;
@@ -55,6 +56,6 @@ pub(crate) fn input_field() -> impl Fn(&Theme, iced::widget::text_input::Status)
         icon: OFF_WHITE,
         placeholder: OFF_WHITE.scale_alpha(0.5),
         value: OFF_WHITE,
-        selection: OFF_WHITE,
+        selection: BLACK,
     }
 }

@@ -19,6 +19,7 @@ use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::color::ORANGE;
 use crate::common::interface::color::PURPLE;
 use crate::common::interface::color::RED;
+use crate::common::interface::color::network_color;
 use crate::common::util::format_duration;
 use crate::common::util::format_thousands;
 use crate::node::control::NETWORK;
@@ -32,9 +33,10 @@ use crate::node::interface::overview::style::log_container;
 use crate::node::log_capture::LogCapture;
 use crate::node::message::NodeMessage;
 use crate::node::statistics::NodeStatistics;
+use crate::pulse_color;
 
-/// Calculate IBD progress from
-fn calculate_progress(headers: u32, blocks: u32) -> f64 {
+/// Calculate IBD progress from blocks and headers.
+fn calculate_progress(blocks: u32, headers: u32) -> f64 {
     if headers > 0 {
         (blocks as f64 / headers as f64) * 100.0
     } else {
@@ -56,9 +58,10 @@ fn control_button_with_disable_logic<'a>(
     // Determine whether the button should be enabled.
     #[allow(clippy::match_like_matches_macro)]
     let should_enable = match (node_status, action_type) {
-        (NodeStatus::Inactive | NodeStatus::Failed(_), ControlButton::Start) => true,
         (NodeStatus::Running, ControlButton::Restart) => true,
         (NodeStatus::Running, ControlButton::Shutdown) => true,
+        (NodeStatus::Inactive, ControlButton::Start) => true,
+        (NodeStatus::Failed(_), ControlButton::Start) => true,
         _ => false,
     };
 
@@ -114,7 +117,7 @@ pub(crate) fn view_overview<'a>(
     let in_ibd = statistics.as_ref().map(|s| s.in_ibd).unwrap_or(true);
     let headers = statistics.as_ref().map(|s| s.headers).unwrap_or(0);
     let blocks = statistics.as_ref().map(|s| s.blocks).unwrap_or(0);
-    let progress = calculate_progress(headers, blocks);
+    let progress = calculate_progress(blocks, headers);
     let user_agent = statistics
         .as_ref()
         .map(|s| s.user_agent.clone())
@@ -128,41 +131,13 @@ pub(crate) fn view_overview<'a>(
         .map(|stats| format_duration(stats.uptime))
         .unwrap_or("00h 00m 00s".to_string());
 
+    let network_color = network_color(NETWORK);
     let status_color = match node_status {
-        NodeStatus::Starting => {
-            // Pulse with sine wave
-            let time = (animation_tick as f32) * 32.0;
-
-            // Pulse with 1 second period (1000ms)
-            let pulse = ((time / 1000.0) * std::f32::consts::PI * 2.0).sin();
-
-            // Map sine wave (-1 to 1) to alpha range (0.7 to 1.0)
-            let alpha = 0.7 + ((pulse + 1.0) / 2.0) * 0.7;
-
-            GREEN.scale_alpha(alpha)
-        }
+        NodeStatus::Starting => pulse_color(GREEN, animation_tick),
         NodeStatus::Running => GREEN,
         NodeStatus::Inactive => OFF_WHITE,
         NodeStatus::Failed(_) => RED,
-        NodeStatus::ShuttingDown => {
-            // Pulse with sine wave
-            let time = (animation_tick as f32) * 32.0;
-
-            // Pulse with 1 second period (1000ms)
-            let pulse = ((time / 1000.0) * std::f32::consts::PI * 2.0).sin();
-
-            // Map sine wave (-1 to 1) to alpha range (0.7 to 1.0)
-            let alpha = 0.7 + ((pulse + 1.0) / 2.0) * 0.7;
-
-            RED.scale_alpha(alpha)
-        }
-    };
-
-    let network_color = match NETWORK {
-        Network::Bitcoin => ORANGE,
-        Network::Signet => PURPLE,
-        Network::Testnet | Network::Testnet4 => BLUE,
-        Network::Regtest => OFF_WHITE,
+        NodeStatus::ShuttingDown => pulse_color(RED, animation_tick),
     };
 
     let metrics_title = container(text("METRICS").size(24));

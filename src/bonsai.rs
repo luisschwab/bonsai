@@ -5,13 +5,16 @@ use core::fmt::Debug;
 
 use bitcoin::Network;
 use iced::Element;
+use iced::Event;
 use iced::Length;
 use iced::Padding;
 use iced::Size;
 use iced::Subscription;
 use iced::Task;
 use iced::Theme;
+use iced::event;
 use iced::theme::Palette;
+use iced::time;
 use iced::widget::Space;
 use iced::widget::button;
 use iced::widget::column;
@@ -37,6 +40,8 @@ use crate::common::interface::color::PURPLE;
 use crate::common::interface::color::RED;
 use crate::common::interface::color::WHITE;
 use crate::common::interface::color::YELLOW;
+use crate::common::interface::color::network_color;
+use crate::common::interface::color::pulse_color;
 use crate::common::interface::container::content::CONTENT_PADDING;
 use crate::common::interface::container::content::CONTENT_SPACING;
 use crate::common::interface::container::content::content_container;
@@ -103,11 +108,13 @@ pub(crate) enum BonsaiMessage {
     Phoenixd(PhoenixdMessage),
     ArkWallet(ArkWalletMessage),
     Node(NodeMessage),
+    AnimationTick,
 }
 
 #[derive(Default)]
 pub(crate) struct Bonsai {
     pub(crate) active_tab: Tab,
+    pub(crate) animation_tick: usize,
     pub(crate) node: Node,
     pub(crate) onchain_wallet: BDKWallet,
     pub(crate) lightning_wallet: Phoenixd,
@@ -118,17 +125,14 @@ impl Bonsai {
     fn view(&self) -> Element<'_, BonsaiMessage> {
         let node_status = &self.node.status;
         let status_color = match node_status {
-            NodeStatus::Starting | NodeStatus::Running => GREEN,
+            NodeStatus::Starting => pulse_color(GREEN, self.animation_tick),
+            NodeStatus::Running => GREEN,
             NodeStatus::Inactive => OFF_WHITE,
-            NodeStatus::ShuttingDown | NodeStatus::Failed(_) => RED,
+            NodeStatus::ShuttingDown => pulse_color(RED, self.animation_tick),
+            NodeStatus::Failed(_) => RED,
         };
         let blocks = self.node.statistics.as_ref().map(|s| s.blocks).unwrap_or(0);
-        let network_color = match NETWORK {
-            Network::Bitcoin => ORANGE,
-            Network::Signet => PURPLE,
-            Network::Testnet | Network::Testnet4 => BLUE,
-            Network::Regtest => OFF_WHITE,
-        };
+        let network_color = network_color(NETWORK);
 
         let header = container(
             container(
@@ -269,7 +273,10 @@ impl Bonsai {
             | Tab::NodeBlocks
             | Tab::NodeUtreexo
             | Tab::NodeMempool
-            | Tab::NodeSettings => self.node.view_tab(self.active_tab).map(BonsaiMessage::Node),
+            | Tab::NodeSettings => self
+                .node
+                .view_tab(self.active_tab, self.animation_tick)
+                .map(BonsaiMessage::Node),
             Tab::About => unimplemented!(),
         };
 
@@ -299,6 +306,10 @@ impl Bonsai {
         match message {
             BonsaiMessage::SelectTab(tab) => {
                 self.active_tab = tab;
+                Task::none()
+            }
+            BonsaiMessage::AnimationTick => {
+                self.animation_tick = self.animation_tick.wrapping_add(1);
                 Task::none()
             }
             BonsaiMessage::BdkWallet(msg) => {
@@ -335,8 +346,8 @@ impl Bonsai {
     }
 
     fn subscription(&self) -> Subscription<BonsaiMessage> {
-        use iced::event::Event;
-        use iced::event::{self};
+        let animation_timer =
+            time::every(std::time::Duration::from_millis(32)).map(|_| BonsaiMessage::AnimationTick);
 
         let window_events = event::listen_with(|event, _status, _id| {
             if let Event::Window(window::Event::CloseRequested) = event {
@@ -357,7 +368,7 @@ impl Bonsai {
             Tab::About => unimplemented!(),
         };
 
-        Subscription::batch([window_events, tab_subscription])
+        Subscription::batch([animation_timer, window_events, tab_subscription])
     }
 }
 
@@ -404,6 +415,7 @@ fn main() -> iced::Result {
         move || {
             let bonsai = Bonsai {
                 active_tab: Tab::default(),
+                animation_tick: usize::default(),
                 node: Node {
                     log_capture: log_capture.clone(),
                     geoip_reader: GeoIpReader::new(GEOIP_ASN_DB, GEOIP_CITY_DB).ok(),
