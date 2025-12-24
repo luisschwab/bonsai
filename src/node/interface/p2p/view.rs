@@ -1,8 +1,10 @@
 use std::net::SocketAddr;
 
 use bdk_floresta::TransportProtocol;
+use bitcoin::p2p::ServiceFlags;
 use iced::Element;
 use iced::Length;
+use iced::Padding;
 use iced::widget::Container;
 use iced::widget::button;
 use iced::widget::column;
@@ -112,6 +114,55 @@ fn get_transport_with_tooltip<'a>(transport: &'a TransportProtocol) -> Element<'
     .into()
 }
 
+fn get_services_with_tooltip<'a>(services: &'a ServiceFlags) -> Element<'a, NodeMessage> {
+    let services_hex = format!("0x{:016x}", services.to_u64());
+
+    const ALL_FLAGS: &[(ServiceFlags, &str, u8)] = &[
+        (ServiceFlags::NETWORK, "NETWORK", 0),
+        (ServiceFlags::GETUTXO, "GETUTXO", 1),
+        (ServiceFlags::BLOOM, "BLOOM", 2),
+        (ServiceFlags::WITNESS, "WITNESS", 3),
+        (ServiceFlags::COMPACT_FILTERS, "COMPACT_FILTERS", 6),
+        (ServiceFlags::NETWORK_LIMITED, "NETWORK_LIMITED", 10),
+        (ServiceFlags::P2P_V2, "P2P_V2", 11),
+    ];
+
+    let mut service_strings: Vec<String> = ALL_FLAGS
+        .iter()
+        .filter(|(flag, _, _)| services.has(*flag))
+        .map(|(_, name, bit)| format!("{} (1 << {})", name, bit))
+        .collect();
+
+    // Check for non-spec flags manually
+    const NODE_UTREEXO: u64 = 1 << 24;
+    const NODE_UTREEXO_ARCHIVE: u64 = 1 << 25;
+
+    if services.to_u64() & NODE_UTREEXO != 0 {
+        service_strings.push("NODE_UTREEXO (1 << 24)".to_string());
+    }
+    if services.to_u64() & NODE_UTREEXO_ARCHIVE != 0 {
+        service_strings.push("NODE_UTREEXO_ARCHIVE (1 << 25)".to_string());
+    }
+
+    let services_text = if service_strings.is_empty() {
+        "NONE".to_string()
+    } else {
+        service_strings.join("\n")
+    };
+
+    container(
+        tooltip(
+            text(services_hex).size(TABLE_CELL_FONT_SIZE - 4),
+            text(services_text),
+            tooltip::Position::FollowCursor,
+        )
+        .style(container::rounded_box),
+    )
+    .align_x(iced::alignment::Horizontal::Left)
+    .align_y(iced::alignment::Vertical::Center)
+    .into()
+}
+
 pub fn view_p2p<'a>(
     _status: &'a NodeStatus,
     statistics: &'a Option<NodeStatistics>,
@@ -171,25 +222,49 @@ pub fn view_p2p<'a>(
     // Peer Info.
     let peer_info_title = container(text("PEERS").size(24));
 
+    const LEFT_PADDING: Padding = Padding {
+        top: 0.0,
+        right: 0.0,
+        bottom: 0.0,
+        left: 10.0,
+    };
+
     let mut peer_info_table = column![].spacing(0);
     peer_info_table = peer_info_table.push(row![
         container(text("SOCKET").size(TABLE_HEADER_FONT_SIZE))
-            .padding(10)
-            .width(Length::FillPortion(2))
+            .width(Length::FillPortion(16))
+            .height(CELL_HEIGHT)
+            .padding(LEFT_PADDING)
+            .align_x(iced::alignment::Horizontal::Left)
+            .align_y(iced::alignment::Vertical::Center)
             .style(table_cell()),
         container(text("IMPLEMENTATION").size(TABLE_HEADER_FONT_SIZE))
-            .padding(10)
-            .width(Length::FillPortion(2))
+            .width(Length::FillPortion(16))
+            .height(CELL_HEIGHT)
+            .padding(LEFT_PADDING)
+            .align_x(iced::alignment::Horizontal::Left)
+            .align_y(iced::alignment::Vertical::Center)
             .style(table_cell()),
-        container(text("TRANSPORT").size(TABLE_HEADER_FONT_SIZE))
-            .padding(10)
-            .width(Length::FillPortion(1))
-            .align_x(iced::alignment::Horizontal::Center)
+        container(text("SERVICES").size(TABLE_HEADER_FONT_SIZE))
+            .width(Length::FillPortion(10))
+            .height(CELL_HEIGHT)
+            .padding(LEFT_PADDING)
+            .align_x(iced::alignment::Horizontal::Left)
+            .align_y(iced::alignment::Vertical::Center)
+            .style(table_cell()),
+        container(text("TRANSPORT").size(TABLE_HEADER_FONT_SIZE - 4))
+            .width(Length::FillPortion(8))
+            .height(CELL_HEIGHT)
+            .padding(LEFT_PADDING)
+            .align_x(iced::alignment::Horizontal::Left)
+            .align_y(iced::alignment::Vertical::Center)
             .style(table_cell()),
         container(text("ACTION").size(TABLE_HEADER_FONT_SIZE))
-            .padding(10)
-            .width(Length::FillPortion(1))
-            .align_x(iced::alignment::Horizontal::Center)
+            .width(Length::FillPortion(10))
+            .height(CELL_HEIGHT)
+            .padding(LEFT_PADDING)
+            .align_x(iced::alignment::Horizontal::Left)
+            .align_y(iced::alignment::Vertical::Center)
             .style(table_cell()),
     ]);
 
@@ -217,25 +292,31 @@ pub fn view_p2p<'a>(
                 container(get_address_with_asn_tooltip(&peer.socket, geoip_reader))
                     .padding(10)
                     .height(CELL_HEIGHT)
-                    .width(Length::FillPortion(2))
+                    .width(Length::FillPortion(16))
                     .style(table_cell()),
                 container(get_impl_icon(&peer.node_impl, &peer.user_agent))
                     .padding(10)
                     .height(CELL_HEIGHT)
-                    .width(Length::FillPortion(2))
+                    .width(Length::FillPortion(16))
                     .style(table_cell())
                     .align_y(iced::alignment::Vertical::Center),
+                container(get_services_with_tooltip(&peer.services))
+                    .padding(10)
+                    .height(CELL_HEIGHT)
+                    .width(Length::FillPortion(10))
+                    .align_y(iced::alignment::Vertical::Center)
+                    .style(table_cell()),
                 container(get_transport_with_tooltip(&peer.transport_protocol))
                     .padding(10)
                     .height(CELL_HEIGHT)
-                    .width(Length::FillPortion(1))
+                    .width(Length::FillPortion(8))
                     .style(table_cell())
                     .align_x(iced::alignment::Horizontal::Center)
                     .align_y(iced::alignment::Vertical::Center),
                 container(row![disconnect_button, ban_button].spacing(4))
                     .padding(2)
                     .height(CELL_HEIGHT)
-                    .width(Length::FillPortion(1))
+                    .width(Length::FillPortion(10))
                     .style(table_cell())
                     .align_x(iced::alignment::Horizontal::Center)
                     .align_y(iced::alignment::Vertical::Center),
@@ -244,19 +325,23 @@ pub fn view_p2p<'a>(
             peer_info_table = peer_info_table.push(row![
                 container(text("").size(12))
                     .padding(10)
-                    .width(Length::FillPortion(2))
+                    .width(Length::FillPortion(16))
                     .style(table_cell()),
                 container(text("").size(12))
                     .padding(10)
-                    .width(Length::FillPortion(2))
+                    .width(Length::FillPortion(16))
                     .style(table_cell()),
                 container(text("").size(12))
                     .padding(10)
-                    .width(Length::FillPortion(1))
+                    .width(Length::FillPortion(10))
                     .style(table_cell()),
                 container(text("").size(12))
                     .padding(10)
-                    .width(Length::FillPortion(1))
+                    .width(Length::FillPortion(8))
+                    .style(table_cell()),
+                container(text("").size(12))
+                    .padding(10)
+                    .width(Length::FillPortion(10))
                     .style(table_cell()),
             ]);
         }
