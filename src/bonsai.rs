@@ -111,8 +111,8 @@ pub(crate) enum BonsaiMessage {
 
 #[derive(Default)]
 pub(crate) struct Bonsai {
+    pub(crate) app_clock: usize,
     pub(crate) active_tab: Tab,
-    pub(crate) animation_tick: usize,
     pub(crate) node: Node,
     pub(crate) onchain_wallet: BDKWallet,
     pub(crate) lightning_wallet: Phoenixd,
@@ -123,10 +123,10 @@ impl Bonsai {
     fn view(&self) -> Element<'_, BonsaiMessage> {
         let node_status = &self.node.status;
         let status_color = match node_status {
-            NodeStatus::Starting => pulse_color(GREEN, self.animation_tick),
+            NodeStatus::Starting => pulse_color(GREEN, self.app_clock),
             NodeStatus::Running => GREEN,
             NodeStatus::Inactive => OFF_WHITE,
-            NodeStatus::ShuttingDown => pulse_color(RED, self.animation_tick),
+            NodeStatus::ShuttingDown => pulse_color(RED, self.app_clock),
             NodeStatus::Failed(_) => RED,
         };
         let blocks = self.node.statistics.as_ref().map(|s| s.blocks).unwrap_or(0);
@@ -273,7 +273,7 @@ impl Bonsai {
             | Tab::NodeMempool
             | Tab::NodeSettings => self
                 .node
-                .view_tab(self.active_tab, self.animation_tick)
+                .view_tab(self.active_tab, self.app_clock)
                 .map(BonsaiMessage::Node),
             Tab::About => unimplemented!(),
         };
@@ -307,7 +307,7 @@ impl Bonsai {
                 Task::none()
             }
             BonsaiMessage::AnimationTick => {
-                self.animation_tick = self.animation_tick.wrapping_add(1);
+                self.app_clock = self.app_clock.wrapping_add(1);
                 Task::none()
             }
             BonsaiMessage::BdkWallet(msg) => {
@@ -413,7 +413,7 @@ fn main() -> iced::Result {
         move || {
             let bonsai = Bonsai {
                 active_tab: Tab::default(),
-                animation_tick: usize::default(),
+                app_clock: usize::default(),
                 node: Node {
                     log_capture: log_capture.clone(),
                     geoip_reader: GeoIpReader::new(GEOIP_ASN_DB, GEOIP_CITY_DB).ok(),

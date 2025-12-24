@@ -16,8 +16,8 @@ pub(crate) fn network_color(network: Network) -> Color {
 }
 
 /// Pulse a [`Color`] in a sinusoidal manner according to a timer;
-pub(crate) fn pulse_color(base_color: Color, animation_tick: usize) -> Color {
-    let time = (animation_tick as f32) * 32.0;
+pub(crate) fn pulse_color(base_color: Color, app_clock: usize) -> Color {
+    let time = (app_clock as f32) * 32.0;
     let pulse = ((time / 1000.0) * PI * 2.0).sin();
     let alpha = 0.7 + ((pulse + 1.0) / 2.0) * 0.3;
     base_color.scale_alpha(alpha)

@@ -73,7 +73,7 @@ impl Node {
         match message {
             // `Tick` is useful for triggering an UI re-render.
             NodeMessage::Tick => {
-                //self.animation_tick = self.animation_tick.wrapping_add(1);
+                //self.app_clock = self.app_clock.wrapping_add(1);
 
                 let current_version = self.log_capture.version();
                 if current_version != self.last_log_version {
@@ -335,9 +335,9 @@ impl Node {
         self.subscription_active = false;
     }
 
-    pub(crate) fn view_tab(&self, tab: Tab, animation_tick: usize) -> Element<'_, NodeMessage> {
+    pub(crate) fn view_tab(&self, tab: Tab, app_clock: usize) -> Element<'_, NodeMessage> {
         match tab {
-            Tab::NodeOverview => self.view_overview(animation_tick),
+            Tab::NodeOverview => self.view_overview(app_clock),
             Tab::NodeP2P => self.view_p2p(),
             Tab::NodeBlocks => self.view_blocks(),
             Tab::NodeUtreexo => self.view_utreexo(),
@@ -346,14 +346,9 @@ impl Node {
         }
     }
 
-    fn view_overview(&self, animation_tick: usize) -> Element<'_, NodeMessage> {
+    fn view_overview(&self, app_clock: usize) -> Element<'_, NodeMessage> {
         use crate::node::interface::overview::view;
-        view::view_overview(
-            &self.status,
-            &self.statistics,
-            &self.log_capture,
-            animation_tick,
-        )
+        view::view_overview(&self.status, &self.statistics, &self.log_capture, app_clock)
     }
 
     pub(crate) fn view_p2p(&self) -> Element<'_, NodeMessage> {

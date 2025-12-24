@@ -75,7 +75,7 @@ pub(crate) fn view_overview<'a>(
     node_status: &'a NodeStatus,
     statistics: &'a Option<NodeStatistics>,
     log_capture: &'a LogCapture,
-    animation_tick: usize,
+    app_clock: usize,
 ) -> Element<'a, NodeMessage> {
     // Tab Title.
     let title: Container<'_, NodeMessage> = container(text("NODE OVERVIEW").size(25))
@@ -131,11 +131,11 @@ pub(crate) fn view_overview<'a>(
 
     let network_color = network_color(NETWORK);
     let status_color = match node_status {
-        NodeStatus::Starting => pulse_color(GREEN, animation_tick),
+        NodeStatus::Starting => pulse_color(GREEN, app_clock),
         NodeStatus::Running => GREEN,
         NodeStatus::Inactive => OFF_WHITE,
         NodeStatus::Failed(_) => RED,
-        NodeStatus::ShuttingDown => pulse_color(RED, animation_tick),
+        NodeStatus::ShuttingDown => pulse_color(RED, app_clock),
     };
 
     let metrics_title = container(text("METRICS").size(24));
