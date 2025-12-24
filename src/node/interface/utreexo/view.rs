@@ -37,7 +37,7 @@ pub fn view_utreexo<'a>(
 
     let roots = statistics.as_ref().map(|s| s.accumulator.roots.clone());
     let num_roots = roots.clone().unwrap_or_default().len();
-    let size_roots = format!("{} BYTES", 32 * num_roots);
+    let size_roots = format!("{} BYTES", format_thousands(32 * num_roots));
 
     // Left: Statistics Table
     let accumulator_title = container(text("ACCUMULATOR STATS").size(24));
