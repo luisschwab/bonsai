@@ -268,7 +268,7 @@ impl Node {
                 // TODO(@luisschwab): add a success notification on top-right corner.
                 Task::none()
             }
-            NodeMessage::DisconnectPeer(peer_address) => {
+            NodeMessage::DisconnectPeer(socket) => {
                 if let Some(handle) = &self.handle {
                     let handle = handle.clone();
                     let rt_handle = Handle::current();
@@ -276,18 +276,9 @@ impl Node {
                     Task::future(async move {
                         let result = rt_handle
                             .spawn(async move {
-                                let addr: SocketAddr = match peer_address.parse() {
-                                    Ok(addr) => addr,
-                                    Err(e) => {
-                                        return NodeMessage::Error(BonsaiNodeError::Generic(
-                                            format!("Invalid peer address: {}", e),
-                                        ));
-                                    }
-                                };
-
                                 let node = handle.read().await;
-                                match node.disconnect_peer(&addr).await {
-                                    Ok(_) => NodeMessage::PeerDisconnected(peer_address),
+                                match node.disconnect_peer(&socket).await {
+                                    Ok(_) => NodeMessage::PeerDisconnected(socket),
                                     Err(e) => NodeMessage::Error(BonsaiNodeError::from(e)),
                                 }
                             })

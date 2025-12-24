@@ -225,7 +225,7 @@ dependencies = [
  "futures-lite",
  "parking",
  "polling",
- "rustix 1.1.2",
+ "rustix 1.1.3",
  "slab",
  "windows-sys 0.61.2",
 ]
@@ -256,7 +256,7 @@ dependencies = [
  "cfg-if",
  "event-listener",
  "futures-lite",
- "rustix 1.1.2",
+ "rustix 1.1.3",
 ]
 
 [[package]]
@@ -282,7 +282,7 @@ dependencies = [
  "cfg-if",
  "futures-core",
  "futures-io",
- "rustix 1.1.2",
+ "rustix 1.1.3",
  "signal-hook-registry",
  "slab",
  "windows-sys 0.61.2",
@@ -430,6 +430,7 @@ dependencies = [
 [[package]]
 name = "bdk_floresta"
 version = "0.1.0"
+source = "git+https://github.com/luisschwab/bdk-floresta#12d211a0dd9bd4673a5fc8711f2546919e750398"
 dependencies = [
  "bdk_wallet",
  "floresta-chain",
@@ -538,7 +539,6 @@ dependencies = [
  "bitcoin-io 0.1.4",
  "bitcoin-units",
  "bitcoin_hashes 0.14.1",
- "bitcoinconsensus",
  "hex-conservative 0.2.2",
  "hex_lit",
  "secp256k1",
@@ -604,15 +604,6 @@ checksum = "e0982261c82a50d89d1a411602afee0498b3e0debe3d36693f0c661352809639"
 dependencies = [
  "bitcoin-io 0.2.0",
  "hex-conservative 0.3.1",
-]
-
-[[package]]
-name = "bitcoinconsensus"
-version = "0.105.0+25.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f260ac8fb2c621329013fc0ed371c940fcc512552dcbcb9095ed0179098c9e18"
-dependencies = [
- "cc",
 ]
 
 [[package]]
@@ -774,7 +765,7 @@ checksum = "cb9f6e1368bd4621d2c86baa7e37de77a938adf5221e5dd3d6133340101b309e"
 dependencies = [
  "bitflags 2.10.0",
  "polling",
- "rustix 1.1.2",
+ "rustix 1.1.3",
  "slab",
  "tracing",
 ]
@@ -798,7 +789,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "138efcf0940a02ebf0cc8d1eff41a1682a46b431630f4c52450d6265876021fa"
 dependencies = [
  "calloop 0.14.3",
- "rustix 1.1.2",
+ "rustix 1.1.3",
  "wayland-backend",
  "wayland-client",
 ]
@@ -1457,6 +1448,7 @@ checksum = "8bf7cc16383c4b8d58b9905a8509f02926ce3058053c056376248d958c9df1e8"
 [[package]]
 name = "floresta-chain"
 version = "0.4.0"
+source = "git+https://github.com/vinteumorg/Floresta.git?rev=a81d70e1dc5a666fc24e8093afac3f7aea0c6e92#a81d70e1dc5a666fc24e8093afac3f7aea0c6e92"
 dependencies = [
  "bitcoin",
  "floresta-common",
@@ -1472,6 +1464,7 @@ dependencies = [
 [[package]]
 name = "floresta-common"
 version = "0.4.0"
+source = "git+https://github.com/vinteumorg/Floresta.git?rev=a81d70e1dc5a666fc24e8093afac3f7aea0c6e92#a81d70e1dc5a666fc24e8093afac3f7aea0c6e92"
 dependencies = [
  "bitcoin",
  "hashbrown 0.16.1",
@@ -1483,6 +1476,7 @@ dependencies = [
 [[package]]
 name = "floresta-compact-filters"
 version = "0.4.0"
+source = "git+https://github.com/vinteumorg/Floresta.git?rev=a81d70e1dc5a666fc24e8093afac3f7aea0c6e92#a81d70e1dc5a666fc24e8093afac3f7aea0c6e92"
 dependencies = [
  "bitcoin",
  "floresta-chain",
@@ -1491,6 +1485,7 @@ dependencies = [
 [[package]]
 name = "floresta-wire"
 version = "0.4.0"
+source = "git+https://github.com/vinteumorg/Floresta.git?rev=a81d70e1dc5a666fc24e8093afac3f7aea0c6e92#a81d70e1dc5a666fc24e8093afac3f7aea0c6e92"
 dependencies = [
  "ahash",
  "bip324",
@@ -1714,7 +1709,7 @@ version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1bd49230192a3797a9a4d6abe9b3eed6f7fa4c8a8a4947977c6f80025f92cbd8"
 dependencies = [
- "rustix 1.1.2",
+ "rustix 1.1.3",
  "windows-link",
 ]
 
@@ -2333,7 +2328,7 @@ dependencies = [
  "rgb",
  "tiff",
  "zune-core 0.5.0",
- "zune-jpeg 0.5.7",
+ "zune-jpeg 0.5.8",
 ]
 
 [[package]]
@@ -2705,7 +2700,7 @@ version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ad38eb12aea514a0466ea40a80fd8cc83637065948eb4a426e4aa46261175227"
 dependencies = [
- "rustix 1.1.2",
+ "rustix 1.1.3",
 ]
 
 [[package]]
@@ -3523,7 +3518,7 @@ dependencies = [
  "concurrent-queue",
  "hermit-abi",
  "pin-project-lite",
- "rustix 1.1.2",
+ "rustix 1.1.3",
  "windows-sys 0.61.2",
 ]
 
@@ -3936,9 +3931,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "1.1.2"
+version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd15f8a2c5551a84d56efdc1cd049089e409ac19a3072d5037a17fd70719ff3e"
+checksum = "146c9e247ccc180c1f61615433868c99f3de3ae256a30a43b49f67c2d9171f34"
 dependencies = [
  "bitflags 2.10.0",
  "errno",
@@ -3997,12 +3992,6 @@ name = "rustversion"
 version = "1.0.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b39cdef0fa800fc44525c84ccb54a029961a8215f9619753635a9c0d2538d46d"
-
-[[package]]
-name = "ryu"
-version = "1.0.21"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "62049b2877bf12821e8f9ad256ee38fdc31db7387ec2d3b3f403024de2034aea"
 
 [[package]]
 name = "same-file"
@@ -4107,15 +4096,15 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.146"
+version = "1.0.147"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "217ca874ae0207aac254aa02c957ded05585a90892cc8d87f9e5fa49669dadd8"
+checksum = "6af14725505314343e673e9ecb7cd7e8a36aa9791eb936235a3567cc31447ae4"
 dependencies = [
  "itoa",
  "memchr",
- "ryu",
  "serde",
  "serde_core",
+ "zmij",
 ]
 
 [[package]]
@@ -4257,7 +4246,7 @@ dependencies = [
  "libc",
  "log",
  "memmap2",
- "rustix 1.1.2",
+ "rustix 1.1.3",
  "thiserror 2.0.17",
  "wayland-backend",
  "wayland-client",
@@ -4331,7 +4320,7 @@ dependencies = [
  "objc2-quartz-core 0.3.2",
  "raw-window-handle",
  "redox_syscall 0.5.18",
- "rustix 1.1.2",
+ "rustix 1.1.3",
  "tiny-xlib",
  "tracing",
  "wasm-bindgen",
@@ -4463,14 +4452,14 @@ dependencies = [
 
 [[package]]
 name = "tempfile"
-version = "3.23.0"
+version = "3.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d31c77bdf42a745371d260a26ca7163f1e0924b64afa0b688e61b5a9fa02f16"
+checksum = "655da9c7eb6305c55742045d5a8d2037996d61d8de95806335c7c86ce0f82e9c"
 dependencies = [
  "fastrand",
  "getrandom 0.3.4",
  "once_cell",
- "rustix 1.1.2",
+ "rustix 1.1.3",
  "windows-sys 0.61.2",
 ]
 
@@ -5076,7 +5065,7 @@ checksum = "673a33c33048a5ade91a6b139580fa174e19fb0d23f396dca9fa15f2e1e49b35"
 dependencies = [
  "cc",
  "downcast-rs",
- "rustix 1.1.2",
+ "rustix 1.1.3",
  "scoped-tls",
  "smallvec",
  "wayland-sys",
@@ -5089,7 +5078,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c66a47e840dc20793f2264eb4b3e4ecb4b75d91c0dd4af04b456128e0bdd449d"
 dependencies = [
  "bitflags 2.10.0",
- "rustix 1.1.2",
+ "rustix 1.1.3",
  "wayland-backend",
  "wayland-scanner",
 ]
@@ -5111,7 +5100,7 @@ version = "0.31.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "447ccc440a881271b19e9989f75726d60faa09b95b0200a9b7eb5cc47c3eeb29"
 dependencies = [
- "rustix 1.1.2",
+ "rustix 1.1.3",
  "wayland-client",
  "xcursor",
 ]
@@ -5934,7 +5923,7 @@ dependencies = [
  "libc",
  "libloading",
  "once_cell",
- "rustix 1.1.2",
+ "rustix 1.1.3",
  "x11rb-protocol",
 ]
 
@@ -6158,6 +6147,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "zmij"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e404bcd8afdaf006e529269d3e85a743f9480c3cef60034d77860d02964f3ba"
+
+[[package]]
 name = "zune-core"
 version = "0.4.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6189,9 +6184,9 @@ dependencies = [
 
 [[package]]
 name = "zune-jpeg"
-version = "0.5.7"
+version = "0.5.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51d915729b0e7d5fe35c2f294c5dc10b30207cc637920e5b59077bfa3da63f28"
+checksum = "e35aee689668bf9bd6f6f3a6c60bb29ba1244b3b43adfd50edd554a371da37d5"
 dependencies = [
  "zune-core 0.5.0",
 ]

@@ -1,4 +1,5 @@
 use core::fmt::Display;
+use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
@@ -9,6 +10,7 @@ use bdk_floresta::PeerInfo;
 use bdk_floresta::PeerStatus;
 use bdk_floresta::TransportProtocol;
 use bdk_floresta::rustreexo::accumulator::stump::Stump;
+use bitcoin::p2p::ServiceFlags;
 use iced::widget::qr_code;
 use regex::Regex;
 use tokio::sync::RwLock;
@@ -41,8 +43,8 @@ impl Display for NodeImpl {
 
 #[derive(Clone)]
 pub(crate) struct PeerInformation {
-    pub(crate) address: String,
-    pub(crate) services: String,
+    pub(crate) socket: SocketAddr,
+    pub(crate) services: ServiceFlags,
     pub(crate) user_agent: String,
     pub(crate) node_impl: NodeImpl,
     pub(crate) initial_height: u32,
@@ -92,7 +94,7 @@ fn process_peer_infos(peer_infos: Vec<PeerInfo>) -> Vec<PeerInformation> {
     let mut peer_informations: Vec<PeerInformation> = Vec::new();
     for peer_info in peer_infos {
         let peer_information = PeerInformation {
-            address: peer_info.address,
+            socket: peer_info.address,
             services: peer_info.services,
             node_impl: regex_user_agent(&peer_info.user_agent),
             user_agent: peer_info.user_agent,

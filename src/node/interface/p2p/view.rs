@@ -1,8 +1,10 @@
 use std::net::IpAddr;
+use std::net::SocketAddr;
 
 use bdk_floresta::TransportProtocol;
 use iced::Element;
 use iced::Length;
+use iced::Length::Fill;
 use iced::Padding;
 use iced::widget::Container;
 use iced::widget::button;
@@ -35,41 +37,34 @@ use crate::node::statistics::NodeImpl;
 use crate::node::statistics::NodeStatistics;
 
 fn get_address_with_asn_tooltip<'a>(
-    address: &'a str,
+    socket: &'a SocketAddr,
     geoip_reader: &'a Option<GeoIpReader>,
 ) -> Element<'a, NodeMessage> {
-    // Extract IP from address (remove port)
-    let ip_str = address.split(':').next().unwrap_or(address);
     let not_found = String::from("NO INFORMATION\nAVAILABLE FOR THIS ADDRESS");
+    let tooltip_text = if let Some(reader) = geoip_reader {
+        let geo_info = reader.lookup_all(socket.ip());
+        let mut lines = Vec::new();
 
-    let tooltip_text = if let Ok(ip) = ip_str.parse::<IpAddr>() {
-        if let Some(reader) = geoip_reader {
-            let geo_info = reader.lookup_all(ip);
-            let mut lines = Vec::new();
+        if let Some(asn) = &geo_info.asn {
+            lines.push(format!("AS{}", asn.number));
+            lines.push(asn.organization.clone());
+        }
 
-            if let Some(asn) = &geo_info.asn {
-                lines.push(format!("AS{}", asn.number));
-                lines.push(asn.organization.clone());
-            }
+        if let Some(city) = &geo_info.city {
+            lines.push(city.to_string());
+        }
 
-            if let Some(city) = &geo_info.city {
-                lines.push(city.to_string());
-            }
-
-            if lines.is_empty() {
-                not_found
-            } else {
-                lines.join("\n")
-            }
-        } else {
+        if lines.is_empty() {
             not_found
+        } else {
+            lines.join("\n")
         }
     } else {
         not_found
     };
 
     tooltip(
-        text(address).size(TABLE_CELL_FONT_SIZE),
+        text(socket.to_string()).size(TABLE_CELL_FONT_SIZE),
         text(tooltip_text),
         tooltip::Position::FollowCursor,
     )
@@ -213,7 +208,7 @@ pub fn view_p2p<'a>(
     for i in 0..NUM_ROWS {
         if let Some(peer) = peers.get(i) {
             let disconnect_button = button(text("DISCONNECT").size(10))
-                .on_press(NodeMessage::DisconnectPeer(peer.address.clone()))
+                .on_press(NodeMessage::DisconnectPeer(peer.socket))
                 .style(disconnect_button())
                 .padding(5);
 
@@ -224,7 +219,7 @@ pub fn view_p2p<'a>(
                 .padding(5);
 
             peer_info_table = peer_info_table.push(row![
-                container(get_address_with_asn_tooltip(&peer.address, geoip_reader))
+                container(get_address_with_asn_tooltip(&peer.socket, geoip_reader))
                     .padding(10)
                     .height(CELL_HEIGHT)
                     .width(Length::FillPortion(2))

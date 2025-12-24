@@ -78,7 +78,7 @@ pub fn view_utreexo<'a>(
                     .style(table_cell()),
             ],
             row![
-                container(text("CACHE SIZE").size(14))
+                container(text("PROOF CACHE SIZE").size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),

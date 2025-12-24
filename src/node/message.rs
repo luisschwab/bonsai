@@ -1,4 +1,5 @@
 use core::fmt::Debug;
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 use bdk_floresta::FlorestaNode;
@@ -23,8 +24,8 @@ pub(crate) enum NodeMessage {
     AddPeerInputChanged(String),
     AddPeer,
     PeerConnected(String),
-    DisconnectPeer(String),
-    PeerDisconnected(String),
+    DisconnectPeer(SocketAddr),
+    PeerDisconnected(SocketAddr),
     CopyAccumulatorData,
     Error(BonsaiNodeError),
 }
