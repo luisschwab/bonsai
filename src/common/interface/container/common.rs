@@ -1,5 +1,7 @@
 use iced::Length;
 use iced::Shadow;
+use iced::Theme;
+use iced::widget::container::Style as ContainerStyle;
 
 pub(crate) const BORDER_WIDTH: f32 = 1.5;
 pub(crate) const BORDER_RADIUS: f32 = 0.0;
@@ -16,3 +18,10 @@ pub(crate) const SHADOW: Shadow = Shadow {
     offset: iced::Vector::new(3.0, 3.0),
     blur_radius: 2.0,
 };
+
+pub fn shadow_container() -> impl Fn(&Theme) -> ContainerStyle {
+    |_theme: &Theme| ContainerStyle {
+        shadow: SHADOW,
+        ..Default::default()
+    }
+}

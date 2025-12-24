@@ -367,7 +367,8 @@ impl Node {
     }
 
     pub(crate) fn view_blocks(&self) -> Element<'_, NodeMessage> {
-        unimplemented!()
+        use crate::node::interface::blocks::view;
+        view::view_blocks(&self.statistics, "1,420,069" /* TODO remove */)
     }
 
     pub(crate) fn view_settings(&self) -> Element<'_, NodeMessage> {

@@ -1,5 +1,5 @@
 // TODO: remove me after node stuff is done
-//#![allow(unused)]
+#![allow(unused)]
 
 use core::fmt::Debug;
 
@@ -75,7 +75,7 @@ pub(crate) mod common;
 pub(crate) mod node;
 pub(crate) mod wallet;
 
-const START_NODE_AUTO: bool = true;
+const START_NODE_AUTO: bool = false; //true;
 const APP_VERSION: &str = concat!("v", env!("CARGO_PKG_VERSION"));
 const GEOIP_ASN_DB: &str = "./assets/geoip/GeoLite2-ASN.mmdb";
 const GEOIP_CITY_DB: &str = "./assets/geoip/GeoLite2-City.mmdb";
@@ -234,15 +234,15 @@ impl Bonsai {
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::NodeUtreexo, GREEN)),
             button(text("NODE BLOCKS"))
-                //.on_press(BonsaiMessage::SelectTab(Tab::NodeBlocks))
+                .on_press(BonsaiMessage::SelectTab(Tab::NodeBlocks))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::NodeBlocks, GREEN)),
-            button(text("NODE MEMPOOL"))
-                //.on_press(BonsaiMessage::SelectTab(Tab::NodeMempool))
-                .height(SIDEBAR_BUTTON_HEIGHT)
-                .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::NodeMempool, GREEN)),
+            //button(text("NODE MEMPOOL"))
+            //    //.on_press(BonsaiMessage::SelectTab(Tab::NodeMempool))
+            //    .height(SIDEBAR_BUTTON_HEIGHT)
+            //    .width(Length::Fill)
+            //    .style(sidebar_button(self.active_tab == Tab::NodeMempool, GREEN)),
             button(text("NODE SETTINGS"))
                 //.on_press(BonsaiMessage::SelectTab(Tab::NodeSettings))
                 .height(SIDEBAR_BUTTON_HEIGHT)
