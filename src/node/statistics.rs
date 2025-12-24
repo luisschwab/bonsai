@@ -11,7 +11,6 @@ use bdk_floresta::PeerStatus;
 use bdk_floresta::TransportProtocol;
 use bdk_floresta::rustreexo::accumulator::stump::Stump;
 use bitcoin::p2p::ServiceFlags;
-use iced::widget::qr_code;
 use regex::Regex;
 use tokio::sync::RwLock;
 
@@ -41,6 +40,7 @@ impl Display for NodeImpl {
     }
 }
 
+#[allow(unused)]
 #[derive(Clone)]
 pub(crate) struct PeerInformation {
     pub(crate) socket: SocketAddr,

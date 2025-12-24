@@ -1,9 +1,8 @@
 // TODO: remove me after node stuff is done
-#![allow(unused)]
+//#![allow(unused)]
 
 use core::fmt::Debug;
 
-use bitcoin::Network;
 use iced::Element;
 use iced::Event;
 use iced::Length;
@@ -31,15 +30,12 @@ use iced::window::icon;
 use iced::window::settings::PlatformSpecific;
 use tokio::runtime::Handle;
 
-use crate::common::interface::color::BLUE;
 use crate::common::interface::color::DARK_GREY;
 use crate::common::interface::color::GREEN;
 use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::color::ORANGE;
-use crate::common::interface::color::PURPLE;
 use crate::common::interface::color::RED;
 use crate::common::interface::color::WHITE;
-use crate::common::interface::color::YELLOW;
 use crate::common::interface::color::network_color;
 use crate::common::interface::color::pulse_color;
 use crate::common::interface::container::content::CONTENT_PADDING;
@@ -87,7 +83,9 @@ const GEOIP_CITY_DB: &str = "./assets/geoip/GeoLite2-City.mmdb";
 #[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Tab {
     BDKWallet,
+    #[allow(unused)]
     Phoenixd,
+    #[allow(unused)]
     Ark,
     #[default]
     NodeOverview,

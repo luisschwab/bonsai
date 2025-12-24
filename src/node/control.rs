@@ -37,6 +37,7 @@ pub(crate) enum NodeStatus {
     Starting,
     Running,
     ShuttingDown,
+    #[allow(unused)]
     Failed(BonsaiNodeError),
 }
 
@@ -64,7 +65,6 @@ pub(crate) struct Node {
     pub(crate) start_time: Option<Instant>,
     pub(crate) peer_input: String,
     pub(crate) geoip_reader: Option<GeoIpReader>,
-    //pub(crate) animation_tick: usize,
     pub(crate) accumulator_qr_data: Option<qr_code::Data>,
 }
 
@@ -305,6 +305,11 @@ impl Node {
                 {
                     return clipboard::write(data.clone());
                 }
+
+                Task::none()
+            }
+            NodeMessage::ClearLogs => {
+                self.log_capture.clear();
 
                 Task::none()
             }

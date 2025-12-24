@@ -1,11 +1,8 @@
-use std::net::IpAddr;
 use std::net::SocketAddr;
 
 use bdk_floresta::TransportProtocol;
 use iced::Element;
 use iced::Length;
-use iced::Length::Fill;
-use iced::Padding;
 use iced::widget::Container;
 use iced::widget::button;
 use iced::widget::column;
@@ -17,8 +14,6 @@ use iced::widget::text_input;
 use iced::widget::tooltip;
 
 use crate::common::interface::color::BLACK;
-use crate::common::interface::container::common::BORDER_RADIUS;
-use crate::common::interface::container::common::BORDER_WIDTH;
 use crate::common::interface::container::common::CELL_HEIGHT;
 use crate::common::interface::container::common::TABLE_CELL_FONT_SIZE;
 use crate::common::interface::container::common::TABLE_CELL_ICON_SIZE;

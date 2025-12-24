@@ -1,8 +1,5 @@
-use bdk_floresta::rustreexo::accumulator::stump::Stump;
-use iced::Alignment;
 use iced::Element;
 use iced::Length;
-use iced::Padding;
 use iced::widget::Container;
 use iced::widget::Space;
 use iced::widget::button;
@@ -14,7 +11,6 @@ use iced::widget::text;
 use iced::widget::tooltip;
 
 use crate::common::interface::color::OFF_WHITE;
-use crate::common::interface::container::common::CELL_HEIGHT;
 use crate::common::interface::container::content::button_container;
 use crate::common::util::format_thousands;
 use crate::node::interface::common::TITLE_PADDING;
@@ -137,6 +133,8 @@ pub fn view_utreexo<'a>(
     let roots_title: Container<'_, NodeMessage> = container(text("ROOTS").size(24));
     let mut roots_table = column![row![
         container(text("IDX").size(14))
+            .align_y(iced::alignment::Vertical::Center)
+            .align_x(iced::alignment::Horizontal::Center)
             .padding(10)
             .width(Length::FillPortion(1))
             .style(table_cell()),
@@ -145,6 +143,8 @@ pub fn view_utreexo<'a>(
             .width(Length::FillPortion(4))
             .style(table_cell()),
         container(text("IDX").size(14))
+            .align_y(iced::alignment::Vertical::Center)
+            .align_x(iced::alignment::Horizontal::Center)
             .padding(10)
             .width(Length::FillPortion(1))
             .style(table_cell()),
@@ -162,6 +162,8 @@ pub fn view_utreexo<'a>(
 
         let left_idx_cell = container(text(format!("{:02}", left_idx)).size(14))
             .padding(10)
+            .align_y(iced::alignment::Vertical::Center)
+            .align_x(iced::alignment::Horizontal::Center)
             .height(ROOT_CELL_HEIGHT)
             .width(Length::FillPortion(1))
             .style(table_cell());
@@ -187,6 +189,8 @@ pub fn view_utreexo<'a>(
 
         let right_idx_cell = container(text(format!("{:02}", right_idx)).size(14))
             .padding(10)
+            .align_y(iced::alignment::Vertical::Center)
+            .align_x(iced::alignment::Horizontal::Center)
             .height(ROOT_CELL_HEIGHT)
             .width(Length::FillPortion(1))
             .style(table_cell());

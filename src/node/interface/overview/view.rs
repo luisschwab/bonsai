@@ -1,11 +1,9 @@
-use std::time::Duration;
-
-use bitcoin::Network;
 use iced::Element;
 use iced::Length;
 use iced::Length::Fill;
 use iced::Padding;
 use iced::widget::Container;
+use iced::widget::Space;
 use iced::widget::button;
 use iced::widget::column;
 use iced::widget::container;
@@ -17,9 +15,9 @@ use crate::common::interface::color::BLUE;
 use crate::common::interface::color::GREEN;
 use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::color::ORANGE;
-use crate::common::interface::color::PURPLE;
 use crate::common::interface::color::RED;
 use crate::common::interface::color::network_color;
+use crate::common::interface::container::content::button_container;
 use crate::common::util::format_duration;
 use crate::common::util::format_thousands;
 use crate::node::control::NETWORK;
@@ -208,6 +206,20 @@ pub(crate) fn view_overview<'a>(
                     .style(table_cell()),
             ],
             row![
+                container(text("COMPACT\nBLOCK FILTERS").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .height(Length::Fixed(60.0))
+                    .align_y(iced::alignment::Vertical::Center)
+                    .style(table_cell()),
+                container(text("TODO").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .height(Length::Fixed(60.0))
+                    .align_y(iced::alignment::Vertical::Center)
+                    .style(table_cell()),
+            ],
+            row![
                 container(text("PEERS").size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
@@ -272,7 +284,19 @@ pub(crate) fn view_overview<'a>(
         .width(Length::FillPortion(4));
 
     // Logs Section.
-    let log_title = container(text("LOGS").size(24));
+    let log_title = container(
+        row![
+            text("LOGS").size(24),
+            Space::new().width(Length::Fill),
+            button(text("CLEAR").size(16))
+                .on_press(NodeMessage::ClearLogs)
+                .style(button_container())
+                .padding(5)
+        ]
+        .spacing(10)
+        .align_y(iced::alignment::Vertical::Center),
+    )
+    .width(Length::Fill);
 
     let mut log_column = column![].spacing(2).padding(Padding {
         top: 0.0,
@@ -318,7 +342,9 @@ pub(crate) fn view_overview<'a>(
         .height(Length::Fill)
         .width(Length::FillPortion(6));
 
-    let right = column![log_title, logs_container];
+    let right = column![log_title, logs_container]
+        .width(Length::FillPortion(6))
+        .spacing(5);
 
     row![left, right].spacing(20).into()
 }

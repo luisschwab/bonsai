@@ -42,7 +42,6 @@ impl LogCapture {
         self.logs.lock().unwrap().iter().cloned().collect()
     }
 
-    #[allow(unused)]
     pub fn clear(&self) {
         self.logs.lock().unwrap().clear();
 

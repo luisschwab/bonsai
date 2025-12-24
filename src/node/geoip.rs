@@ -100,6 +100,7 @@ pub struct AsnInfo {
 pub struct CityInfo {
     pub city: Option<String>,
     pub country: Option<String>,
+    #[allow(unused)]
     pub country_code: Option<String>,
 }
 
