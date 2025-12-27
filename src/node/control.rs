@@ -8,6 +8,7 @@ use bdk_floresta::ChainParams;
 use bdk_floresta::FlorestaNode;
 use bdk_floresta::UtreexoNodeConfig;
 use bdk_floresta::builder::FlorestaBuilder;
+use bitcoin::Block;
 use bitcoin::Network;
 use iced::Element;
 use iced::Subscription;
@@ -17,8 +18,10 @@ use iced::widget::qr_code;
 use tokio::runtime::Handle;
 use tokio::sync::RwLock;
 use tracing::error;
+use tracing::info;
 
 use crate::Tab;
+use crate::common::util::format_thousands;
 use crate::node::error::BonsaiNodeError;
 use crate::node::geoip::GeoIpReader;
 use crate::node::log_capture::LogCapture;
@@ -66,6 +69,9 @@ pub(crate) struct Node {
     pub(crate) peer_input: String,
     pub(crate) geoip_reader: Option<GeoIpReader>,
     pub(crate) accumulator_qr_data: Option<qr_code::Data>,
+    pub(crate) block_explorer_height_str: String,
+    pub(crate) block_explorer_current_block: Option<Block>,
+    pub(crate) block_explorer_expanded_tx_idx: Option<usize>,
 }
 
 impl Node {
@@ -124,6 +130,7 @@ impl Node {
                 self.subscription_active = true;
                 self.is_shutting_down = false;
                 self.start_time = Some(Instant::now());
+
                 Task::none()
             }
             NodeMessage::Shutdown => {
@@ -313,6 +320,79 @@ impl Node {
 
                 Task::none()
             }
+            NodeMessage::BlockHeightInputChanged(value) => {
+                let clean = value.replace(",", "");
+
+                if clean.is_empty() || clean.chars().all(|c| c.is_numeric()) {
+                    if let Ok(height) = clean.parse::<u32>() {
+                        self.block_explorer_height_str = format_thousands(height);
+                        return self.update(NodeMessage::FetchBlock(height));
+                    } else if clean.is_empty() {
+                        self.block_explorer_height_str.clear();
+                    }
+                }
+                Task::none()
+            }
+            NodeMessage::BlockExplorerHeightUpdate(height) => {
+                self.block_explorer_height_str = format_thousands(height);
+                self.update(NodeMessage::FetchBlock(height))
+            }
+
+            NodeMessage::FetchBlock(height) => {
+                if let Some(handle) = &self.handle {
+                    let handle = handle.clone();
+                    let rt_handle = Handle::current();
+
+                    Task::future(async move {
+                        let result = rt_handle
+                            .spawn(async move {
+                                let node = handle.read().await;
+
+                                let blockhash = match node.get_blockhash(height) {
+                                    Ok(hash) => {
+                                        info!(
+                                            "Fetching block with height={} and hash={}",
+                                            height, hash
+                                        );
+                                        hash
+                                    }
+                                    Err(e) => return NodeMessage::BlockFetched(None),
+                                };
+
+                                match node.get_block(blockhash).await {
+                                    Ok(Some(block)) => {
+                                        info!("Fetched block at height={height}");
+                                        NodeMessage::BlockFetched(Some(block))
+                                    }
+                                    Ok(None) => NodeMessage::BlockFetched(None),
+                                    Err(e) => NodeMessage::Error(BonsaiNodeError::from(e)),
+                                }
+                            })
+                            .await;
+
+                        result.unwrap_or(NodeMessage::BlockFetched(None))
+                    })
+                } else {
+                    Task::none()
+                }
+            }
+
+            NodeMessage::BlockFetched(block) => {
+                if let Some(block) = block {
+                    info!("Fetched block with hash={}", block.header.block_hash());
+                    self.block_explorer_current_block = Some(block);
+                }
+                Task::none()
+            }
+
+            NodeMessage::ToggleTransactionExpandedIdx(idx) => {
+                if self.block_explorer_expanded_tx_idx == Some(idx) {
+                    self.block_explorer_expanded_tx_idx = None;
+                } else {
+                    self.block_explorer_expanded_tx_idx = Some(idx);
+                }
+                Task::none()
+            }
         }
     }
 
@@ -368,7 +448,12 @@ impl Node {
 
     pub(crate) fn view_blocks(&self) -> Element<'_, NodeMessage> {
         use crate::node::interface::blocks::view;
-        view::view_blocks(&self.statistics, "1,420,069" /* TODO remove */)
+        view::view_blocks(
+            &self.statistics,
+            &self.block_explorer_height_str,
+            &self.block_explorer_current_block,
+            &self.block_explorer_expanded_tx_idx,
+        )
     }
 
     pub(crate) fn view_settings(&self) -> Element<'_, NodeMessage> {

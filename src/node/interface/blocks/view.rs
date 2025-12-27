@@ -1,5 +1,8 @@
+use bitcoin::Amount;
+use bitcoin::Block;
 use iced::Element;
 use iced::Length;
+use iced::Padding;
 use iced::alignment::Horizontal::Left;
 use iced::alignment::Horizontal::Right;
 use iced::widget::Container;
@@ -9,24 +12,49 @@ use iced::widget::column;
 use iced::widget::container;
 use iced::widget::qr_code;
 use iced::widget::row;
+use iced::widget::scrollable;
+use iced::widget::scrollable::Scrollable;
+use iced::widget::scrollable::Scrollbar;
 use iced::widget::text;
 use iced::widget::text_input;
 use iced::widget::tooltip;
+use tracing::info;
 
 use crate::common::interface::container::common::CELL_HEIGHT;
+use crate::common::interface::container::common::CELL_HEIGHT_2X;
 use crate::common::interface::container::common::SHADOW;
 use crate::common::interface::container::common::shadow_container;
 use crate::common::interface::container::content::button_container;
 use crate::common::interface::font::BERKELEY_MONO_BOLD;
+use crate::common::util::format_thousands;
 use crate::node::interface::common::TITLE_PADDING;
 use crate::node::interface::common::input_field;
+use crate::node::interface::common::table_cell;
 use crate::node::interface::common::title_container;
 use crate::node::message::NodeMessage;
 use crate::node::statistics::NodeStatistics;
 
+const CELL_HEIGHT_PX: f32 = 35.0;
+
+/// Get the block subsidy in satoshis based on blockheight.
+fn get_block_subsidy(height: u32) -> u64 {
+    const SUBSIDY_HALVING_INTERVAL: u32 = 210_000; // Blocks.
+    const INITIAL_SUBSIDY: u64 = 50 * 100_000_000; // 50 BTC in satoshis.
+
+    let halvings = height / SUBSIDY_HALVING_INTERVAL;
+
+    if halvings >= 64 {
+        return 0;
+    }
+
+    INITIAL_SUBSIDY >> halvings
+}
+
 pub fn view_blocks<'a>(
     statistics: &'a Option<NodeStatistics>,
     block_height: &'a str,
+    current_block: &'a Option<Block>,
+    expanded_tx_idx: &'a Option<usize>,
 ) -> Element<'a, NodeMessage> {
     // Tab Title.
     let title: Container<'_, NodeMessage> = container(text("NODE BLOCKS").size(25))
@@ -45,6 +73,8 @@ pub fn view_blocks<'a>(
         .spacing(20)
         .width(Length::FillPortion(1));
 
+    // Parse the `block_height` string into a `u32`.
+    let current_height = block_height.replace(",", "").parse::<u32>().ok();
     let explorer_title = container(row![
         text("BLOCK EXPLORER").size(24),
         Space::new().width(Length::Fill),
@@ -56,15 +86,20 @@ pub fn view_blocks<'a>(
                     .align_x(iced::alignment::Horizontal::Center)
                     .align_y(iced::alignment::Vertical::Center)
             )
-            //.on_press(NodeMessage::CopyAccumulatorData)
+            .on_press_maybe(
+                current_height
+                    .and_then(|h| h.checked_sub(1))
+                    .map(NodeMessage::BlockExplorerHeightUpdate)
+            )
             .style(button_container())
             .padding(10)
             .height(CELL_HEIGHT),
             container(
-                text_input("TODO", block_height)
-                    //.on_input(NodeMessage::AddPeerInputChanged)
+                text_input("", block_height)
+                    .on_input(NodeMessage::BlockHeightInputChanged)
                     .style(input_field())
                     .size(16)
+                    .padding(10)
                     .align_x(iced::alignment::Horizontal::Center)
                     .width(Length::Fixed(110.0))
             )
@@ -78,7 +113,11 @@ pub fn view_blocks<'a>(
                     .align_x(iced::alignment::Horizontal::Center)
                     .align_y(iced::alignment::Vertical::Center)
             )
-            //.on_press(NodeMessage::CopyAccumulatorData)
+            .on_press_maybe(
+                current_height
+                    .and_then(|h| h.checked_add(1))
+                    .map(NodeMessage::BlockExplorerHeightUpdate)
+            )
             .style(button_container())
             .padding(10)
             .height(CELL_HEIGHT)
@@ -86,14 +125,565 @@ pub fn view_blocks<'a>(
         .spacing(10)
     ]);
 
-    let explorer_canvas: Container<'_, NodeMessage> = container(text("TODO"))
+    let header_table = {
+        let version = current_block.as_ref().map_or(String::new(), |b| {
+            format!("{:08x}", b.header.version.to_consensus())
+        });
+        let time = current_block
+            .as_ref()
+            .map_or(String::new(), |b| b.header.time.to_string());
+        let bits = current_block
+            .as_ref()
+            .map_or(String::new(), |b| format!("{:08x}", b.header.bits));
+        let nonce = current_block
+            .as_ref()
+            .map_or(String::new(), |b| format!("{:08x}", b.header.nonce));
+        let prev_blockhash = current_block.as_ref().map_or(String::new(), |b| {
+            let hex = b.header.prev_blockhash.to_string();
+            format!("{}\n{}", &hex[..32], &hex[32..])
+        });
+        let merkle_root = current_block.as_ref().map_or(String::new(), |b| {
+            let hex = b.header.merkle_root.to_string();
+            format!("{}\n{}", &hex[..32], &hex[32..])
+        });
+
+        let (block_size, block_weight, subsidy_and_fees, total_moved) =
+            current_block.as_ref().map_or(
+                (String::new(), String::new(), String::new(), String::new()),
+                |block| {
+                    let block_size_bytes = bitcoin::consensus::encode::serialize(&block).len();
+                    let block_size = if block_size_bytes < 1_000 {
+                        format!("{} BYTES", block_size_bytes)
+                    } else if block_size_bytes < 1_000_000 {
+                        format!("{:.2} KB", block_size_bytes as f64 / 1_000.0)
+                    } else {
+                        format!("{:.2} MB", block_size_bytes as f64 / 1_000_000.0)
+                    };
+
+                    let block_weight =
+                        format!("{} WU", format_thousands(block.weight().to_wu() as u32));
+
+                    // Need to fetch all prevouts for fees (too network intensive?)
+                    let fees = Amount::from_sat(0);
+
+                    let subsidy = Amount::from_sat(get_block_subsidy(current_height.unwrap_or(0)));
+
+                    let subsidy_and_fees = format!(
+                        "{} BTC + {} BTC = {} BTC",
+                        subsidy.to_btc(),
+                        fees.to_btc(),
+                        (subsidy + fees).to_btc()
+                    );
+
+                    let mut total_moved = Amount::from_sat(0);
+                    for tx in &block.txdata {
+                        let output_sum: u64 = tx.output.iter().map(|o| o.value.to_sat()).sum();
+                        total_moved += Amount::from_sat(output_sum);
+                    }
+
+                    let total_moved = format!("{:.02} BTC", total_moved.to_btc());
+
+                    (block_size, block_weight, subsidy_and_fees, total_moved)
+                },
+            );
+
+        column![
+            row![
+                container(text("HEADER & STATS").font(BERKELEY_MONO_BOLD).size(16))
+                    .width(Length::Fill)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .align_x(iced::alignment::Horizontal::Center)
+                    .height(CELL_HEIGHT)
+                    .style(table_cell()),
+            ]
+            .spacing(0),
+            row![
+                container(text("VERSION").font(BERKELEY_MONO_BOLD).size(12))
+                    .width(Length::FillPortion(2))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .style(table_cell()),
+                container(text(version).size(12))
+                    .width(Length::FillPortion(3))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .style(table_cell()),
+                container(text("TIME").font(BERKELEY_MONO_BOLD).size(12))
+                    .width(Length::FillPortion(2))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .style(table_cell()),
+                container(text(time).size(12))
+                    .width(Length::FillPortion(3))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .style(table_cell()),
+            ]
+            .spacing(0),
+            row![
+                container(text("PREV BLOCKHASH").font(BERKELEY_MONO_BOLD).size(12))
+                    .width(Length::FillPortion(2))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .style(table_cell()),
+                container(text(prev_blockhash).size(9))
+                    .width(Length::FillPortion(3))
+                    .height(CELL_HEIGHT)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .align_x(iced::alignment::Horizontal::Center)
+                    .style(table_cell()),
+                container(text("BITS").font(BERKELEY_MONO_BOLD).size(12))
+                    .width(Length::FillPortion(2))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .style(table_cell()),
+                container(text(bits).size(12))
+                    .width(Length::FillPortion(3))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .style(table_cell()),
+            ]
+            .spacing(0),
+            row![
+                container(text("MERKLE ROOT").font(BERKELEY_MONO_BOLD).size(12))
+                    .width(Length::FillPortion(2))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .style(table_cell()),
+                container(text(merkle_root).size(9))
+                    .width(Length::FillPortion(3))
+                    .height(CELL_HEIGHT)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .align_x(iced::alignment::Horizontal::Center)
+                    .style(table_cell()),
+                container(text("NONCE").font(BERKELEY_MONO_BOLD).size(12))
+                    .width(Length::FillPortion(2))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .style(table_cell()),
+                container(text(nonce).size(12))
+                    .width(Length::FillPortion(3))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .style(table_cell()),
+            ]
+            .spacing(0),
+            row![
+                container(text("BLOCK SIZE").font(BERKELEY_MONO_BOLD).size(12))
+                    .width(Length::FillPortion(2))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .style(table_cell()),
+                container(text(block_size).size(12))
+                    .width(Length::FillPortion(3))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .style(table_cell()),
+                container(text("TOTAL MOVED").font(BERKELEY_MONO_BOLD).size(12))
+                    .width(Length::FillPortion(2))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .style(table_cell()),
+                container(text(total_moved).size(12))
+                    .width(Length::FillPortion(3))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .style(table_cell()),
+            ]
+            .spacing(0),
+            row![
+                container(text("BLOCK WEIGHT").font(BERKELEY_MONO_BOLD).size(12))
+                    .width(Length::FillPortion(2))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .style(table_cell()),
+                container(text(block_weight).size(12))
+                    .width(Length::FillPortion(3))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .style(table_cell()),
+                container(text("SUBSIDY + FEES").font(BERKELEY_MONO_BOLD).size(12))
+                    .width(Length::FillPortion(2))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .style(table_cell()),
+                container(text(subsidy_and_fees).size(12))
+                    .width(Length::FillPortion(3))
+                    .height(CELL_HEIGHT)
+                    .padding(10)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .style(table_cell()),
+            ]
+            .spacing(0),
+        ]
+        .spacing(0)
+    };
+
+    let mut transactions_table = column![
+        row![
+            container(text("TRANSACTIONS").font(BERKELEY_MONO_BOLD).size(16))
+                .width(Length::Fill)
+                .align_y(iced::alignment::Vertical::Center)
+                .align_x(iced::alignment::Horizontal::Center)
+                .height(CELL_HEIGHT)
+                .style(table_cell()),
+        ]
+        .spacing(0),
+        row![
+            container(text("IDX").font(BERKELEY_MONO_BOLD).size(12))
+                .width(Length::Fixed(80.0))
+                .height(CELL_HEIGHT)
+                .padding(0)
+                .align_y(iced::alignment::Vertical::Center)
+                .align_x(iced::alignment::Horizontal::Center)
+                .style(table_cell()),
+            container(text("TXID").font(BERKELEY_MONO_BOLD).size(12))
+                .width(Length::Fill)
+                .height(CELL_HEIGHT)
+                .padding(0)
+                .align_y(iced::alignment::Vertical::Center)
+                .align_x(iced::alignment::Horizontal::Center)
+                .style(table_cell()),
+        ]
+        .spacing(0),
+    ]
+    .spacing(0);
+
+    if let Some(block) = current_block {
+        for (idx, tx) in block.txdata.iter().enumerate() {
+            let mut txid = tx.compute_txid().to_string();
+            if tx.is_coinbase() {
+                txid.push_str(" [COINBASE]");
+            }
+
+            let is_expanded = *expanded_tx_idx == Some(idx);
+
+            let tx_row = button(
+                row![
+                    container(text(format!("{:05}", idx)).size(12))
+                        .width(Length::Fixed(80.0))
+                        .height(CELL_HEIGHT)
+                        .padding(10)
+                        .align_y(iced::alignment::Vertical::Center)
+                        .align_x(iced::alignment::Horizontal::Center)
+                        .style(table_cell()),
+                    container(text(txid).size(11))
+                        .width(Length::Fill)
+                        .height(CELL_HEIGHT)
+                        .padding(10)
+                        .align_y(iced::alignment::Vertical::Center)
+                        .style(table_cell()),
+                ]
+                .spacing(0),
+            )
+            .on_press(NodeMessage::ToggleTransactionExpandedIdx(idx))
+            .style(button_container())
+            .padding(0);
+
+            transactions_table = transactions_table.push(tx_row);
+
+            if is_expanded {
+                let tx_details = {
+                    let mut details = column![
+                        row![
+                            container(text("VERSION").font(BERKELEY_MONO_BOLD).size(12))
+                                .width(Length::FillPortion(1))
+                                .height(CELL_HEIGHT)
+                                .padding(10)
+                                .style(table_cell()),
+                            container(text(tx.version.0.to_string()).size(12))
+                                .width(Length::FillPortion(3))
+                                .height(CELL_HEIGHT)
+                                .padding(10)
+                                .align_y(iced::alignment::Vertical::Center)
+                                .style(table_cell()),
+                        ]
+                        .spacing(0),
+                        row![
+                            container(text("LOCKTIME").font(BERKELEY_MONO_BOLD).size(12))
+                                .width(Length::FillPortion(1))
+                                .height(CELL_HEIGHT)
+                                .padding(10)
+                                .style(table_cell()),
+                            container(text(tx.lock_time.to_string()).size(12))
+                                .width(Length::FillPortion(3))
+                                .height(CELL_HEIGHT)
+                                .padding(10)
+                                .align_y(iced::alignment::Vertical::Center)
+                                .style(table_cell()),
+                        ]
+                        .spacing(0),
+                        row![
+                            container(text("INPUTS").font(BERKELEY_MONO_BOLD).size(14))
+                                .width(Length::Fill)
+                                .height(CELL_HEIGHT)
+                                .padding(10)
+                                .align_x(iced::alignment::Horizontal::Center)
+                                .align_y(iced::alignment::Vertical::Center)
+                                .style(table_cell()),
+                        ]
+                        .spacing(0),
+                    ]
+                    .spacing(0);
+
+                    for (input_idx, input) in tx.input.iter().enumerate() {
+                        let prevout_txid = input.previous_output.txid.to_string();
+                        let prevout_vout = input.previous_output.vout.to_string();
+                        let prevout = format!("{}:{}", prevout_txid, prevout_vout);
+
+                        let sequence = format!("{:08x}", input.sequence);
+                        let script_sig = input.script_sig.to_asm_string();
+
+                        let witness_count = input.witness.len();
+                        let num_rows = 5 + witness_count;
+
+                        let mut input_rows = column![
+                            row![
+                                container(text("OUTPOINT").size(12))
+                                    .width(Length::FillPortion(1))
+                                    .height(CELL_HEIGHT_2X)
+                                    .align_y(iced::alignment::Vertical::Center)
+                                    .padding(10)
+                                    .style(table_cell()),
+                                container(text(prevout).size(12).wrapping(text::Wrapping::Glyph))
+                                    .width(Length::FillPortion(3))
+                                    .height(CELL_HEIGHT_2X)
+                                    .padding(10)
+                                    .align_y(iced::alignment::Vertical::Center)
+                                    .style(table_cell()),
+                            ]
+                            .spacing(0),
+                            row![
+                                container(text("SEQUENCE").size(12))
+                                    .width(Length::FillPortion(1))
+                                    .height(CELL_HEIGHT)
+                                    .padding(10)
+                                    .style(table_cell()),
+                                container(text(sequence).size(12))
+                                    .width(Length::FillPortion(3))
+                                    .height(CELL_HEIGHT)
+                                    .padding(10)
+                                    .align_y(iced::alignment::Vertical::Center)
+                                    .style(table_cell()),
+                            ]
+                            .spacing(0),
+                            row![
+                                container(text("SCRIPT SIG").size(12))
+                                    .width(Length::FillPortion(1))
+                                    .align_y(iced::alignment::Vertical::Center)
+                                    .height(CELL_HEIGHT_2X)
+                                    .padding(10)
+                                    .style(table_cell()),
+                                container(
+                                    text(if script_sig.is_empty() {
+                                        String::from("EMPTY")
+                                    } else {
+                                        script_sig
+                                    })
+                                    .size(10)
+                                )
+                                .width(Length::FillPortion(3))
+                                .height(CELL_HEIGHT_2X)
+                                .padding(12)
+                                .align_y(iced::alignment::Vertical::Center)
+                                .style(table_cell()),
+                            ]
+                            .spacing(0),
+                        ]
+                        .spacing(0);
+
+                        if witness_count == 0 {
+                            input_rows = input_rows.push(
+                                row![
+                                    container(text("WITNESS").size(12))
+                                        .width(Length::FillPortion(1))
+                                        .height(CELL_HEIGHT)
+                                        .padding(10)
+                                        .style(table_cell()),
+                                    container(text("EMPTY").size(12))
+                                        .width(Length::FillPortion(3))
+                                        .height(CELL_HEIGHT)
+                                        .padding(10)
+                                        .align_y(iced::alignment::Vertical::Center)
+                                        .style(table_cell()),
+                                ]
+                                .spacing(0),
+                            );
+                        } else {
+                            for (witness_idx, witness_item) in input.witness.iter().enumerate() {
+                                let witness_hex = hex::encode(witness_item);
+                                input_rows = input_rows.push(
+                                    row![
+                                        container(
+                                            text(format!("WITNESS {}", witness_idx)).size(12)
+                                        )
+                                        .width(Length::FillPortion(1))
+                                        .height(CELL_HEIGHT)
+                                        .padding(10)
+                                        .style(table_cell()),
+                                        container(text(witness_hex).size(10))
+                                            .width(Length::FillPortion(3))
+                                            .height(CELL_HEIGHT)
+                                            .padding(10)
+                                            .align_y(iced::alignment::Vertical::Center)
+                                            .style(table_cell()),
+                                    ]
+                                    .spacing(0),
+                                );
+                            }
+                        }
+
+                        details = details.push(
+                            row![
+                                container(
+                                    text(format!("{:02}", input_idx))
+                                        .font(BERKELEY_MONO_BOLD)
+                                        .size(20)
+                                )
+                                .width(Length::Fixed(80.0))
+                                .height(Length::Fixed(CELL_HEIGHT_PX * num_rows as f32))
+                                .padding(10)
+                                .align_y(iced::alignment::Vertical::Center)
+                                .align_x(iced::alignment::Horizontal::Center)
+                                .style(table_cell()),
+                                input_rows.width(Length::Fill),
+                            ]
+                            .spacing(0),
+                        );
+                    }
+
+                    details = details.push(
+                        row![
+                            container(text("OUTPUTS").font(BERKELEY_MONO_BOLD).size(14))
+                                .width(Length::Fill)
+                                .height(CELL_HEIGHT)
+                                .padding(10)
+                                .align_x(iced::alignment::Horizontal::Center)
+                                .align_y(iced::alignment::Vertical::Center)
+                                .style(table_cell()),
+                        ]
+                        .spacing(0),
+                    );
+
+                    for (output_idx, output) in tx.output.iter().enumerate() {
+                        let value = format!("{} SATOSHIS", format_thousands(output.value.to_sat()));
+                        let script_pubkey = output.script_pubkey.to_asm_string();
+                        let script_type = if output.script_pubkey.is_p2pkh() {
+                            "P2PKH"
+                        } else if output.script_pubkey.is_p2sh() {
+                            "P2SH"
+                        } else if output.script_pubkey.is_p2wpkh() {
+                            "P2WPKH"
+                        } else if output.script_pubkey.is_p2wsh() {
+                            "P2WSH"
+                        } else if output.script_pubkey.is_p2tr() {
+                            "P2TR"
+                        } else if output.script_pubkey.is_op_return() {
+                            "OP_RETURN"
+                        } else {
+                            "UNKNOWN"
+                        };
+
+                        details = details.push(
+                            row![
+                                container(
+                                    text(format!("{:02}", output_idx))
+                                        .font(BERKELEY_MONO_BOLD)
+                                        .size(20)
+                                )
+                                .width(Length::Fixed(80.0))
+                                .height(Length::Fixed(CELL_HEIGHT_PX * 4.0))
+                                .padding(10)
+                                .align_y(iced::alignment::Vertical::Center)
+                                .align_x(iced::alignment::Horizontal::Center)
+                                .style(table_cell()),
+                                column![
+                                    row![
+                                        container(text("VALUE").size(12))
+                                            .width(Length::FillPortion(1))
+                                            .height(CELL_HEIGHT)
+                                            .padding(10)
+                                            .style(table_cell()),
+                                        container(text(value).size(12))
+                                            .width(Length::FillPortion(3))
+                                            .height(CELL_HEIGHT)
+                                            .padding(10)
+                                            .align_y(iced::alignment::Vertical::Center)
+                                            .style(table_cell()),
+                                    ]
+                                    .spacing(0),
+                                    row![
+                                        container(text("SCRIPT TYPE").size(12))
+                                            .width(Length::FillPortion(1))
+                                            .height(CELL_HEIGHT)
+                                            .padding(10)
+                                            .style(table_cell()),
+                                        container(text(script_type).size(12))
+                                            .width(Length::FillPortion(3))
+                                            .height(CELL_HEIGHT)
+                                            .padding(10)
+                                            .style(table_cell()),
+                                    ]
+                                    .spacing(0),
+                                    row![
+                                        container(text("SCRIPT PUBKEY").size(12))
+                                            .width(Length::FillPortion(1))
+                                            .height(Length::Fill)
+                                            .padding(10)
+                                            .align_y(iced::alignment::Vertical::Center)
+                                            .style(table_cell()),
+                                        container(
+                                            text(script_pubkey)
+                                                .size(12)
+                                                .wrapping(text::Wrapping::Glyph)
+                                        )
+                                        .width(Length::FillPortion(3))
+                                        .height(Length::Shrink)
+                                        .padding(10)
+                                        .align_y(iced::alignment::Vertical::Center)
+                                        .style(table_cell()),
+                                    ]
+                                    .spacing(0),
+                                ]
+                                .spacing(0)
+                                .width(Length::Fill),
+                            ]
+                            .spacing(0),
+                        );
+                    }
+
+                    container(details)
+                        .width(Length::Fill)
+                        .padding(Padding::from([0, 30]))
+                        .style(table_cell())
+                };
+
+                transactions_table = transactions_table.push(tx_details);
+            }
+        }
+    }
+
+    let transactions_scrollable = scrollable(transactions_table)
+        .height(Length::Fill)
+        .direction(iced::widget::scrollable::Direction::Vertical(
+            Scrollbar::hidden(),
+        ));
+
+    let explorer_canvas = container(column![header_table, transactions_scrollable,].spacing(0))
         .padding(0)
         .width(Length::Fill)
         .height(Length::Fill)
         .style(title_container());
+
     let explorer = container(column![explorer_title, explorer_canvas].spacing(5));
 
-    let right = column![explorer].spacing(20).width(Length::FillPortion(1));
+    let right = column![explorer].spacing(20).width(Length::FillPortion(2));
 
     row![left, right].spacing(20).into()
 }

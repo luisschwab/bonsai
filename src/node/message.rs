@@ -1,8 +1,10 @@
 use core::fmt::Debug;
+use std::fmt::write;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
 use bdk_floresta::FlorestaNode;
+use bitcoin::Block;
 use tokio::sync::RwLock;
 
 use crate::node::error::BonsaiNodeError;
@@ -28,6 +30,11 @@ pub(crate) enum NodeMessage {
     DisconnectPeer(SocketAddr),
     PeerDisconnected(SocketAddr),
     CopyAccumulatorData,
+    BlockHeightInputChanged(String),
+    BlockExplorerHeightUpdate(u32),
+    FetchBlock(u32),
+    BlockFetched(Option<Block>),
+    ToggleTransactionExpandedIdx(usize),
     Error(BonsaiNodeError),
 }
 
@@ -51,6 +58,18 @@ impl Debug for NodeMessage {
             Self::DisconnectPeer(peer) => write!(f, "RemovePeer({peer})"),
             Self::PeerDisconnected(peer) => write!(f, "PeerRemoved({peer})"),
             Self::CopyAccumulatorData => write!(f, "CopyAccumulatorData"),
+            Self::BlockHeightInputChanged(input) => write!(f, "BlockHeightInputChanged({input})"),
+            Self::BlockExplorerHeightUpdate(height) => {
+                write!(f, "BlockExplorerHeightUpdate({height})")
+            }
+            Self::FetchBlock(height) => write!(f, "FetchBlock({height})"),
+            Self::BlockFetched(block) => match block {
+                Some(block) => write!(f, "BlockFetched({})", block.header.block_hash()),
+                None => write!(f, "BlockFetched(Missing)"),
+            },
+            Self::ToggleTransactionExpandedIdx(idx) => {
+                write!(f, "ToggleTransactionExpandedIdx({idx})")
+            }
             Self::Error(_) => write!(f, "Node Error"),
         }
     }

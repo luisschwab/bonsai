@@ -75,7 +75,7 @@ pub(crate) mod common;
 pub(crate) mod node;
 pub(crate) mod wallet;
 
-const START_NODE_AUTO: bool = false; //true;
+const START_NODE_AUTO: bool = true;
 const APP_VERSION: &str = concat!("v", env!("CARGO_PKG_VERSION"));
 const GEOIP_ASN_DB: &str = "./assets/geoip/GeoLite2-ASN.mmdb";
 const GEOIP_CITY_DB: &str = "./assets/geoip/GeoLite2-City.mmdb";
@@ -417,6 +417,7 @@ fn main() -> iced::Result {
                 node: Node {
                     log_capture: log_capture.clone(),
                     geoip_reader: GeoIpReader::new(GEOIP_ASN_DB, GEOIP_CITY_DB).ok(),
+                    block_explorer_height_str: String::from("0"),
                     ..Node::default()
                 },
                 onchain_wallet: BDKWallet::default(),
