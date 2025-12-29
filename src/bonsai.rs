@@ -1,4 +1,3 @@
-// TODO: remove me after node stuff is done
 #![allow(unused)]
 
 use core::fmt::Debug;
@@ -66,13 +65,8 @@ use crate::node::interface::common::table_cell;
 use crate::node::message::NodeMessage;
 use crate::settings::bonsai_settings::BonsaiSettings;
 use crate::settings::bonsai_settings::BonsaiSettingsMessage;
-use crate::settings::view::view_settings;
-use crate::wallet::ark::placeholder::ArkWallet;
-use crate::wallet::ark::placeholder::ArkWalletMessage;
 use crate::wallet::bdk::placeholder::BDKWallet;
 use crate::wallet::bdk::placeholder::BDKWalletMessage;
-use crate::wallet::phoenixd::placeholder::Phoenixd;
-use crate::wallet::phoenixd::placeholder::PhoenixdMessage;
 
 pub(crate) mod common;
 pub(crate) mod node;
@@ -87,16 +81,11 @@ const GEOIP_CITY_DB: &str = "./assets/geoip/GeoLite2-City.mmdb";
 #[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Tab {
     BDKWallet,
-    //#[allow(unused)]
-    //Phoenixd,
-    //#[allow(unused)]
-    //Ark,
     #[default]
     NodeOverview,
     NodeP2P,
     NodeBlocks,
     NodeUtreexo,
-    NodeMempool,
     Settings,
     About,
 }
@@ -120,8 +109,8 @@ pub(crate) struct Bonsai {
     pub(crate) active_tab: Tab,
     pub(crate) node: Node,
     pub(crate) onchain_wallet: BDKWallet,
-    pub(crate) lightning_wallet: Phoenixd,
-    pub(crate) ark_wallet: ArkWallet,
+    //pub(crate) lightning_wallet: Phoenixd,
+    //pub(crate) ark_wallet: ArkWallet,
     pub(crate) settings: BonsaiSettings,
 }
 
@@ -272,11 +261,7 @@ impl Bonsai {
             Tab::BDKWallet => self.onchain_wallet.view().map(BonsaiMessage::BdkWallet),
             //Tab::Phoenixd => self.lightning_wallet.view().map(BonsaiMessage::Phoenixd),
             //Tab::Ark => self.ark_wallet.view().map(BonsaiMessage::ArkWallet),
-            Tab::NodeOverview
-            | Tab::NodeP2P
-            | Tab::NodeBlocks
-            | Tab::NodeUtreexo
-            | Tab::NodeMempool => self
+            Tab::NodeOverview | Tab::NodeP2P | Tab::NodeBlocks | Tab::NodeUtreexo => self
                 .node
                 .view_tab(self.active_tab, self.app_clock)
                 .map(BonsaiMessage::Node),
@@ -365,12 +350,10 @@ impl Bonsai {
         let tab_subscription = match self.active_tab {
             Tab::BDKWallet => Subscription::none(),
             //Tab::Phoenixd | Tab::Ark => Subscription::none(),
-            Tab::NodeOverview
-            | Tab::NodeP2P
-            | Tab::NodeBlocks
-            | Tab::NodeUtreexo
-            | Tab::NodeMempool
-            | Tab::Settings => Subscription::none(),
+            Tab::NodeOverview | Tab::NodeP2P | Tab::NodeBlocks | Tab::NodeUtreexo => {
+                self.node.subscribe().map(BonsaiMessage::Node)
+            }
+            Tab::Settings => Subscription::none(),
             Tab::About => unimplemented!(),
         };
 
@@ -430,8 +413,6 @@ fn main() -> iced::Result {
                     ..Node::default()
                 },
                 onchain_wallet: BDKWallet::default(),
-                lightning_wallet: Phoenixd::default(),
-                ark_wallet: ArkWallet::default(),
             };
 
             let tasks = if START_NODE_AUTO {

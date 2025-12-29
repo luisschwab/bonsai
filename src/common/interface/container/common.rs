@@ -7,7 +7,6 @@ pub(crate) const BORDER_WIDTH: f32 = 1.5;
 pub(crate) const BORDER_RADIUS: f32 = 0.0;
 
 pub(crate) const CELL_HEIGHT: Length = Length::Fixed(35.0);
-pub(crate) const CELL_HEIGHT_2X: Length = Length::Fixed(70.0);
 pub(crate) const TABLE_HEADER_FONT_SIZE: u32 = 16;
 pub(crate) const TABLE_CELL_FONT_SIZE: u32 = 12;
 pub(crate) const TABLE_CELL_ICON_SIZE: u32 = 24;

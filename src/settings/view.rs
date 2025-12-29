@@ -6,7 +6,6 @@ use iced::widget::container;
 use iced::widget::row;
 use iced::widget::text;
 
-use crate::BonsaiMessage;
 use crate::node::interface::common::TITLE_PADDING;
 use crate::node::interface::common::title_container;
 use crate::settings::bonsai_settings::BonsaiSettingsMessage;

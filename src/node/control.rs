@@ -385,7 +385,7 @@ impl Node {
                                         );
                                         hash
                                     }
-                                    Err(e) => return NodeMessage::BlockFetched(None),
+                                    Err(_) => return NodeMessage::BlockFetched(None),
                                 };
 
                                 match node.get_block(blockhash).await {
@@ -511,7 +511,6 @@ impl Node {
     pub(crate) fn view_blocks(&self) -> Element<'_, NodeMessage> {
         use crate::node::interface::blocks::view;
         view::view_blocks(
-            &self.statistics,
             &self.block_explorer_height_str,
             &self.latest_blocks,
             &self.block_explorer_current_block,

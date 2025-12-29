@@ -1,12 +1,10 @@
 use core::fmt::Debug;
-use std::fmt::write;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
 use bdk_floresta::FlorestaNode;
 use bitcoin::Block;
 use tokio::sync::RwLock;
-use tokio::sync::mpsc;
 
 use crate::node::error::BonsaiNodeError;
 use crate::node::statistics::NodeStatistics;
