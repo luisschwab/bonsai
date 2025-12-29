@@ -32,6 +32,7 @@ use crate::node::interface::common::TITLE_PADDING;
 use crate::node::interface::common::input_field;
 use crate::node::interface::common::table_cell;
 use crate::node::interface::common::title_container;
+use crate::node::interface::common::transparent_button;
 use crate::node::message::NodeMessage;
 use crate::node::statistics::NodeStatistics;
 
@@ -54,6 +55,7 @@ fn get_block_subsidy(height: u32) -> u64 {
 pub fn view_blocks<'a>(
     statistics: &'a Option<NodeStatistics>,
     block_height: &'a str,
+    latest_blocks: &'a [Block],
     current_block: &'a Option<Block>,
     expanded_tx_idx: &'a Option<usize>,
 ) -> Element<'a, NodeMessage> {
@@ -63,11 +65,60 @@ pub fn view_blocks<'a>(
         .padding(TITLE_PADDING);
 
     let latest_title: Container<'_, NodeMessage> = container(text("LATEST BLOCKS").size(24));
-    let latest_canvas: Container<'_, NodeMessage> = container(text("TODO"))
-        .padding(0)
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .style(title_container());
+    let latest_canvas: Container<'_, NodeMessage> = {
+        let blocks_column = latest_blocks.iter().take(5).enumerate().fold(
+            column![].spacing(0),
+            |col, (idx, block)| {
+                let block_height = block.bip34_block_height().unwrap_or(0);
+                let tx_count = block.txdata.len();
+                let block_size_bytes = bitcoin::consensus::encode::serialize(&block).len();
+                let block_size = if block_size_bytes < 1_000 {
+                    format!("{} BYTES", block_size_bytes)
+                } else if block_size_bytes < 1_000_000 {
+                    format!("{:.2} KB", block_size_bytes as f64 / 1_000.0)
+                } else {
+                    format!("{:.2} MB", block_size_bytes as f64 / 1_000_000.0)
+                };
+
+                let ascii: &[&str] = &[
+                    "  ___________  ",
+                    " /          /| ",
+                    "/__________/ | ",
+                    "|          | | ",
+                    "|          | | ",
+                    "|          | / ",
+                    "|__________|/  ",
+                ];
+                let cube = text(ascii.join("\n")).font(BERKELEY_MONO_BOLD).size(10);
+
+                let block_info = row![
+                    cube,
+                    column![
+                        text(format!("BLOCK {}", format_thousands(block_height))).size(12),
+                        text(format!("{} TRANSACTION(S)", tx_count)).size(12),
+                        text(block_size).size(12),
+                    ]
+                    .spacing(2)
+                ]
+                .spacing(10)
+                .align_y(iced::alignment::Vertical::Center);
+
+                let block_button = button(container(block_info).padding(10))
+                    .style(transparent_button())
+                    .on_press(NodeMessage::BlockExplorerHeightUpdate(block_height));
+
+                col.push(block_button)
+            },
+        );
+
+        container(blocks_column)
+            .padding(0)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .align_y(iced::alignment::Vertical::Center)
+            .style(title_container())
+    };
+
     let latest = container(column![latest_title, latest_canvas].spacing(5));
 
     let left = column![title, latest]
@@ -90,7 +141,7 @@ pub fn view_blocks<'a>(
             .on_press_maybe(
                 current_height
                     .and_then(|h| h.checked_sub(1))
-                    .map(NodeMessage::BlockExplorerHeightUpdate)
+                    .map(|h| NodeMessage::BlockExplorerHeightUpdate(h as u64))
             )
             .style(button_container())
             .padding(10)
@@ -117,7 +168,7 @@ pub fn view_blocks<'a>(
             .on_press_maybe(
                 current_height
                     .and_then(|h| h.checked_add(1))
-                    .map(NodeMessage::BlockExplorerHeightUpdate)
+                    .map(|h| NodeMessage::BlockExplorerHeightUpdate(h as u64))
             )
             .style(button_container())
             .padding(10)
@@ -166,15 +217,9 @@ pub fn view_blocks<'a>(
 
                     // Need to fetch all prevouts for fees (too network intensive?)
                     let fees = Amount::from_sat(0);
-
                     let subsidy = Amount::from_sat(get_block_subsidy(current_height.unwrap_or(0)));
-
-                    let subsidy_and_fees = format!(
-                        "{} BTC + {} BTC = {} BTC",
-                        subsidy.to_btc(),
-                        fees.to_btc(),
-                        (subsidy + fees).to_btc()
-                    );
+                    let subsidy_and_fees =
+                        format!("{} BTC", format_thousands((subsidy + fees).to_btc()));
 
                     let mut total_moved = Amount::from_sat(0);
                     for tx in &block.txdata {
@@ -317,7 +362,7 @@ pub fn view_blocks<'a>(
                     .height(CELL_HEIGHT)
                     .padding(10)
                     .style(table_cell()),
-                container(text(subsidy_and_fees).size(10))
+                container(text(subsidy_and_fees).size(12))
                     .width(Length::FillPortion(3))
                     .height(CELL_HEIGHT)
                     .padding(10)
@@ -350,9 +395,8 @@ pub fn view_blocks<'a>(
             container(text("TXID").font(BERKELEY_MONO_BOLD).size(14))
                 .width(Length::Fill)
                 .height(CELL_HEIGHT)
-                .padding(5)
-                .align_y(iced::alignment::Vertical::Center)
                 .align_x(iced::alignment::Horizontal::Center)
+                .align_y(iced::alignment::Vertical::Center)
                 .style(table_cell()),
         ]
         .spacing(0),
