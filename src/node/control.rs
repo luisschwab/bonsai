@@ -1,22 +1,30 @@
 use core::fmt::Display;
+use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
 
+use bdk_floresta::BlockConsumer;
 use bdk_floresta::ChainParams;
 use bdk_floresta::FlorestaNode;
 use bdk_floresta::UtreexoNodeConfig;
+use bdk_floresta::UtxoData;
 use bdk_floresta::builder::FlorestaBuilder;
 use bitcoin::Block;
 use bitcoin::Network;
+use bitcoin::OutPoint;
 use iced::Element;
 use iced::Subscription;
 use iced::Task;
 use iced::clipboard;
+use iced::futures::SinkExt;
 use iced::widget::qr_code;
+use once_cell::sync::Lazy;
 use tokio::runtime::Handle;
+use tokio::sync::Mutex;
 use tokio::sync::RwLock;
+use tokio::sync::mpsc;
 use tracing::error;
 use tracing::info;
 
@@ -32,6 +40,9 @@ use crate::node::statistics::fetch_stats;
 pub const DATA_DIR: &str = "./data/";
 pub const NETWORK: Network = Network::Signet;
 pub const FETCH_STATISTICS_TIME: u64 = 1;
+
+static BLOCK_RECEIVER: Lazy<Arc<Mutex<Option<mpsc::UnboundedReceiver<Block>>>>> =
+    Lazy::new(|| Arc::new(Mutex::new(None)));
 
 #[derive(Clone, Debug, Default)]
 pub(crate) enum NodeStatus {
@@ -56,6 +67,26 @@ impl Display for NodeStatus {
     }
 }
 
+pub(crate) struct BlockForwarder {
+    tx: mpsc::UnboundedSender<Block>,
+}
+
+impl BlockConsumer for BlockForwarder {
+    fn on_block(
+        &self,
+        block: &Block,
+        _height: u32,
+        _spent_utxos: Option<&HashMap<OutPoint, UtxoData>>,
+    ) {
+        let _ = self.tx.send(block.clone());
+    }
+
+    #[allow(unused)]
+    fn wants_spent_utxos(&self) -> bool {
+        false
+    }
+}
+
 #[derive(Default)]
 pub(crate) struct Node {
     pub(crate) handle: Option<Arc<RwLock<FlorestaNode>>>,
@@ -70,6 +101,7 @@ pub(crate) struct Node {
     pub(crate) geoip_reader: Option<GeoIpReader>,
     pub(crate) accumulator_qr_data: Option<qr_code::Data>,
     pub(crate) block_explorer_height_str: String,
+    pub(crate) latest_blocks: Vec<Block>,
     pub(crate) block_explorer_current_block: Option<Block>,
     pub(crate) block_explorer_expanded_tx_idx: Option<usize>,
 }
@@ -130,7 +162,6 @@ impl Node {
                 self.subscription_active = true;
                 self.is_shutting_down = false;
                 self.start_time = Some(Instant::now());
-
                 Task::none()
             }
             NodeMessage::Shutdown => {
@@ -326,7 +357,7 @@ impl Node {
                 if clean.is_empty() || clean.chars().all(|c| c.is_numeric()) {
                     if let Ok(height) = clean.parse::<u32>() {
                         self.block_explorer_height_str = format_thousands(height);
-                        return self.update(NodeMessage::FetchBlock(height));
+                        return self.update(NodeMessage::FetchBlock(height as u64));
                     } else if clean.is_empty() {
                         self.block_explorer_height_str.clear();
                     }
@@ -348,7 +379,7 @@ impl Node {
                             .spawn(async move {
                                 let node = handle.read().await;
 
-                                let blockhash = match node.get_blockhash(height) {
+                                let blockhash = match node.get_blockhash(height as u32) {
                                     Ok(hash) => {
                                         info!(
                                             "Fetching block with height={} and hash={}",
@@ -393,6 +424,14 @@ impl Node {
                 }
                 Task::none()
             }
+
+            NodeMessage::NewBlock(block) => {
+                self.latest_blocks.insert(0, block);
+                if self.latest_blocks.len() > 5 {
+                    self.latest_blocks.truncate(5);
+                }
+                Task::none()
+            }
         }
     }
 
@@ -400,19 +439,45 @@ impl Node {
         let tick_subscription =
             iced::time::every(Duration::from_millis(32)).map(|_| NodeMessage::Tick);
 
+        let mut subscriptions = vec![tick_subscription];
+
         if self.subscription_active {
-            Subscription::batch(vec![
+            subscriptions.push(
                 iced::time::every(Duration::from_secs(FETCH_STATISTICS_TIME))
                     .map(|_| NodeMessage::GetStatistics),
-                tick_subscription,
-            ])
-        } else {
-            tick_subscription
+            );
+
+            subscriptions.push(Self::block_subscription());
         }
+
+        Subscription::batch(subscriptions)
     }
 
     pub fn unsubscribe(&mut self) {
         self.subscription_active = false;
+    }
+
+    fn block_subscription() -> Subscription<NodeMessage> {
+        Subscription::run(|| {
+            iced::stream::channel(
+                100,
+                |mut output: iced::futures::channel::mpsc::Sender<NodeMessage>| async move {
+                    loop {
+                        let mut receiver_guard = BLOCK_RECEIVER.lock().await;
+
+                        if let Some(receiver) = receiver_guard.as_mut()
+                            && let Some(block) = receiver.recv().await
+                        {
+                            let _ = output.send(NodeMessage::NewBlock(block)).await;
+                            continue;
+                        }
+
+                        drop(receiver_guard);
+                        tokio::time::sleep(Duration::from_millis(100)).await;
+                    }
+                },
+            )
+        })
     }
 
     pub(crate) fn view_tab(&self, tab: Tab, app_clock: usize) -> Element<'_, NodeMessage> {
@@ -451,6 +516,7 @@ impl Node {
         view::view_blocks(
             &self.statistics,
             &self.block_explorer_height_str,
+            &self.latest_blocks,
             &self.block_explorer_current_block,
             &self.block_explorer_expanded_tx_idx,
         )
@@ -478,6 +544,14 @@ pub(crate) async fn start_node() -> Result<Arc<RwLock<FlorestaNode>>, String> {
                 .build()
                 .await
                 .map_err(|e| e.to_string())?;
+
+            let (block_tx, block_rx) = mpsc::unbounded_channel();
+            let forwarder = Arc::new(BlockForwarder { tx: block_tx });
+
+            node.block_subscriber(forwarder);
+
+            // Store receiver globally
+            *BLOCK_RECEIVER.lock().await = Some(block_rx);
 
             Ok(Arc::new(RwLock::new(node)))
         })

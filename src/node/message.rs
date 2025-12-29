@@ -6,6 +6,7 @@ use std::sync::Arc;
 use bdk_floresta::FlorestaNode;
 use bitcoin::Block;
 use tokio::sync::RwLock;
+use tokio::sync::mpsc;
 
 use crate::node::error::BonsaiNodeError;
 use crate::node::statistics::NodeStatistics;
@@ -31,9 +32,10 @@ pub(crate) enum NodeMessage {
     PeerDisconnected(SocketAddr),
     CopyAccumulatorData,
     BlockHeightInputChanged(String),
-    BlockExplorerHeightUpdate(u32),
-    FetchBlock(u32),
+    BlockExplorerHeightUpdate(u64),
+    FetchBlock(u64),
     BlockFetched(Option<Block>),
+    NewBlock(Block),
     ToggleTransactionExpandedIdx(usize),
     Error(BonsaiNodeError),
 }
@@ -67,6 +69,7 @@ impl Debug for NodeMessage {
                 Some(block) => write!(f, "BlockFetched({})", block.header.block_hash()),
                 None => write!(f, "BlockFetched(Missing)"),
             },
+            Self::NewBlock(block) => write!(f, "NewBlock({})", block.bip34_block_height().unwrap()),
             Self::ToggleTransactionExpandedIdx(idx) => {
                 write!(f, "ToggleTransactionExpandedIdx({idx})")
             }

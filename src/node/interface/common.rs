@@ -2,6 +2,8 @@ use iced::Border;
 use iced::Padding;
 use iced::Theme;
 use iced::border::Radius;
+use iced::widget::button::Status as ButtonStatus;
+use iced::widget::button::Style as ButtonStyle;
 use iced::widget::container::Style as ContainerStyle;
 use iced::widget::text_input::Style as TextInputStyle;
 
@@ -57,5 +59,14 @@ pub(crate) fn input_field() -> impl Fn(&Theme, iced::widget::text_input::Status)
         placeholder: OFF_WHITE.scale_alpha(0.5),
         value: OFF_WHITE,
         selection: BLACK,
+    }
+}
+
+pub(crate) fn transparent_button() -> impl Fn(&Theme, ButtonStatus) -> ButtonStyle {
+    move |_theme, _status| ButtonStyle {
+        background: None,
+        border: Border::default(),
+        text_color: OFF_WHITE,
+        ..Default::default()
     }
 }
