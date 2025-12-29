@@ -11,24 +11,29 @@ pub(crate) fn format_duration(duration: Duration) -> String {
 }
 
 pub(crate) fn format_thousands<T: Display>(n: T) -> String {
-    let mut s = n.to_string();
-
+    let s = n.to_string();
     let negative = s.starts_with('-');
-    if negative {
-        s.remove(0);
-    }
 
+    // Split on decimal point if it exists.
+    let parts: Vec<&str> = s.trim_start_matches('-').split('.').collect();
+    let mut integer_part = parts[0].to_string();
+    let decimal_part = if parts.len() > 1 {
+        format!(".{}", parts[1])
+    } else {
+        String::new()
+    };
+
+    // Format the integer part with commas.
     let mut out = String::new();
-    while s.len() > 3 {
-        let tail = s.split_off(s.len() - 3);
+    while integer_part.len() > 3 {
+        let tail = integer_part.split_off(integer_part.len() - 3);
         out = format!(",{}{}", tail, out);
     }
+    out = format!("{}{}", integer_part, out);
 
-    out = format!("{}{}", s, out);
-
+    // Add back negative sign and decimal part.
     if negative {
         out.insert(0, '-');
     }
-
-    out
+    format!("{}{}", out, decimal_part)
 }
