@@ -3,27 +3,19 @@ use bitcoin::Block;
 use iced::Element;
 use iced::Length;
 use iced::Padding;
-use iced::alignment::Horizontal::Left;
-use iced::alignment::Horizontal::Right;
 use iced::widget::Container;
 use iced::widget::Space;
 use iced::widget::button;
 use iced::widget::column;
 use iced::widget::container;
-use iced::widget::qr_code;
 use iced::widget::row;
 use iced::widget::scrollable;
-use iced::widget::scrollable::Scrollable;
 use iced::widget::scrollable::Scrollbar;
 use iced::widget::text;
 use iced::widget::text_input;
-use iced::widget::tooltip;
-use tracing::info;
 
 use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::container::common::CELL_HEIGHT;
-use crate::common::interface::container::common::CELL_HEIGHT_2X;
-use crate::common::interface::container::common::SHADOW;
 use crate::common::interface::container::common::shadow_container;
 use crate::common::interface::container::content::button_container;
 use crate::common::interface::font::BERKELEY_MONO_BOLD;
@@ -34,9 +26,6 @@ use crate::node::interface::common::table_cell;
 use crate::node::interface::common::title_container;
 use crate::node::interface::common::transparent_button;
 use crate::node::message::NodeMessage;
-use crate::node::statistics::NodeStatistics;
-
-const CELL_HEIGHT_PX: f32 = 35.0;
 
 /// Get the block subsidy in satoshis based on blockheight.
 fn get_block_subsidy(height: u32) -> u64 {
@@ -53,7 +42,6 @@ fn get_block_subsidy(height: u32) -> u64 {
 }
 
 pub fn view_blocks<'a>(
-    statistics: &'a Option<NodeStatistics>,
     block_height: &'a str,
     latest_blocks: &'a [Block],
     current_block: &'a Option<Block>,
@@ -68,7 +56,7 @@ pub fn view_blocks<'a>(
     let latest_canvas: Container<'_, NodeMessage> = {
         let blocks_column = latest_blocks.iter().take(5).enumerate().fold(
             column![].spacing(0),
-            |col, (idx, block)| {
+            |col, (_idx, block)| {
                 let block_height = block.bip34_block_height().unwrap_or(0);
                 let tx_count = block.txdata.len();
                 let block_size_bytes = bitcoin::consensus::encode::serialize(&block).len();
