@@ -64,6 +64,9 @@ use crate::node::error::BonsaiNodeError;
 use crate::node::geoip::GeoIpReader;
 use crate::node::interface::common::table_cell;
 use crate::node::message::NodeMessage;
+use crate::settings::bonsai_settings::BonsaiSettings;
+use crate::settings::bonsai_settings::BonsaiSettingsMessage;
+use crate::settings::view::view_settings;
 use crate::wallet::ark::placeholder::ArkWallet;
 use crate::wallet::ark::placeholder::ArkWalletMessage;
 use crate::wallet::bdk::placeholder::BDKWallet;
@@ -73,9 +76,10 @@ use crate::wallet::phoenixd::placeholder::PhoenixdMessage;
 
 pub(crate) mod common;
 pub(crate) mod node;
+pub(crate) mod settings;
 pub(crate) mod wallet;
 
-const START_NODE_AUTO: bool = true;
+const START_NODE_AUTO: bool = false; //true;
 const APP_VERSION: &str = concat!("v", env!("CARGO_PKG_VERSION"));
 const GEOIP_ASN_DB: &str = "./assets/geoip/GeoLite2-ASN.mmdb";
 const GEOIP_CITY_DB: &str = "./assets/geoip/GeoLite2-City.mmdb";
@@ -83,30 +87,31 @@ const GEOIP_CITY_DB: &str = "./assets/geoip/GeoLite2-City.mmdb";
 #[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Tab {
     BDKWallet,
-    #[allow(unused)]
-    Phoenixd,
-    #[allow(unused)]
-    Ark,
+    //#[allow(unused)]
+    //Phoenixd,
+    //#[allow(unused)]
+    //Ark,
     #[default]
     NodeOverview,
     NodeP2P,
     NodeBlocks,
     NodeUtreexo,
     NodeMempool,
-    NodeSettings,
+    Settings,
     About,
 }
 
 #[derive(Debug, Clone)]
 pub(crate) enum BonsaiMessage {
+    AnimationTick,
     SelectTab(Tab),
     CloseRequested,
     CloseWindow,
-    BdkWallet(BDKWalletMessage),
-    Phoenixd(PhoenixdMessage),
-    ArkWallet(ArkWalletMessage),
+    Settings(BonsaiSettingsMessage),
     Node(NodeMessage),
-    AnimationTick,
+    BdkWallet(BDKWalletMessage),
+    //Phoenixd(PhoenixdMessage),
+    //ArkWallet(ArkWalletMessage),
 }
 
 #[derive(Default)]
@@ -117,6 +122,7 @@ pub(crate) struct Bonsai {
     pub(crate) onchain_wallet: BDKWallet,
     pub(crate) lightning_wallet: Phoenixd,
     pub(crate) ark_wallet: ArkWallet,
+    pub(crate) settings: BonsaiSettings,
 }
 
 impl Bonsai {
@@ -243,11 +249,11 @@ impl Bonsai {
             //    .height(SIDEBAR_BUTTON_HEIGHT)
             //    .width(Length::Fill)
             //    .style(sidebar_button(self.active_tab == Tab::NodeMempool, GREEN)),
-            button(text("NODE SETTINGS"))
-                //.on_press(BonsaiMessage::SelectTab(Tab::NodeSettings))
+            button(text("SETTINGS"))
+                .on_press(BonsaiMessage::SelectTab(Tab::Settings))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::NodeSettings, GREEN)),
+                .style(sidebar_button(self.active_tab == Tab::Settings, GREEN)),
             button(text("ABOUT BONSAI"))
                 //.on_press(BonsaiMessage::SelectTab(Tab::About))
                 .height(SIDEBAR_BUTTON_HEIGHT)
@@ -264,17 +270,17 @@ impl Bonsai {
 
         let content = match self.active_tab {
             Tab::BDKWallet => self.onchain_wallet.view().map(BonsaiMessage::BdkWallet),
-            Tab::Phoenixd => self.lightning_wallet.view().map(BonsaiMessage::Phoenixd),
-            Tab::Ark => self.ark_wallet.view().map(BonsaiMessage::ArkWallet),
+            //Tab::Phoenixd => self.lightning_wallet.view().map(BonsaiMessage::Phoenixd),
+            //Tab::Ark => self.ark_wallet.view().map(BonsaiMessage::ArkWallet),
             Tab::NodeOverview
             | Tab::NodeP2P
             | Tab::NodeBlocks
             | Tab::NodeUtreexo
-            | Tab::NodeMempool
-            | Tab::NodeSettings => self
+            | Tab::NodeMempool => self
                 .node
                 .view_tab(self.active_tab, self.app_clock)
                 .map(BonsaiMessage::Node),
+            Tab::Settings => self.settings.view().map(BonsaiMessage::Settings),
             Tab::About => unimplemented!(),
         };
 
@@ -340,6 +346,7 @@ impl Bonsai {
                 .and_then(window::close::<BonsaiMessage>)
                 .discard(),
             BonsaiMessage::Node(msg) => self.node.update(msg).map(BonsaiMessage::Node),
+            BonsaiMessage::Settings(msg) => self.settings.update(msg).map(BonsaiMessage::Settings),
         }
     }
 
@@ -356,13 +363,14 @@ impl Bonsai {
         });
 
         let tab_subscription = match self.active_tab {
-            Tab::BDKWallet | Tab::Phoenixd | Tab::Ark => Subscription::none(),
+            Tab::BDKWallet => Subscription::none(),
+            //Tab::Phoenixd | Tab::Ark => Subscription::none(),
             Tab::NodeOverview
             | Tab::NodeP2P
             | Tab::NodeBlocks
             | Tab::NodeUtreexo
             | Tab::NodeMempool
-            | Tab::NodeSettings => self.node.subscribe().map(BonsaiMessage::Node),
+            | Tab::Settings => Subscription::none(),
             Tab::About => unimplemented!(),
         };
 
@@ -414,6 +422,7 @@ fn main() -> iced::Result {
             let bonsai = Bonsai {
                 active_tab: Tab::default(),
                 app_clock: usize::default(),
+                settings: BonsaiSettings::default(),
                 node: Node {
                     log_capture: log_capture.clone(),
                     geoip_reader: GeoIpReader::new(GEOIP_ASN_DB, GEOIP_CITY_DB).ok(),
