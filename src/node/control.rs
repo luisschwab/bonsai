@@ -111,8 +111,6 @@ impl Node {
         match message {
             // `Tick` is useful for triggering an UI re-render.
             NodeMessage::Tick => {
-                //self.app_clock = self.app_clock.wrapping_add(1);
-
                 let current_version = self.log_capture.version();
                 if current_version != self.last_log_version {
                     self.last_log_version = current_version;
@@ -486,7 +484,6 @@ impl Node {
             Tab::NodeP2P => self.view_p2p(),
             Tab::NodeBlocks => self.view_blocks(),
             Tab::NodeUtreexo => self.view_utreexo(),
-            Tab::NodeSettings => self.view_settings(),
             _ => unreachable!(),
         }
     }
@@ -520,10 +517,6 @@ impl Node {
             &self.block_explorer_current_block,
             &self.block_explorer_expanded_tx_idx,
         )
-    }
-
-    pub(crate) fn view_settings(&self) -> Element<'_, NodeMessage> {
-        unimplemented!()
     }
 }
 

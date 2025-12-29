@@ -414,15 +414,14 @@ pub fn view_blocks<'a>(
                     container(text(format!("{:05}", idx)).size(12))
                         .width(Length::Fixed(80.0))
                         .height(CELL_HEIGHT)
-                        .padding(10)
                         .align_y(iced::alignment::Vertical::Center)
                         .align_x(iced::alignment::Horizontal::Center)
                         .style(table_cell()),
-                    container(text(txid).size(11))
+                    container(text(txid).size(12))
                         .width(Length::Fill)
                         .height(CELL_HEIGHT)
-                        .padding(10)
                         .align_y(iced::alignment::Vertical::Center)
+                        .align_x(iced::alignment::Horizontal::Center)
                         .style(table_cell()),
                 ]
                 .spacing(0),
@@ -448,6 +447,20 @@ pub fn view_blocks<'a>(
                                 .padding(10)
                                 .align_y(iced::alignment::Vertical::Center)
                                 .style(table_cell()),
+                            container(text("INPUT COUNT").font(BERKELEY_MONO_BOLD).size(12))
+                                .width(Length::FillPortion(1))
+                                .height(CELL_HEIGHT)
+                                .padding(10)
+                                .style(table_cell()),
+                            container(text(format!("{:04}", tx.input.len())).size(12))
+                                .width(Length::FillPortion(1))
+                                .height(CELL_HEIGHT)
+                                .padding(10)
+                                .align_y(iced::alignment::Vertical::Center)
+                                .style(table_cell()),
+                        ]
+                        .spacing(0),
+                        row![
                             container(text("LOCKTIME").font(BERKELEY_MONO_BOLD).size(12))
                                 .width(Length::FillPortion(1))
                                 .height(CELL_HEIGHT)
@@ -466,20 +479,6 @@ pub fn view_blocks<'a>(
                             .padding(10)
                             .align_y(iced::alignment::Vertical::Center)
                             .style(table_cell()),
-                        ]
-                        .spacing(0),
-                        row![
-                            container(text("INPUT COUNT").font(BERKELEY_MONO_BOLD).size(12))
-                                .width(Length::FillPortion(1))
-                                .height(CELL_HEIGHT)
-                                .padding(10)
-                                .style(table_cell()),
-                            container(text(format!("{:04}", tx.input.len())).size(12))
-                                .width(Length::FillPortion(1))
-                                .height(CELL_HEIGHT)
-                                .padding(10)
-                                .align_y(iced::alignment::Vertical::Center)
-                                .style(table_cell()),
                             container(text("OUTPUT COUNT").font(BERKELEY_MONO_BOLD).size(12))
                                 .width(Length::FillPortion(1))
                                 .height(CELL_HEIGHT)
