@@ -130,7 +130,7 @@ fn get_services_with_tooltip<'a>(services: &'a ServiceFlags) -> Element<'a, Node
     let mut service_strings: Vec<String> = ALL_FLAGS
         .iter()
         .filter(|(flag, _, _)| services.has(*flag))
-        .map(|(_, name, bit)| format!("{} (1 << {})", name, bit))
+        .map(|(_, name, bit)| format!("{} (1<<{})", name, bit))
         .collect();
 
     // Check for non-spec flags manually
@@ -138,10 +138,10 @@ fn get_services_with_tooltip<'a>(services: &'a ServiceFlags) -> Element<'a, Node
     const NODE_UTREEXO_ARCHIVE: u64 = 1 << 25;
 
     if services.to_u64() & NODE_UTREEXO != 0 {
-        service_strings.push("NODE_UTREEXO (1 << 24)".to_string());
+        service_strings.push("NODE_UTREEXO (1<<24)".to_string());
     }
     if services.to_u64() & NODE_UTREEXO_ARCHIVE != 0 {
-        service_strings.push("NODE_UTREEXO_ARCHIVE (1 << 25)".to_string());
+        service_strings.push("NODE_UTREEXO_ARCHIVE (1<<25)".to_string());
     }
 
     let services_text = if service_strings.is_empty() {
