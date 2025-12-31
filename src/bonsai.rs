@@ -65,8 +65,8 @@ use crate::node::interface::common::table_cell;
 use crate::node::message::NodeMessage;
 use crate::settings::bonsai_settings::BonsaiSettings;
 use crate::settings::bonsai_settings::BonsaiSettingsMessage;
-use crate::wallet::bdk::placeholder::BDKWallet;
-use crate::wallet::bdk::placeholder::BDKWalletMessage;
+use crate::wallet::placeholder::Wallet;
+use crate::wallet::placeholder::WalletMessage;
 
 pub(crate) mod common;
 pub(crate) mod node;
@@ -80,7 +80,7 @@ const GEOIP_CITY_DB: &str = "./assets/geoip/GeoLite2-City.mmdb";
 
 #[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Tab {
-    BDKWallet,
+    Wallet,
     #[default]
     NodeOverview,
     NodeP2P,
@@ -98,7 +98,7 @@ pub(crate) enum BonsaiMessage {
     CloseWindow,
     Settings(BonsaiSettingsMessage),
     Node(NodeMessage),
-    BdkWallet(BDKWalletMessage),
+    BdkWallet(WalletMessage),
     //Phoenixd(PhoenixdMessage),
     //ArkWallet(ArkWalletMessage),
 }
@@ -108,9 +108,7 @@ pub(crate) struct Bonsai {
     pub(crate) app_clock: usize,
     pub(crate) active_tab: Tab,
     pub(crate) node: Node,
-    pub(crate) onchain_wallet: BDKWallet,
-    //pub(crate) lightning_wallet: Phoenixd,
-    //pub(crate) ark_wallet: ArkWallet,
+    pub(crate) onchain_wallet: Wallet,
     pub(crate) settings: BonsaiSettings,
 }
 
@@ -199,20 +197,10 @@ impl Bonsai {
 
         let tabs = column![
             button(text("ONCHAIN WALLET"))
-                .on_press(BonsaiMessage::SelectTab(Tab::BDKWallet))
+                .on_press(BonsaiMessage::SelectTab(Tab::Wallet))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::BDKWallet, ORANGE)),
-            //button(text("LIGHTNING WALLET"))
-            //    .on_press(BonsaiMessage::SelectTab(Tab::Phoenixd))
-            //    .height(SIDEBAR_BUTTON_HEIGHT)
-            //    .width(Length::Fill)
-            //    .style(sidebar_button(self.active_tab == Tab::Phoenixd, YELLOW)),
-            //button(text("ARK WALLET"))
-            //    .on_press(BonsaiMessage::SelectTab(Tab::Ark))
-            //    .height(SIDEBAR_BUTTON_HEIGHT)
-            //    .width(Length::Fill)
-            //    .style(sidebar_button(self.active_tab == Tab::Ark, PURPLE)),
+                .style(sidebar_button(self.active_tab == Tab::Wallet, ORANGE)),
             button(text("NODE OVERVIEW"))
                 .on_press(BonsaiMessage::SelectTab(Tab::NodeOverview))
                 .height(SIDEBAR_BUTTON_HEIGHT)
@@ -258,9 +246,7 @@ impl Bonsai {
             .style(sidebar_container());
 
         let content = match self.active_tab {
-            Tab::BDKWallet => self.onchain_wallet.view().map(BonsaiMessage::BdkWallet),
-            //Tab::Phoenixd => self.lightning_wallet.view().map(BonsaiMessage::Phoenixd),
-            //Tab::Ark => self.ark_wallet.view().map(BonsaiMessage::ArkWallet),
+            Tab::Wallet => self.onchain_wallet.view().map(BonsaiMessage::BdkWallet),
             Tab::NodeOverview | Tab::NodeP2P | Tab::NodeBlocks | Tab::NodeUtreexo => self
                 .node
                 .view_tab(self.active_tab, self.app_clock)
@@ -348,11 +334,11 @@ impl Bonsai {
         });
 
         let tab_subscription = match self.active_tab {
-            Tab::BDKWallet => Subscription::none(),
-            //Tab::Phoenixd | Tab::Ark => Subscription::none(),
-            Tab::NodeOverview | Tab::NodeP2P | Tab::NodeBlocks | Tab::NodeUtreexo => {
-                self.node.subscribe().map(BonsaiMessage::Node)
-            }
+            Tab::Wallet => Subscription::none(),
+            Tab::NodeOverview => self.node.subscribe().map(BonsaiMessage::Node),
+            Tab::NodeP2P => self.node.subscribe().map(BonsaiMessage::Node),
+            Tab::NodeBlocks => self.node.subscribe().map(BonsaiMessage::Node),
+            Tab::NodeUtreexo => self.node.subscribe().map(BonsaiMessage::Node),
             Tab::Settings => Subscription::none(),
             Tab::About => unimplemented!(),
         };
@@ -412,7 +398,7 @@ fn main() -> iced::Result {
                     block_explorer_height_str: String::from("0"),
                     ..Node::default()
                 },
-                onchain_wallet: BDKWallet::default(),
+                onchain_wallet: Wallet::default(),
             };
 
             let tasks = if START_NODE_AUTO {
