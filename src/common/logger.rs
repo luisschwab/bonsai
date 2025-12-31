@@ -41,7 +41,7 @@ pub(crate) fn setup_logger() -> LogCapture {
         .with(capture_layer)
         .init();
 
-    tracing::info!("Setup tracing subscriber");
+    tracing::info!("Tracing subscriber setup");
 
     log_capture
 }
