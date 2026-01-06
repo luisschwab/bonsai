@@ -17,7 +17,7 @@ use crate::common::interface::container::common::BORDER_WIDTH;
 
 pub(crate) const SIDEBAR_WIDTH: f32 = 200.0;
 pub(crate) const SIDEBAR_PADDING: f32 = 10.0;
-pub(crate) const SIDEBAR_BUTTON_HEIGHT: f32 = 30.0;
+pub(crate) const SIDEBAR_BUTTON_HEIGHT: f32 = 45.0;
 pub(crate) const SIDEBAR_BUTTON_SPACING: f32 = 10.0;
 
 pub(crate) fn sidebar_container() -> impl Fn(&Theme) -> ContainerStyle {

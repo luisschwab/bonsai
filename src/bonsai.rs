@@ -29,10 +29,13 @@ use iced::window::icon;
 use iced::window::settings::PlatformSpecific;
 use tokio::runtime::Handle;
 
+use crate::common::interface::color::BLACK;
+use crate::common::interface::color::BLUE;
 use crate::common::interface::color::DARK_GREY;
 use crate::common::interface::color::GREEN;
 use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::color::ORANGE;
+use crate::common::interface::color::PURPLE;
 use crate::common::interface::color::RED;
 use crate::common::interface::color::WHITE;
 use crate::common::interface::color::network_color;
@@ -77,14 +80,16 @@ const START_NODE_AUTO: bool = false; //true;
 const APP_VERSION: &str = concat!("v", env!("CARGO_PKG_VERSION"));
 const GEOIP_ASN_DB: &str = "./assets/geoip/GeoLite2-ASN.mmdb";
 const GEOIP_CITY_DB: &str = "./assets/geoip/GeoLite2-City.mmdb";
+const BONSAI_ICON_DARK_PATH: &str = "./assets/icon/bonsai-dark.png";
+const BONSAI_ICON_LIGHT_PATH: &str = "./assets/icon/bonsai-light.png";
 
 #[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Tab {
     Wallet,
     #[default]
-    NodeOverview,
-    NodeP2P,
-    NodeBlocks,
+    NodeStatistics,
+    NodeNetwork,
+    NodeBlockchain,
     NodeUtreexo,
     Settings,
     About,
@@ -99,8 +104,6 @@ pub(crate) enum BonsaiMessage {
     Settings(BonsaiSettingsMessage),
     Node(NodeMessage),
     BdkWallet(WalletMessage),
-    //Phoenixd(PhoenixdMessage),
-    //ArkWallet(ArkWalletMessage),
 }
 
 #[derive(Default)]
@@ -131,8 +134,8 @@ impl Bonsai {
                     // Left.
                     container(
                         row![
-                            container(image("assets/icon/bonsai.png").height(Length::Fill))
-                                .padding(5)
+                            container(image(BONSAI_ICON_DARK_PATH).height(Length::Fill))
+                                .padding(1)
                                 .style(table_cell()),
                             column![
                                 row![
@@ -196,46 +199,82 @@ impl Bonsai {
         .style(header_container());
 
         let tabs = column![
-            button(text("ONCHAIN WALLET"))
-                .on_press(BonsaiMessage::SelectTab(Tab::Wallet))
-                .height(SIDEBAR_BUTTON_HEIGHT)
-                .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::Wallet, ORANGE)),
-            button(text("NODE OVERVIEW"))
-                .on_press(BonsaiMessage::SelectTab(Tab::NodeOverview))
-                .height(SIDEBAR_BUTTON_HEIGHT)
-                .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::NodeOverview, GREEN)),
-            button(text("NODE P2P"))
-                .on_press(BonsaiMessage::SelectTab(Tab::NodeP2P))
-                .height(SIDEBAR_BUTTON_HEIGHT)
-                .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::NodeP2P, GREEN)),
-            button(text("NODE UTREEXO"))
-                .on_press(BonsaiMessage::SelectTab(Tab::NodeUtreexo))
-                .height(SIDEBAR_BUTTON_HEIGHT)
-                .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::NodeUtreexo, GREEN)),
-            button(text("NODE BLOCKS"))
-                .on_press(BonsaiMessage::SelectTab(Tab::NodeBlocks))
-                .height(SIDEBAR_BUTTON_HEIGHT)
-                .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::NodeBlocks, GREEN)),
-            //button(text("NODE MEMPOOL"))
-            //    //.on_press(BonsaiMessage::SelectTab(Tab::NodeMempool))
-            //    .height(SIDEBAR_BUTTON_HEIGHT)
-            //    .width(Length::Fill)
-            //    .style(sidebar_button(self.active_tab == Tab::NodeMempool, GREEN)),
-            button(text("SETTINGS"))
-                .on_press(BonsaiMessage::SelectTab(Tab::Settings))
-                .height(SIDEBAR_BUTTON_HEIGHT)
-                .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::Settings, GREEN)),
-            button(text("ABOUT BONSAI"))
-                //.on_press(BonsaiMessage::SelectTab(Tab::About))
-                .height(SIDEBAR_BUTTON_HEIGHT)
-                .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::About, WHITE)),
+            button(
+                text("WALLET")
+                    .size(20)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .align_x(iced::alignment::Horizontal::Center)
+            )
+            .on_press(BonsaiMessage::SelectTab(Tab::Wallet))
+            .height(SIDEBAR_BUTTON_HEIGHT)
+            .width(Length::Fill)
+            .style(sidebar_button(self.active_tab == Tab::Wallet, ORANGE)),
+            button(
+                text("STATISTICS")
+                    .size(20)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .align_x(iced::alignment::Horizontal::Center)
+            )
+            .on_press(BonsaiMessage::SelectTab(Tab::NodeStatistics))
+            .height(SIDEBAR_BUTTON_HEIGHT)
+            .width(Length::Fill)
+            .style(sidebar_button(
+                self.active_tab == Tab::NodeStatistics,
+                GREEN
+            )),
+            button(
+                text("NETWORK")
+                    .size(20)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .align_x(iced::alignment::Horizontal::Center)
+            )
+            .on_press(BonsaiMessage::SelectTab(Tab::NodeNetwork))
+            .height(SIDEBAR_BUTTON_HEIGHT)
+            .width(Length::Fill)
+            .style(sidebar_button(self.active_tab == Tab::NodeNetwork, GREEN)),
+            button(
+                text("UTREEXO")
+                    .size(20)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .align_x(iced::alignment::Horizontal::Center)
+            )
+            .on_press(BonsaiMessage::SelectTab(Tab::NodeUtreexo))
+            .height(SIDEBAR_BUTTON_HEIGHT)
+            .width(Length::Fill)
+            .style(sidebar_button(self.active_tab == Tab::NodeUtreexo, GREEN)),
+            button(
+                text("BLOCKCHAIN")
+                    .size(20)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .align_x(iced::alignment::Horizontal::Center)
+            )
+            .on_press(BonsaiMessage::SelectTab(Tab::NodeBlockchain))
+            .height(SIDEBAR_BUTTON_HEIGHT)
+            .width(Length::Fill)
+            .style(sidebar_button(
+                self.active_tab == Tab::NodeBlockchain,
+                GREEN
+            )),
+            button(
+                text("SETTINGS")
+                    .size(20)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .align_x(iced::alignment::Horizontal::Center)
+            )
+            .on_press(BonsaiMessage::SelectTab(Tab::Settings))
+            .height(SIDEBAR_BUTTON_HEIGHT)
+            .width(Length::Fill)
+            .style(sidebar_button(self.active_tab == Tab::Settings, PURPLE)),
+            button(
+                text("ABOUT")
+                    .size(20)
+                    .align_y(iced::alignment::Vertical::Center)
+                    .align_x(iced::alignment::Horizontal::Center)
+            )
+            //.on_press(BonsaiMessage::SelectTab(Tab::About))
+            .height(SIDEBAR_BUTTON_HEIGHT)
+            .width(Length::Fill)
+            .style(sidebar_button(self.active_tab == Tab::About, WHITE)),
         ]
         .spacing(SIDEBAR_BUTTON_SPACING);
 
@@ -247,7 +286,19 @@ impl Bonsai {
 
         let content = match self.active_tab {
             Tab::Wallet => self.onchain_wallet.view().map(BonsaiMessage::BdkWallet),
-            Tab::NodeOverview | Tab::NodeP2P | Tab::NodeBlocks | Tab::NodeUtreexo => self
+            Tab::NodeStatistics => self
+                .node
+                .view_tab(self.active_tab, self.app_clock)
+                .map(BonsaiMessage::Node),
+            Tab::NodeNetwork => self
+                .node
+                .view_tab(self.active_tab, self.app_clock)
+                .map(BonsaiMessage::Node),
+            Tab::NodeBlockchain => self
+                .node
+                .view_tab(self.active_tab, self.app_clock)
+                .map(BonsaiMessage::Node),
+            Tab::NodeUtreexo => self
                 .node
                 .view_tab(self.active_tab, self.app_clock)
                 .map(BonsaiMessage::Node),
@@ -335,9 +386,9 @@ impl Bonsai {
 
         let tab_subscription = match self.active_tab {
             Tab::Wallet => Subscription::none(),
-            Tab::NodeOverview => self.node.subscribe().map(BonsaiMessage::Node),
-            Tab::NodeP2P => self.node.subscribe().map(BonsaiMessage::Node),
-            Tab::NodeBlocks => self.node.subscribe().map(BonsaiMessage::Node),
+            Tab::NodeStatistics => self.node.subscribe().map(BonsaiMessage::Node),
+            Tab::NodeNetwork => self.node.subscribe().map(BonsaiMessage::Node),
+            Tab::NodeBlockchain => self.node.subscribe().map(BonsaiMessage::Node),
             Tab::NodeUtreexo => self.node.subscribe().map(BonsaiMessage::Node),
             Tab::Settings => Subscription::none(),
             Tab::About => unimplemented!(),
@@ -363,7 +414,7 @@ fn main() -> iced::Result {
     std::mem::forget(rt);
 
     // Create an [`Icon`] from a PNG.
-    let icon: Icon = icon::from_file("./assets/icon/bonsai.png").unwrap();
+    let icon: Icon = icon::from_file(BONSAI_ICON_DARK_PATH).unwrap();
 
     // Define some window [`Settings`].
     let window_settings: Settings = Settings {

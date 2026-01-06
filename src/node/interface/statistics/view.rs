@@ -25,9 +25,9 @@ use crate::node::control::NodeStatus;
 use crate::node::interface::common::TITLE_PADDING;
 use crate::node::interface::common::table_cell;
 use crate::node::interface::common::title_container;
-use crate::node::interface::overview::style::ControlButton;
-use crate::node::interface::overview::style::action_button;
-use crate::node::interface::overview::style::log_container;
+use crate::node::interface::statistics::style::ControlButton;
+use crate::node::interface::statistics::style::action_button;
+use crate::node::interface::statistics::style::log_container;
 use crate::node::log_capture::LogCapture;
 use crate::node::message::NodeMessage;
 use crate::node::statistics::NodeStatistics;
@@ -70,20 +70,14 @@ fn control_button_with_disable_logic<'a>(
     }
 }
 
-/// View renderer for the `NODE OVERVIEW` tab.
-pub(crate) fn view_overview<'a>(
+pub(crate) fn view_statistics<'a>(
     node_status: &'a NodeStatus,
     statistics: &'a Option<NodeStatistics>,
     log_capture: &'a LogCapture,
     app_clock: usize,
 ) -> Element<'a, NodeMessage> {
-    // Tab Title.
-    let title: Container<'_, NodeMessage> = container(text("NODE OVERVIEW").size(25))
-        .style(title_container())
-        .padding(TITLE_PADDING);
-
     // Control Button Section.
-    let control_button_title: Container<'_, NodeMessage> = container(text("CONTROL").size(24));
+    let control_button_title: Container<'_, NodeMessage> = container(text("NODE CONTROL").size(24));
     let control_button_container: Container<'_, NodeMessage> = container(
         row![
             control_button_with_disable_logic(
@@ -112,10 +106,10 @@ pub(crate) fn view_overview<'a>(
     let control = column![control_button_title, control_button_container];
 
     // Metrics Section.
-    let in_ibd = statistics.as_ref().map(|s| s.in_ibd).unwrap_or(true);
+    let ibd_status = statistics.as_ref().map(|s| s.in_ibd).unwrap_or(true);
     let headers = statistics.as_ref().map(|s| s.headers).unwrap_or(0);
     let blocks = statistics.as_ref().map(|s| s.blocks).unwrap_or(0);
-    let progress = calculate_progress(blocks, headers);
+    let ibd_progress = calculate_progress(blocks, headers);
     let user_agent = statistics
         .as_ref()
         .map(|s| s.user_agent.clone())
@@ -130,7 +124,7 @@ pub(crate) fn view_overview<'a>(
         .unwrap_or("00h 00m 00s".to_string());
 
     let network_color = network_color(NETWORK);
-    let status_color = match node_status {
+    let node_status_color = match node_status {
         NodeStatus::Starting => pulse_color(GREEN, app_clock),
         NodeStatus::Running => GREEN,
         NodeStatus::Inactive => OFF_WHITE,
@@ -138,7 +132,7 @@ pub(crate) fn view_overview<'a>(
         NodeStatus::ShuttingDown => pulse_color(RED, app_clock),
     };
 
-    let metrics_title = container(text("METRICS").size(24));
+    let metrics_title = container(text("NODE STATISTICS").size(24));
     let metrics_table = container(
         column![
             row![
@@ -146,10 +140,14 @@ pub(crate) fn view_overview<'a>(
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
-                container(text(node_status.to_string()).size(14).color(status_color))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
+                container(
+                    text(node_status.to_string())
+                        .size(14)
+                        .color(node_status_color)
+                )
+                .padding(10)
+                .width(Length::FillPortion(1))
+                .style(table_cell()),
             ],
             row![
                 container(text("NETWORK").size(14))
@@ -166,11 +164,21 @@ pub(crate) fn view_overview<'a>(
                 .style(table_cell()),
             ],
             row![
-                container(text("IBD").size(14))
+                container(text("IBD STATUS").size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
-                container(text(in_ibd.to_string().to_uppercase()).size(14))
+                container(text(ibd_status.to_string().to_uppercase()).size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+            ],
+            row![
+                container(text("IBD PROGRESS").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+                container(text(format!("{:.2}%", ibd_progress)).size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
@@ -191,16 +199,6 @@ pub(crate) fn view_overview<'a>(
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
                 container(text(format_thousands(headers)).size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-            ],
-            row![
-                container(text("PROGRESS").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-                container(text(format!("{:.2}%", progress)).size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
@@ -279,7 +277,7 @@ pub(crate) fn view_overview<'a>(
     .style(title_container());
     let metrics = column![metrics_title, metrics_table].spacing(0);
 
-    let left = column![title, control, metrics]
+    let left = column![control, metrics]
         .spacing(20)
         .width(Length::FillPortion(4));
 

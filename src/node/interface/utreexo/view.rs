@@ -17,7 +17,7 @@ use crate::common::util::format_thousands;
 use crate::node::interface::common::TITLE_PADDING;
 use crate::node::interface::common::table_cell;
 use crate::node::interface::common::title_container;
-use crate::node::interface::p2p::style::peer_info_table_container;
+use crate::node::interface::network::style::peer_info_table_container;
 use crate::node::interface::utreexo::style::ROOT_CELL_HEIGHT;
 use crate::node::message::NodeMessage;
 use crate::node::statistics::NodeStatistics;
@@ -26,11 +26,6 @@ pub fn view_utreexo<'a>(
     statistics: &'a Option<NodeStatistics>,
     qr_data: &'a Option<qr_code::Data>,
 ) -> Element<'a, NodeMessage> {
-    // Tab Title
-    let title: Container<'_, NodeMessage> = container(text("NODE UTREEXO").size(25))
-        .style(title_container())
-        .padding(TITLE_PADDING);
-
     let num_leaves = statistics
         .as_ref()
         .map(|s| s.accumulator.leaves as u32)
@@ -58,7 +53,7 @@ pub fn view_utreexo<'a>(
     let accumulator_table = container(
         column![
             row![
-                container(text("NUM ROOTS").size(14))
+                container(text("ROOT COUNT").size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
@@ -68,7 +63,7 @@ pub fn view_utreexo<'a>(
                     .style(table_cell()),
             ],
             row![
-                container(text("NUM LEAVES").size(14))
+                container(text("LEAF COUNT").size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
@@ -140,7 +135,7 @@ pub fn view_utreexo<'a>(
     };
     let qr = container(column![qr_title, qr_code].spacing(5));
 
-    let left = column![title, accumulator, qr]
+    let left = column![accumulator, qr]
         .spacing(20)
         .width(Length::Fixed(420.0));
 

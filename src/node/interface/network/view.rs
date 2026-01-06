@@ -26,9 +26,9 @@ use crate::node::interface::common::TITLE_PADDING;
 use crate::node::interface::common::input_field;
 use crate::node::interface::common::table_cell;
 use crate::node::interface::common::title_container;
-use crate::node::interface::p2p::style::ban_button;
-use crate::node::interface::p2p::style::disconnect_button;
-use crate::node::interface::p2p::style::peer_info_table_container;
+use crate::node::interface::network::style::ban_button;
+use crate::node::interface::network::style::disconnect_button;
+use crate::node::interface::network::style::peer_info_table_container;
 use crate::node::message::NodeMessage;
 use crate::node::statistics::NodeImpl;
 use crate::node::statistics::NodeStatistics;
@@ -169,11 +169,6 @@ pub fn view_p2p<'a>(
     peer_input: &'a str,
     geoip_reader: &'a Option<GeoIpReader>,
 ) -> Element<'a, NodeMessage> {
-    // Tab Title.
-    let title: Container<'_, NodeMessage> = container(text("NODE P2P").size(25))
-        .style(title_container())
-        .padding(TITLE_PADDING);
-
     // Add Peer.
     let add_peer_title: Container<'_, NodeMessage> = container(text("ADD PEER").size(24));
     let add_peer_input = container(
@@ -215,7 +210,7 @@ pub fn view_p2p<'a>(
     let p2p_messages = column![p2p_messages_title, p2p_messages_container];
 
     // Left Section.
-    let left = column![title, add_peer, p2p_messages]
+    let left = column![add_peer, p2p_messages]
         .spacing(25)
         .width(Length::FillPortion(3));
 

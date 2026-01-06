@@ -378,23 +378,29 @@ impl Node {
                                 let node = handle.read().await;
 
                                 let blockhash = match node.get_blockhash(height as u32) {
-                                    Ok(hash) => {
-                                        info!(
-                                            "Fetching block with height={} and hash={}",
-                                            height, hash
-                                        );
-                                        hash
+                                    Ok(blockhash) => {
+                                        info!("Fetching block of height={height} and hash={blockhash}");
+                                        blockhash
                                     }
-                                    Err(_) => return NodeMessage::BlockFetched(None),
+                                    Err(e) => {
+                                        error!("Failed to find a block of height={height} from Floresta's header chain");
+                                        return NodeMessage::BlockFetched(None)
+                                    }
                                 };
 
                                 match node.get_block(blockhash).await {
                                     Ok(Some(block)) => {
-                                        info!("Fetched block at height={height}");
+                                        info!("Fetched block of height={height} and hash={blockhash}");
                                         NodeMessage::BlockFetched(Some(block))
                                     }
-                                    Ok(None) => NodeMessage::BlockFetched(None),
-                                    Err(e) => NodeMessage::Error(BonsaiNodeError::from(e)),
+                                    Ok(None) => {
+                                        error!("Failed to fetch block of height={height} and hash={blockhash}: 404 Not Found");
+                                        NodeMessage::BlockFetched(None)
+                                    }
+                                    Err(e) => {
+                                        error!("Failed to fetch block of height={height} and hash={blockhash}: {e}");
+                                        NodeMessage::Error(BonsaiNodeError::from(e))
+                                    }
                                 }
                             })
                             .await;
@@ -408,7 +414,6 @@ impl Node {
 
             NodeMessage::BlockFetched(block) => {
                 if let Some(block) = block {
-                    info!("Fetched block with hash={}", block.header.block_hash());
                     self.block_explorer_current_block = Some(block);
                 }
                 Task::none()
@@ -480,21 +485,21 @@ impl Node {
 
     pub(crate) fn view_tab(&self, tab: Tab, app_clock: usize) -> Element<'_, NodeMessage> {
         match tab {
-            Tab::NodeOverview => self.view_overview(app_clock),
-            Tab::NodeP2P => self.view_p2p(),
-            Tab::NodeBlocks => self.view_blocks(),
+            Tab::NodeStatistics => self.view_overview(app_clock),
+            Tab::NodeNetwork => self.view_network(),
+            Tab::NodeBlockchain => self.view_blocks(),
             Tab::NodeUtreexo => self.view_utreexo(),
             _ => unreachable!(),
         }
     }
 
     fn view_overview(&self, app_clock: usize) -> Element<'_, NodeMessage> {
-        use crate::node::interface::overview::view;
-        view::view_overview(&self.status, &self.statistics, &self.log_capture, app_clock)
+        use crate::node::interface::statistics::view;
+        view::view_statistics(&self.status, &self.statistics, &self.log_capture, app_clock)
     }
 
-    pub(crate) fn view_p2p(&self) -> Element<'_, NodeMessage> {
-        use crate::node::interface::p2p::view;
+    pub(crate) fn view_network(&self) -> Element<'_, NodeMessage> {
+        use crate::node::interface::network::view;
         view::view_p2p(
             &self.status,
             &self.statistics,
