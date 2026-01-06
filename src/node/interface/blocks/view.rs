@@ -47,11 +47,6 @@ pub fn view_blocks<'a>(
     current_block: &'a Option<Block>,
     expanded_tx_idx: &'a Option<usize>,
 ) -> Element<'a, NodeMessage> {
-    // Tab Title.
-    let title: Container<'_, NodeMessage> = container(text("NODE BLOCKS").size(25))
-        .style(title_container())
-        .padding(TITLE_PADDING);
-
     let latest_title: Container<'_, NodeMessage> = container(text("LATEST BLOCKS").size(24));
     let latest_canvas: Container<'_, NodeMessage> = {
         let blocks_column = latest_blocks.iter().take(5).enumerate().fold(
@@ -109,9 +104,7 @@ pub fn view_blocks<'a>(
 
     let latest = container(column![latest_title, latest_canvas].spacing(5));
 
-    let left = column![title, latest]
-        .spacing(20)
-        .width(Length::FillPortion(1));
+    let left = column![latest].spacing(20).width(Length::FillPortion(1));
 
     // Parse the `block_height` string into a `u32`.
     let current_height = block_height.replace(",", "").parse::<u32>().ok();
