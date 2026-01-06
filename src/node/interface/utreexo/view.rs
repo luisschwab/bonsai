@@ -1,3 +1,4 @@
+use bdk_floresta::rustreexo::accumulator::node_hash::BitcoinNodeHash;
 use iced::Element;
 use iced::Length;
 use iced::widget::Container;
@@ -32,12 +33,25 @@ pub fn view_utreexo<'a>(
 
     let num_leaves = statistics
         .as_ref()
-        .map(|s| s.accumulator.leaves)
+        .map(|s| s.accumulator.leaves as u32)
         .unwrap_or(0);
-
     let roots = statistics.as_ref().map(|s| s.accumulator.roots.clone());
-    let num_roots = roots.clone().unwrap_or_default().len();
+    let num_roots = roots.as_ref().map(|r| r.len()).unwrap_or(0);
     let size_roots = format!("{} BYTES", format_thousands(32 * num_roots));
+
+    // Place the roots in their correct positions
+    // according to the binary representation of `num_leaves`.
+    let mut roots_in_position: Vec<Option<BitcoinNodeHash>> = vec![None; 32];
+    if let Some(roots_vec) = roots {
+        let mut root_iter = roots_vec.into_iter();
+
+        // If the bit at `num_leaves[idx]` is `1`, place the next root there.
+        for (idx, root_slot) in roots_in_position.iter_mut().enumerate() {
+            if (num_leaves >> idx) & 1 == 1 {
+                *root_slot = root_iter.next();
+            }
+        }
+    }
 
     // Left: Statistics Table
     let accumulator_title = container(text("ACCUMULATOR STATS").size(24));
@@ -155,10 +169,9 @@ pub fn view_utreexo<'a>(
     ]]
     .spacing(0);
 
-    let roots = roots.as_deref().unwrap_or(&[]);
-    for i in 0..16 {
-        let left_idx = i;
-        let right_idx = i + 16;
+    for idx in 0..16 {
+        let left_idx = idx;
+        let right_idx = idx + 16;
 
         let left_idx_cell = container(text(format!("{:02}", left_idx)).size(14))
             .padding(10)
@@ -168,7 +181,7 @@ pub fn view_utreexo<'a>(
             .width(Length::FillPortion(1))
             .style(table_cell());
 
-        let left_root_cell = if let Some(root) = roots.get(left_idx) {
+        let left_root_cell = if let Some(Some(root)) = roots_in_position.get(left_idx) {
             let root_hex = hex::encode(**root);
             let root_hex_split = format!("{}\n{}", &root_hex[..32], &root_hex[32..]);
 
@@ -195,7 +208,7 @@ pub fn view_utreexo<'a>(
             .width(Length::FillPortion(1))
             .style(table_cell());
 
-        let right_root_cell = if let Some(root) = roots.get(right_idx) {
+        let right_root_cell = if let Some(Some(root)) = roots_in_position.get(right_idx) {
             let root_hex = hex::encode(**root);
             let root_hex_split = format!("{}\n{}", &root_hex[..32], &root_hex[32..]);
 
