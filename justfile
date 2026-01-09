@@ -41,6 +41,7 @@ hot:
 
 _delete-data:
     rm -rf data/
+    rm -rf ~/.bonsai
 
 _delete-target:
     rm -rf target/

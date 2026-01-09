@@ -184,6 +184,16 @@ pub(crate) fn view_statistics<'a>(
                     .style(table_cell()),
             ],
             row![
+                container(text("BACKFILL").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+                container(text("TODO").size(14)) // TODO: add backfill status getter to NodeInterface
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+            ],
+            row![
                 container(text("BLOCKS").size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
@@ -204,7 +214,7 @@ pub(crate) fn view_statistics<'a>(
                     .style(table_cell()),
             ],
             row![
-                container(text("COMPACT\nBLOCK FILTERS").size(14))
+                container(text("COMPACT\nBLOCK FILTERS").size(14)) // TODO: add CBF info getter to NodeInterface
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .height(Length::Fixed(60.0))

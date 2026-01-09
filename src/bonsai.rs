@@ -2,6 +2,7 @@
 
 use core::fmt::Debug;
 
+use bitcoin::Network;
 use iced::Element;
 use iced::Event;
 use iced::Length;
@@ -57,6 +58,7 @@ use crate::common::interface::font::BERKELEY_MONO_BOLD;
 use crate::common::interface::font::BERKELEY_MONO_REGULAR;
 use crate::common::logger::setup_logger;
 use crate::common::util::format_thousands;
+use crate::node::control::DATA_DIR;
 use crate::node::control::NETWORK;
 use crate::node::control::Node;
 use crate::node::control::NodeStatus;
@@ -66,8 +68,10 @@ use crate::node::error::BonsaiNodeError;
 use crate::node::geoip::GeoIpReader;
 use crate::node::interface::common::table_cell;
 use crate::node::message::NodeMessage;
+use crate::settings::bonsai_settings::AUTO_START_NODE;
 use crate::settings::bonsai_settings::BonsaiSettings;
 use crate::settings::bonsai_settings::BonsaiSettingsMessage;
+use crate::settings::bonsai_settings::SETTINGS_FILE;
 use crate::wallet::placeholder::Wallet;
 use crate::wallet::placeholder::WalletMessage;
 
@@ -76,12 +80,11 @@ pub(crate) mod node;
 pub(crate) mod settings;
 pub(crate) mod wallet;
 
-const START_NODE_AUTO: bool = false; //true;
-const APP_VERSION: &str = concat!("v", env!("CARGO_PKG_VERSION"));
-const GEOIP_ASN_DB: &str = "./assets/geoip/GeoLite2-ASN.mmdb";
-const GEOIP_CITY_DB: &str = "./assets/geoip/GeoLite2-City.mmdb";
-const BONSAI_ICON_DARK_PATH: &str = "./assets/icon/bonsai-dark.png";
-const BONSAI_ICON_LIGHT_PATH: &str = "./assets/icon/bonsai-light.png";
+pub(crate) const APP_VERSION: &str = concat!("v", env!("CARGO_PKG_VERSION"));
+pub(crate) const GEOIP_ASN_DB_PATH: &str = "./assets/geoip/GeoLite2-ASN.mmdb";
+pub(crate) const GEOIP_CITY_DB_PATH: &str = "./assets/geoip/GeoLite2-City.mmdb";
+pub(crate) const BONSAI_ICON_DARK_PATH: &str = "./assets/icon/bonsai-dark.png";
+pub(crate) const BONSAI_ICON_LIGHT_PATH: &str = "./assets/icon/bonsai-light.png";
 
 #[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Tab {
@@ -111,7 +114,7 @@ pub(crate) struct Bonsai {
     pub(crate) app_clock: usize,
     pub(crate) active_tab: Tab,
     pub(crate) node: Node,
-    pub(crate) onchain_wallet: Wallet,
+    pub(crate) wallet: Wallet,
     pub(crate) settings: BonsaiSettings,
 }
 
@@ -285,7 +288,7 @@ impl Bonsai {
             .style(sidebar_container());
 
         let content = match self.active_tab {
-            Tab::Wallet => self.onchain_wallet.view().map(BonsaiMessage::BdkWallet),
+            Tab::Wallet => self.wallet.view().map(BonsaiMessage::BdkWallet),
             Tab::NodeStatistics => self
                 .node
                 .view_tab(self.active_tab, self.app_clock)
@@ -339,10 +342,14 @@ impl Bonsai {
                 Task::none()
             }
             BonsaiMessage::BdkWallet(msg) => {
-                self.onchain_wallet.update(msg);
+                self.wallet.update(msg);
                 Task::none()
             }
             BonsaiMessage::CloseRequested => {
+                if let Err(e) = self.settings.save() {
+                    eprintln!("Failed to save settings on close: {}", e);
+                }
+
                 if self.node.handle.is_some() {
                     let stopping_task = Task::done(BonsaiMessage::Node(NodeMessage::ShuttingDown));
                     self.node.unsubscribe();
@@ -367,8 +374,45 @@ impl Bonsai {
             BonsaiMessage::CloseWindow => window::oldest()
                 .and_then(window::close::<BonsaiMessage>)
                 .discard(),
-            BonsaiMessage::Node(msg) => self.node.update(msg).map(BonsaiMessage::Node),
-            BonsaiMessage::Settings(msg) => self.settings.update(msg).map(BonsaiMessage::Settings),
+            BonsaiMessage::Node(msg) => {
+                // Save settings when node shuts down or restarts
+                match &msg {
+                    NodeMessage::Shutdown | NodeMessage::Restart => {
+                        if let Err(e) = self.settings.save() {
+                            eprintln!("Failed to save settings: {}", e);
+                        }
+                    }
+                    NodeMessage::ConfigUsed(config) => {
+                        // Update settings with the actual config used by the node
+                        self.settings.update_from_config(config);
+                        if let Err(e) = self.settings.save() {
+                            eprintln!("Failed to save actual node config: {}", e);
+                        }
+                    }
+                    _ => {}
+                }
+
+                self.node.update(msg).map(BonsaiMessage::Node)
+            }
+            BonsaiMessage::Settings(msg) => {
+                // Check if it's a restart request before updating
+                let should_restart = matches!(msg, BonsaiSettingsMessage::RestartNode);
+
+                let task = self.settings.update(msg).map(BonsaiMessage::Settings);
+
+                if should_restart {
+                    // Update the node config before restarting
+                    let network = self.settings.bonsai.network.unwrap_or(NETWORK);
+                    let node_config = self.settings.get_node_config(network, DATA_DIR);
+                    self.node.config = Some(node_config);
+
+                    // Trigger node restart
+                    let restart_task = Task::done(BonsaiMessage::Node(NodeMessage::Restart));
+                    Task::batch([task, restart_task])
+                } else {
+                    task
+                }
+            }
         }
     }
 
@@ -437,25 +481,51 @@ fn main() -> iced::Result {
         blur: false,
     };
 
+    // Load [`BonsaiSettings`] from disk.
+    let mut settings = BonsaiSettings::load();
+
+    // Check if this is the first run by seeing if the file exists
+    let settings_file = BonsaiSettings::base_dir().join(SETTINGS_FILE);
+    let is_first_run = !settings_file.exists();
+
+    // On first run, populate settings with the actual config that will be used
+    // and save it to disk
+    if is_first_run {
+        let network = settings.bonsai.network.unwrap_or(Network::Signet);
+        let node_config = settings.get_node_config(network, DATA_DIR);
+
+        if let Err(e) = settings.save() {
+            eprintln!("Failed to save initial settings: {}", e);
+        }
+    }
+
+    let auto_start_node = settings.node.auto_start.unwrap_or(AUTO_START_NODE);
+    let network = settings.bonsai.network.unwrap_or(Network::Signet);
+    let node_config = settings.get_node_config(network, DATA_DIR);
+
     iced::application(
         move || {
             let bonsai = Bonsai {
                 active_tab: Tab::default(),
                 app_clock: usize::default(),
-                settings: BonsaiSettings::default(),
+                settings: settings.clone(),
                 node: Node {
+                    config: Some(node_config.clone()),
                     log_capture: log_capture.clone(),
-                    geoip_reader: GeoIpReader::new(GEOIP_ASN_DB, GEOIP_CITY_DB).ok(),
+                    geoip_reader: GeoIpReader::new(GEOIP_ASN_DB_PATH, GEOIP_CITY_DB_PATH).ok(),
                     block_explorer_height_str: String::from("0"),
                     ..Node::default()
                 },
-                onchain_wallet: Wallet::default(),
+                wallet: Wallet::default(),
             };
 
-            let tasks = if START_NODE_AUTO {
+            let tasks = if auto_start_node {
+                let network = settings.bonsai.network.unwrap_or(Network::Signet);
+                let node_config = settings.get_node_config(network, DATA_DIR);
+
                 Task::batch([
                     Task::done(BonsaiMessage::Node(NodeMessage::Starting)),
-                    Task::perform(start_node(), |result| match result {
+                    Task::perform(start_node(node_config), |result| match result {
                         Ok(handle) => BonsaiMessage::Node(NodeMessage::Running(handle)),
                         Err(e) => BonsaiMessage::Node(NodeMessage::Error(BonsaiNodeError::from(e))),
                     }),

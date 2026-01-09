@@ -89,6 +89,7 @@ impl BlockConsumer for BlockForwarder {
 
 #[derive(Default)]
 pub(crate) struct Node {
+    pub(crate) config: Option<UtreexoNodeConfig>,
     pub(crate) handle: Option<Arc<RwLock<FlorestaNode>>>,
     pub(crate) status: NodeStatus,
     pub(crate) statistics: Option<NodeStatistics>,
@@ -120,10 +121,17 @@ impl Node {
             }
             NodeMessage::Start => {
                 self.status = NodeStatus::Starting;
-                Task::perform(start_node(), |res| match res {
-                    Ok(handle) => NodeMessage::Running(handle),
-                    Err(e) => NodeMessage::Error(BonsaiNodeError::from(e)),
-                })
+
+                if let Some(config) = self.config.clone() {
+                    Task::perform(start_node(config), |res| match res {
+                        Ok(handle) => NodeMessage::Running(handle),
+                        Err(e) => NodeMessage::Error(BonsaiNodeError::from(e)),
+                    })
+                } else {
+                    Task::done(NodeMessage::Error(BonsaiNodeError::Generic(
+                        "No node configuration available".to_string(),
+                    )))
+                }
             }
             NodeMessage::Restart => {
                 self.status = NodeStatus::ShuttingDown;
@@ -155,11 +163,27 @@ impl Node {
                 Task::none()
             }
             NodeMessage::Running(handle) => {
-                self.handle = Some(handle);
+                self.handle = Some(handle.clone());
                 self.status = NodeStatus::Running;
                 self.subscription_active = true;
                 self.is_shutting_down = false;
                 self.start_time = Some(Instant::now());
+
+                // Get the actual config from the running node and emit it
+                let handle_clone = handle.clone();
+                Task::future(async move {
+                    let node = handle_clone.read().await;
+                    match node.get_config().await {
+                        Ok(config) => NodeMessage::ConfigUsed(config),
+                        Err(e) => {
+                            error!("Failed to get node config: {}", e);
+                            NodeMessage::Error(BonsaiNodeError::from(e))
+                        }
+                    }
+                })
+            }
+            NodeMessage::ConfigUsed(_config) => {
+                // This will be handled in Bonsai to update settings
                 Task::none()
             }
             NodeMessage::Shutdown => {
@@ -524,20 +548,15 @@ impl Node {
     }
 }
 
-pub(crate) async fn start_node() -> Result<Arc<RwLock<FlorestaNode>>, String> {
+pub(crate) async fn start_node(
+    node_config: UtreexoNodeConfig,
+) -> Result<Arc<RwLock<FlorestaNode>>, String> {
     let rt_handle = Handle::current();
 
     rt_handle
         .spawn(async {
-            let config = UtreexoNodeConfig {
-                network: NETWORK,
-                datadir: format!("{}{}", DATA_DIR, NETWORK),
-                assume_utreexo: Some(ChainParams::get_assume_utreexo(NETWORK)),
-                ..Default::default()
-            };
-
             let node = FlorestaBuilder::new()
-                .with_config(config)
+                .with_config(node_config)
                 .build()
                 .await
                 .map_err(|e| e.to_string())?;

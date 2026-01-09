@@ -36,3 +36,6 @@ memmap2 = "0.9.9"
 hex = "0.4.3"
 bitcoin = "0.32.8"
 once_cell = "1.21.3"
+dirs = "6.0.0"
+serde = { version = "1.0.228", features = ["derive"] }
+toml = "0.9.10"
