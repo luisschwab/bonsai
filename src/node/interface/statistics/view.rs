@@ -1,3 +1,4 @@
+use iced::Alignment::Center;
 use iced::Element;
 use iced::Length;
 use iced::Length::Fill;
@@ -49,7 +50,7 @@ fn control_button_with_disable_logic<'a>(
     action_type: ControlButton,
     message: NodeMessage,
 ) -> iced::widget::Button<'a, NodeMessage> {
-    let button = button(text(label))
+    let button = button(text(label).align_x(Center).align_y(Center))
         .style(action_button(node_status, action_type))
         .width(Fill);
 
@@ -218,13 +219,13 @@ pub(crate) fn view_statistics<'a>(
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .height(Length::Fixed(60.0))
-                    .align_y(iced::alignment::Vertical::Center)
+                    .align_y(Center)
                     .style(table_cell()),
                 container(text("TODO").size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .height(Length::Fixed(60.0))
-                    .align_y(iced::alignment::Vertical::Center)
+                    .align_y(Center)
                     .style(table_cell()),
             ],
             row![
@@ -242,13 +243,13 @@ pub(crate) fn view_statistics<'a>(
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .height(Length::Fixed(60.0))
-                    .align_y(iced::alignment::Vertical::Center)
+                    .align_y(Center)
                     .style(table_cell()),
                 container(text(user_agent).size(12))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .height(Length::Fixed(60.0))
-                    .align_y(iced::alignment::Vertical::Center)
+                    .align_y(Center)
                     .style(table_cell()),
             ],
             row![
@@ -302,7 +303,7 @@ pub(crate) fn view_statistics<'a>(
                 .padding(5)
         ]
         .spacing(10)
-        .align_y(iced::alignment::Vertical::Center),
+        .align_y(Center),
     )
     .width(Length::Fill);
 
@@ -318,8 +319,8 @@ pub(crate) fn view_statistics<'a>(
     if logs.is_empty() {
         log_column = log_column.push(text("").size(12));
     } else {
-        // Keep the last 500 logs rendered.
-        let skip_count = logs.len().saturating_sub(500);
+        // Keep the last 5000 logs rendered.
+        let skip_count = logs.len().saturating_sub(5000);
 
         for log in logs.into_iter().skip(skip_count) {
             let color = if log.contains("ERROR") {

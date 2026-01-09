@@ -2,6 +2,7 @@ use std::net::SocketAddr;
 
 use bdk_floresta::TransportProtocol;
 use bitcoin::p2p::ServiceFlags;
+use iced::Alignment::Center;
 use iced::Element;
 use iced::Length;
 use iced::Padding;
@@ -86,7 +87,7 @@ fn get_impl_icon<'a>(node_impl: &'a NodeImpl, user_agent: &'a str) -> Element<'a
         text(node_impl.to_string()).size(TABLE_CELL_FONT_SIZE)
     ]
     .spacing(5)
-    .align_y(iced::alignment::Vertical::Center);
+    .align_y(Center);
 
     tooltip(content, user_agent, tooltip::Position::FollowCursor)
         .style(container::rounded_box)
@@ -159,7 +160,7 @@ fn get_services_with_tooltip<'a>(services: &'a ServiceFlags) -> Element<'a, Node
         .style(container::rounded_box),
     )
     .align_x(iced::alignment::Horizontal::Left)
-    .align_y(iced::alignment::Vertical::Center)
+    .align_y(Center)
     .into()
 }
 
@@ -178,20 +179,20 @@ pub fn view_p2p<'a>(
             .size(12)
             .padding(10),
     )
-    .align_y(iced::alignment::Vertical::Center)
+    .align_y(Center)
     .height(Length::Fill);
     let add_peer_button = container(
         button(text("CONNECT").size(12).color(BLACK))
             .on_press(NodeMessage::AddPeer)
             .padding(10),
     )
-    .align_y(iced::alignment::Vertical::Center)
+    .align_y(Center)
     .height(Length::Fill);
     let add_peer_container = container(
         row![add_peer_input, add_peer_button]
             .spacing(10)
             .height(50)
-            .align_y(iced::alignment::Vertical::Center),
+            .align_y(Center),
     )
     .style(title_container())
     .padding(10);
@@ -231,35 +232,35 @@ pub fn view_p2p<'a>(
             .height(CELL_HEIGHT)
             .padding(LEFT_PADDING)
             .align_x(iced::alignment::Horizontal::Left)
-            .align_y(iced::alignment::Vertical::Center)
+            .align_y(Center)
             .style(table_cell()),
         container(text("IMPLEMENTATION").size(TABLE_HEADER_FONT_SIZE))
             .width(Length::FillPortion(16))
             .height(CELL_HEIGHT)
             .padding(LEFT_PADDING)
             .align_x(iced::alignment::Horizontal::Left)
-            .align_y(iced::alignment::Vertical::Center)
+            .align_y(Center)
             .style(table_cell()),
         container(text("SERVICES").size(TABLE_HEADER_FONT_SIZE))
             .width(Length::FillPortion(10))
             .height(CELL_HEIGHT)
             .padding(LEFT_PADDING)
             .align_x(iced::alignment::Horizontal::Left)
-            .align_y(iced::alignment::Vertical::Center)
+            .align_y(Center)
             .style(table_cell()),
         container(text("TRANSPORT").size(TABLE_HEADER_FONT_SIZE - 4))
             .width(Length::FillPortion(8))
             .height(CELL_HEIGHT)
             .padding(LEFT_PADDING)
             .align_x(iced::alignment::Horizontal::Left)
-            .align_y(iced::alignment::Vertical::Center)
+            .align_y(Center)
             .style(table_cell()),
         container(text("ACTION").size(TABLE_HEADER_FONT_SIZE))
             .width(Length::FillPortion(10))
             .height(CELL_HEIGHT)
             .padding(LEFT_PADDING)
             .align_x(iced::alignment::Horizontal::Left)
-            .align_y(iced::alignment::Vertical::Center)
+            .align_y(Center)
             .style(table_cell()),
     ]);
 
@@ -294,27 +295,27 @@ pub fn view_p2p<'a>(
                     .height(CELL_HEIGHT)
                     .width(Length::FillPortion(16))
                     .style(table_cell())
-                    .align_y(iced::alignment::Vertical::Center),
+                    .align_y(Center),
                 container(get_services_with_tooltip(&peer.services))
                     .padding(10)
                     .height(CELL_HEIGHT)
                     .width(Length::FillPortion(10))
-                    .align_y(iced::alignment::Vertical::Center)
+                    .align_y(Center)
                     .style(table_cell()),
                 container(get_transport_with_tooltip(&peer.transport_protocol))
                     .padding(10)
                     .height(CELL_HEIGHT)
                     .width(Length::FillPortion(8))
                     .style(table_cell())
-                    .align_x(iced::alignment::Horizontal::Center)
-                    .align_y(iced::alignment::Vertical::Center),
+                    .align_x(Center)
+                    .align_y(Center),
                 container(row![disconnect_button, ban_button].spacing(4))
                     .padding(2)
                     .height(CELL_HEIGHT)
                     .width(Length::FillPortion(10))
                     .style(table_cell())
-                    .align_x(iced::alignment::Horizontal::Center)
-                    .align_y(iced::alignment::Vertical::Center),
+                    .align_x(Center)
+                    .align_y(Center),
             ]);
         } else {
             peer_info_table = peer_info_table.push(row![

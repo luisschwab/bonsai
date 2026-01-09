@@ -1,4 +1,5 @@
 use bdk_floresta::rustreexo::accumulator::node_hash::BitcoinNodeHash;
+use iced::Alignment::Center;
 use iced::Element;
 use iced::Length;
 use iced::widget::Container;
@@ -113,7 +114,7 @@ pub fn view_utreexo<'a>(
                 .padding(2)
         ]
         .spacing(10)
-        .align_y(iced::alignment::Vertical::Center)
+        .align_y(Center)
     );
 
     let qr_code = if let Some(data) = qr_data {
@@ -142,8 +143,8 @@ pub fn view_utreexo<'a>(
     let roots_title: Container<'_, NodeMessage> = container(text("ROOTS").size(24));
     let mut roots_table = column![row![
         container(text("IDX").size(14))
-            .align_y(iced::alignment::Vertical::Center)
-            .align_x(iced::alignment::Horizontal::Center)
+            .align_y(Center)
+            .align_x(Center)
             .padding(10)
             .width(Length::FillPortion(1))
             .style(table_cell()),
@@ -152,8 +153,8 @@ pub fn view_utreexo<'a>(
             .width(Length::FillPortion(4))
             .style(table_cell()),
         container(text("IDX").size(14))
-            .align_y(iced::alignment::Vertical::Center)
-            .align_x(iced::alignment::Horizontal::Center)
+            .align_y(Center)
+            .align_x(Center)
             .padding(10)
             .width(Length::FillPortion(1))
             .style(table_cell()),
@@ -170,8 +171,8 @@ pub fn view_utreexo<'a>(
 
         let left_idx_cell = container(text(format!("{:02}", left_idx)).size(14))
             .padding(10)
-            .align_y(iced::alignment::Vertical::Center)
-            .align_x(iced::alignment::Horizontal::Center)
+            .align_y(Center)
+            .align_x(Center)
             .height(ROOT_CELL_HEIGHT)
             .width(Length::FillPortion(1))
             .style(table_cell());
@@ -181,15 +182,15 @@ pub fn view_utreexo<'a>(
             let root_hex_split = format!("{}\n{}", &root_hex[..32], &root_hex[32..]);
 
             container(text(root_hex_split).size(10))
-                .align_y(iced::alignment::Vertical::Center)
-                .align_x(iced::alignment::Horizontal::Center)
+                .align_y(Center)
+                .align_x(Center)
                 .height(ROOT_CELL_HEIGHT)
                 .width(Length::FillPortion(4))
                 .style(table_cell())
         } else {
             container(text("NULL").size(12).color(OFF_WHITE.scale_alpha(0.5)))
-                .align_y(iced::alignment::Vertical::Center)
-                .align_x(iced::alignment::Horizontal::Center)
+                .align_y(Center)
+                .align_x(Center)
                 .height(ROOT_CELL_HEIGHT)
                 .width(Length::FillPortion(4))
                 .style(table_cell())
@@ -197,8 +198,8 @@ pub fn view_utreexo<'a>(
 
         let right_idx_cell = container(text(format!("{:02}", right_idx)).size(14))
             .padding(10)
-            .align_y(iced::alignment::Vertical::Center)
-            .align_x(iced::alignment::Horizontal::Center)
+            .align_y(Center)
+            .align_x(Center)
             .height(ROOT_CELL_HEIGHT)
             .width(Length::FillPortion(1))
             .style(table_cell());
@@ -208,15 +209,15 @@ pub fn view_utreexo<'a>(
             let root_hex_split = format!("{}\n{}", &root_hex[..32], &root_hex[32..]);
 
             container(text(root_hex_split).size(10))
-                .align_y(iced::alignment::Vertical::Center)
-                .align_x(iced::alignment::Horizontal::Center)
+                .align_y(Center)
+                .align_x(Center)
                 .height(ROOT_CELL_HEIGHT)
                 .width(Length::FillPortion(4))
                 .style(table_cell())
         } else {
             container(text("NULL").size(12).color(OFF_WHITE.scale_alpha(0.5)))
-                .align_y(iced::alignment::Vertical::Center)
-                .align_x(iced::alignment::Horizontal::Center)
+                .align_y(Center)
+                .align_x(Center)
                 .height(ROOT_CELL_HEIGHT)
                 .width(Length::FillPortion(4))
                 .style(table_cell())

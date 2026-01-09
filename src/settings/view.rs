@@ -188,16 +188,6 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
     .padding(10);
     let v1_fallback_section = column![v1_fallback_title, v1_fallback_buttons];
 
-    let left = column![
-        network_section,
-        auto_start_section,
-        powfps_section,
-        backfill_section,
-        v1_fallback_section,
-    ]
-    .spacing(15)
-    .width(FillPortion(1));
-
     let user_agent_title: Container<'_, BonsaiSettingsMessage> =
         container(text("USER AGENT").size(24));
     let user_agent_input = container(
@@ -209,6 +199,17 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
     .style(title_container())
     .padding(1);
     let user_agent_section = column![user_agent_title, user_agent_input];
+
+    let left = column![
+        network_section,
+        auto_start_section,
+        powfps_section,
+        backfill_section,
+        v1_fallback_section,
+        user_agent_section
+    ]
+    .spacing(15)
+    .width(FillPortion(1));
 
     let fixed_peer_title: Container<'_, BonsaiSettingsMessage> =
         container(text("FIXED PEER").size(24));
@@ -245,7 +246,7 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
             )
             .padding(10)
             .width(FillPortion(2))
-            .align_x(iced::alignment::Horizontal::Center)
+            .align_x(Center)
             .align_y(iced::alignment::Vertical::Center)
             .style(table_cell_with_shadow()),
             button(text("-").size(16).align_x(Center).align_y(Center))
@@ -288,7 +289,7 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
             )
             .padding(10)
             .width(FillPortion(2))
-            .align_x(iced::alignment::Horizontal::Center)
+            .align_x(Center)
             .align_y(iced::alignment::Vertical::Center)
             .style(table_cell_with_shadow()),
             button(text("-").size(16).align_x(Center).align_y(Center))
@@ -331,7 +332,7 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
             )
             .padding(10)
             .width(FillPortion(2))
-            .align_x(iced::alignment::Horizontal::Center)
+            .align_x(Center)
             .align_y(iced::alignment::Vertical::Center)
             .style(table_cell_with_shadow()),
             button(text("-").size(16).align_x(Center).align_y(Center))
@@ -429,7 +430,6 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
         .width(Fill);
 
     let right = column![
-        user_agent_section,
         fixed_peer_section,
         proxy_section,
         max_banscore_section,
@@ -454,24 +454,18 @@ pub(crate) fn network_button_style(
         let is_active = button_network == active_network;
 
         let pair = if is_active {
-            Pair {
-                color: color.scale_alpha(0.8),
-                text: BLACK,
-            }
+            Pair { color, text: BLACK }
         } else {
             match button_status {
                 ButtonStatus::Active => Pair {
-                    color: color.scale_alpha(0.8),
-                    text: BLACK,
-                },
-                ButtonStatus::Hovered => Pair {
-                    color: color.scale_alpha(0.6),
-                    text: BLACK,
-                },
-                ButtonStatus::Pressed => Pair {
                     color: color.scale_alpha(0.5),
                     text: BLACK,
                 },
+                ButtonStatus::Hovered => Pair {
+                    color: color.scale_alpha(0.8),
+                    text: BLACK,
+                },
+                ButtonStatus::Pressed => Pair { color, text: BLACK },
                 ButtonStatus::Disabled => Pair {
                     color: color.scale_alpha(0.5),
                     text: BLACK.scale_alpha(0.5),
@@ -521,21 +515,18 @@ pub(crate) fn boolean_button_style(
         let is_active = button_value == active_value;
 
         let pair = if is_active {
-            Pair {
-                color: color.scale_alpha(0.8),
-                text: BLACK,
-            }
+            Pair { color, text: BLACK }
         } else {
             match button_status {
-                ButtonStatus::Active => Pair { color, text: BLACK },
+                ButtonStatus::Active => Pair {
+                    color: color.scale_alpha(0.5),
+                    text: BLACK,
+                },
                 ButtonStatus::Hovered => Pair {
                     color: color.scale_alpha(0.8),
                     text: BLACK,
                 },
-                ButtonStatus::Pressed => Pair {
-                    color: color.scale_alpha(0.6),
-                    text: BLACK,
-                },
+                ButtonStatus::Pressed => Pair { color, text: BLACK },
                 ButtonStatus::Disabled => Pair {
                     color: color.scale_alpha(0.5),
                     text: BLACK.scale_alpha(0.5),
@@ -613,7 +604,7 @@ where
             .padding(5)
             .width(Fill)
             .center_x(Fill)
-            .align_x(iced::alignment::Horizontal::Center),
+            .align_x(Center),
         button(text("+").size(14))
             .on_press_maybe(if value < max {
                 Some(on_change(value.saturating_add(step)))

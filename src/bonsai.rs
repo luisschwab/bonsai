@@ -3,6 +3,7 @@
 use core::fmt::Debug;
 
 use bitcoin::Network;
+use iced::Alignment::Center;
 use iced::Element;
 use iced::Event;
 use iced::Length;
@@ -202,82 +203,47 @@ impl Bonsai {
         .style(header_container());
 
         let tabs = column![
-            button(
-                text("WALLET")
-                    .size(20)
-                    .align_y(iced::alignment::Vertical::Center)
-                    .align_x(iced::alignment::Horizontal::Center)
-            )
-            .on_press(BonsaiMessage::SelectTab(Tab::Wallet))
-            .height(SIDEBAR_BUTTON_HEIGHT)
-            .width(Length::Fill)
-            .style(sidebar_button(self.active_tab == Tab::Wallet, ORANGE)),
-            button(
-                text("STATISTICS")
-                    .size(20)
-                    .align_y(iced::alignment::Vertical::Center)
-                    .align_x(iced::alignment::Horizontal::Center)
-            )
-            .on_press(BonsaiMessage::SelectTab(Tab::NodeStatistics))
-            .height(SIDEBAR_BUTTON_HEIGHT)
-            .width(Length::Fill)
-            .style(sidebar_button(
-                self.active_tab == Tab::NodeStatistics,
-                GREEN
-            )),
-            button(
-                text("NETWORK")
-                    .size(20)
-                    .align_y(iced::alignment::Vertical::Center)
-                    .align_x(iced::alignment::Horizontal::Center)
-            )
-            .on_press(BonsaiMessage::SelectTab(Tab::NodeNetwork))
-            .height(SIDEBAR_BUTTON_HEIGHT)
-            .width(Length::Fill)
-            .style(sidebar_button(self.active_tab == Tab::NodeNetwork, GREEN)),
-            button(
-                text("UTREEXO")
-                    .size(20)
-                    .align_y(iced::alignment::Vertical::Center)
-                    .align_x(iced::alignment::Horizontal::Center)
-            )
-            .on_press(BonsaiMessage::SelectTab(Tab::NodeUtreexo))
-            .height(SIDEBAR_BUTTON_HEIGHT)
-            .width(Length::Fill)
-            .style(sidebar_button(self.active_tab == Tab::NodeUtreexo, GREEN)),
-            button(
-                text("BLOCKCHAIN")
-                    .size(20)
-                    .align_y(iced::alignment::Vertical::Center)
-                    .align_x(iced::alignment::Horizontal::Center)
-            )
-            .on_press(BonsaiMessage::SelectTab(Tab::NodeBlockchain))
-            .height(SIDEBAR_BUTTON_HEIGHT)
-            .width(Length::Fill)
-            .style(sidebar_button(
-                self.active_tab == Tab::NodeBlockchain,
-                GREEN
-            )),
-            button(
-                text("SETTINGS")
-                    .size(20)
-                    .align_y(iced::alignment::Vertical::Center)
-                    .align_x(iced::alignment::Horizontal::Center)
-            )
-            .on_press(BonsaiMessage::SelectTab(Tab::Settings))
-            .height(SIDEBAR_BUTTON_HEIGHT)
-            .width(Length::Fill)
-            .style(sidebar_button(self.active_tab == Tab::Settings, PURPLE)),
-            button(
-                text("ABOUT")
-                    .size(20)
-                    .align_y(iced::alignment::Vertical::Center)
-                    .align_x(iced::alignment::Horizontal::Center)
-            )
-            //.on_press(BonsaiMessage::SelectTab(Tab::About))
-            .height(SIDEBAR_BUTTON_HEIGHT)
-            .width(Length::Fill)
-            .style(sidebar_button(self.active_tab == Tab::About, WHITE)),
+            button(text("WALLET").size(20).align_y(Center).align_x(Center))
+                .on_press(BonsaiMessage::SelectTab(Tab::Wallet))
+                .height(SIDEBAR_BUTTON_HEIGHT)
+                .width(Length::Fill)
+                .style(sidebar_button(self.active_tab == Tab::Wallet, ORANGE)),
+            button(text("STATISTICS").size(20).align_y(Center).align_x(Center))
+                .on_press(BonsaiMessage::SelectTab(Tab::NodeStatistics))
+                .height(SIDEBAR_BUTTON_HEIGHT)
+                .width(Length::Fill)
+                .style(sidebar_button(
+                    self.active_tab == Tab::NodeStatistics,
+                    GREEN
+                )),
+            button(text("NETWORK").size(20).align_y(Center).align_x(Center))
+                .on_press(BonsaiMessage::SelectTab(Tab::NodeNetwork))
+                .height(SIDEBAR_BUTTON_HEIGHT)
+                .width(Length::Fill)
+                .style(sidebar_button(self.active_tab == Tab::NodeNetwork, GREEN)),
+            button(text("UTREEXO").size(20).align_y(Center).align_x(Center))
+                .on_press(BonsaiMessage::SelectTab(Tab::NodeUtreexo))
+                .height(SIDEBAR_BUTTON_HEIGHT)
+                .width(Length::Fill)
+                .style(sidebar_button(self.active_tab == Tab::NodeUtreexo, GREEN)),
+            button(text("BLOCKCHAIN").size(20).align_y(Center).align_x(Center))
+                .on_press(BonsaiMessage::SelectTab(Tab::NodeBlockchain))
+                .height(SIDEBAR_BUTTON_HEIGHT)
+                .width(Length::Fill)
+                .style(sidebar_button(
+                    self.active_tab == Tab::NodeBlockchain,
+                    GREEN
+                )),
+            button(text("SETTINGS").size(20).align_y(Center).align_x(Center))
+                .on_press(BonsaiMessage::SelectTab(Tab::Settings))
+                .height(SIDEBAR_BUTTON_HEIGHT)
+                .width(Length::Fill)
+                .style(sidebar_button(self.active_tab == Tab::Settings, PURPLE)),
+            button(text("ABOUT").size(20).align_y(Center).align_x(Center))
+                //.on_press(BonsaiMessage::SelectTab(Tab::About))
+                .height(SIDEBAR_BUTTON_HEIGHT)
+                .width(Length::Fill)
+                .style(sidebar_button(self.active_tab == Tab::About, WHITE)),
         ]
         .spacing(SIDEBAR_BUTTON_SPACING);
 

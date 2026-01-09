@@ -1,5 +1,6 @@
 use bitcoin::Amount;
 use bitcoin::Block;
+use iced::Alignment::Center;
 use iced::Element;
 use iced::Length;
 use iced::Padding;
@@ -84,7 +85,7 @@ pub fn view_blocks<'a>(
                     .spacing(2)
                 ]
                 .spacing(10)
-                .align_y(iced::alignment::Vertical::Center);
+                .align_y(Center);
 
                 let block_button = button(container(block_info).padding(10))
                     .style(transparent_button())
@@ -98,7 +99,7 @@ pub fn view_blocks<'a>(
             .padding(0)
             .width(Length::Fill)
             .height(Length::Fill)
-            .align_y(iced::alignment::Vertical::Center)
+            .align_y(Center)
             .style(title_container())
     };
 
@@ -116,8 +117,8 @@ pub fn view_blocks<'a>(
                 text("<")
                     .size(16)
                     .font(BERKELEY_MONO_BOLD)
-                    .align_x(iced::alignment::Horizontal::Center)
-                    .align_y(iced::alignment::Vertical::Center)
+                    .align_x(Center)
+                    .align_y(Center)
             )
             .on_press_maybe(
                 current_height
@@ -133,7 +134,7 @@ pub fn view_blocks<'a>(
                     .style(input_field())
                     .size(16)
                     .padding(10)
-                    .align_x(iced::alignment::Horizontal::Center)
+                    .align_x(Center)
                     .width(Length::Fixed(110.0))
             )
             .padding(0)
@@ -143,8 +144,8 @@ pub fn view_blocks<'a>(
                 text(">")
                     .size(16)
                     .font(BERKELEY_MONO_BOLD)
-                    .align_x(iced::alignment::Horizontal::Center)
-                    .align_y(iced::alignment::Vertical::Center)
+                    .align_x(Center)
+                    .align_y(Center)
             )
             .on_press_maybe(
                 current_height
@@ -221,8 +222,8 @@ pub fn view_blocks<'a>(
             row![
                 container(text("HEADER & STATS").font(BERKELEY_MONO_BOLD).size(16))
                     .width(Length::Fill)
-                    .align_y(iced::alignment::Vertical::Center)
-                    .align_x(iced::alignment::Horizontal::Center)
+                    .align_y(Center)
+                    .align_x(Center)
                     .height(CELL_HEIGHT)
                     .style(table_cell()),
             ]
@@ -237,7 +238,7 @@ pub fn view_blocks<'a>(
                     .width(Length::FillPortion(3))
                     .height(CELL_HEIGHT)
                     .padding(10)
-                    .align_y(iced::alignment::Vertical::Center)
+                    .align_y(Center)
                     .style(table_cell()),
                 container(text("TIME").font(BERKELEY_MONO_BOLD).size(12))
                     .width(Length::FillPortion(2))
@@ -248,7 +249,7 @@ pub fn view_blocks<'a>(
                     .width(Length::FillPortion(3))
                     .height(CELL_HEIGHT)
                     .padding(10)
-                    .align_y(iced::alignment::Vertical::Center)
+                    .align_y(Center)
                     .style(table_cell()),
             ]
             .spacing(0),
@@ -261,8 +262,8 @@ pub fn view_blocks<'a>(
                 container(text(prev_blockhash).size(9))
                     .width(Length::FillPortion(3))
                     .height(CELL_HEIGHT)
-                    .align_y(iced::alignment::Vertical::Center)
-                    .align_x(iced::alignment::Horizontal::Center)
+                    .align_y(Center)
+                    .align_x(Center)
                     .style(table_cell()),
                 container(text("BITS").font(BERKELEY_MONO_BOLD).size(12))
                     .width(Length::FillPortion(2))
@@ -273,7 +274,7 @@ pub fn view_blocks<'a>(
                     .width(Length::FillPortion(3))
                     .height(CELL_HEIGHT)
                     .padding(10)
-                    .align_y(iced::alignment::Vertical::Center)
+                    .align_y(Center)
                     .style(table_cell()),
             ]
             .spacing(0),
@@ -286,8 +287,8 @@ pub fn view_blocks<'a>(
                 container(text(merkle_root).size(9))
                     .width(Length::FillPortion(3))
                     .height(CELL_HEIGHT)
-                    .align_y(iced::alignment::Vertical::Center)
-                    .align_x(iced::alignment::Horizontal::Center)
+                    .align_y(Center)
+                    .align_x(Center)
                     .style(table_cell()),
                 container(text("NONCE").font(BERKELEY_MONO_BOLD).size(12))
                     .width(Length::FillPortion(2))
@@ -298,7 +299,7 @@ pub fn view_blocks<'a>(
                     .width(Length::FillPortion(3))
                     .height(CELL_HEIGHT)
                     .padding(10)
-                    .align_y(iced::alignment::Vertical::Center)
+                    .align_y(Center)
                     .style(table_cell()),
             ]
             .spacing(0),
@@ -312,7 +313,7 @@ pub fn view_blocks<'a>(
                     .width(Length::FillPortion(3))
                     .height(CELL_HEIGHT)
                     .padding(10)
-                    .align_y(iced::alignment::Vertical::Center)
+                    .align_y(Center)
                     .style(table_cell()),
                 container(text("TOTAL MOVED").font(BERKELEY_MONO_BOLD).size(12))
                     .width(Length::FillPortion(2))
@@ -323,7 +324,7 @@ pub fn view_blocks<'a>(
                     .width(Length::FillPortion(3))
                     .height(CELL_HEIGHT)
                     .padding(10)
-                    .align_y(iced::alignment::Vertical::Center)
+                    .align_y(Center)
                     .style(table_cell()),
             ]
             .spacing(0),
@@ -347,7 +348,7 @@ pub fn view_blocks<'a>(
                     .width(Length::FillPortion(3))
                     .height(CELL_HEIGHT)
                     .padding(10)
-                    .align_y(iced::alignment::Vertical::Center)
+                    .align_y(Center)
                     .style(table_cell()),
             ]
             .spacing(0),
@@ -359,8 +360,8 @@ pub fn view_blocks<'a>(
         row![
             container(text("TRANSACTIONS").font(BERKELEY_MONO_BOLD).size(16))
                 .width(Length::Fill)
-                .align_y(iced::alignment::Vertical::Center)
-                .align_x(iced::alignment::Horizontal::Center)
+                .align_y(Center)
+                .align_x(Center)
                 .height(CELL_HEIGHT)
                 .style(table_cell()),
         ]
@@ -370,14 +371,14 @@ pub fn view_blocks<'a>(
                 .width(Length::Fixed(80.0))
                 .height(CELL_HEIGHT)
                 .padding(0)
-                .align_y(iced::alignment::Vertical::Center)
-                .align_x(iced::alignment::Horizontal::Center)
+                .align_y(Center)
+                .align_x(Center)
                 .style(table_cell()),
             container(text("TXID").font(BERKELEY_MONO_BOLD).size(14))
                 .width(Length::Fill)
                 .height(CELL_HEIGHT)
-                .align_x(iced::alignment::Horizontal::Center)
-                .align_y(iced::alignment::Vertical::Center)
+                .align_x(Center)
+                .align_y(Center)
                 .style(table_cell()),
         ]
         .spacing(0),
@@ -395,14 +396,14 @@ pub fn view_blocks<'a>(
                     container(text(format!("{:05}", idx)).size(12))
                         .width(Length::Fixed(80.0))
                         .height(CELL_HEIGHT)
-                        .align_y(iced::alignment::Vertical::Center)
-                        .align_x(iced::alignment::Horizontal::Center)
+                        .align_y(Center)
+                        .align_x(Center)
                         .style(table_cell()),
                     container(text(txid).size(12))
                         .width(Length::Fill)
                         .height(CELL_HEIGHT)
-                        .align_y(iced::alignment::Vertical::Center)
-                        .align_x(iced::alignment::Horizontal::Center)
+                        .align_y(Center)
+                        .align_x(Center)
                         .style(table_cell()),
                 ]
                 .spacing(0),
@@ -426,7 +427,7 @@ pub fn view_blocks<'a>(
                                 .width(Length::FillPortion(1))
                                 .height(CELL_HEIGHT)
                                 .padding(10)
-                                .align_y(iced::alignment::Vertical::Center)
+                                .align_y(Center)
                                 .style(table_cell()),
                             container(text("INPUT COUNT").font(BERKELEY_MONO_BOLD).size(12))
                                 .width(Length::FillPortion(1))
@@ -437,7 +438,7 @@ pub fn view_blocks<'a>(
                                 .width(Length::FillPortion(1))
                                 .height(CELL_HEIGHT)
                                 .padding(10)
-                                .align_y(iced::alignment::Vertical::Center)
+                                .align_y(Center)
                                 .style(table_cell()),
                         ]
                         .spacing(0),
@@ -458,7 +459,7 @@ pub fn view_blocks<'a>(
                             .width(Length::FillPortion(1))
                             .height(CELL_HEIGHT)
                             .padding(10)
-                            .align_y(iced::alignment::Vertical::Center)
+                            .align_y(Center)
                             .style(table_cell()),
                             container(text("OUTPUT COUNT").font(BERKELEY_MONO_BOLD).size(12))
                                 .width(Length::FillPortion(1))
@@ -469,7 +470,7 @@ pub fn view_blocks<'a>(
                                 .width(Length::FillPortion(1))
                                 .height(CELL_HEIGHT)
                                 .padding(10)
-                                .align_y(iced::alignment::Vertical::Center)
+                                .align_y(Center)
                                 .style(table_cell()),
                         ]
                         .spacing(0),
@@ -478,8 +479,8 @@ pub fn view_blocks<'a>(
                                 .width(Length::Fill)
                                 .height(CELL_HEIGHT)
                                 .padding(10)
-                                .align_x(iced::alignment::Horizontal::Center)
-                                .align_y(iced::alignment::Vertical::Center)
+                                .align_x(Center)
+                                .align_y(Center)
                                 .style(table_cell()),
                         ]
                         .spacing(0),
@@ -501,13 +502,13 @@ pub fn view_blocks<'a>(
                                 container(text("OUTPOINT").size(12))
                                     .width(Length::FillPortion(1))
                                     .padding(10)
-                                    .align_y(iced::alignment::Vertical::Center)
-                                    .align_x(iced::alignment::Horizontal::Center)
+                                    .align_y(Center)
+                                    .align_x(Center)
                                     .style(table_cell()),
                                 container(text(prevout).size(12).wrapping(text::Wrapping::Glyph))
                                     .width(Length::FillPortion(3))
                                     .padding(10)
-                                    .align_y(iced::alignment::Vertical::Center)
+                                    .align_y(Center)
                                     .style(table_cell()),
                             ]
                             .spacing(0),
@@ -515,13 +516,13 @@ pub fn view_blocks<'a>(
                                 container(text("SEQUENCE").size(12))
                                     .width(Length::FillPortion(1))
                                     .padding(10)
-                                    .align_y(iced::alignment::Vertical::Center)
-                                    .align_x(iced::alignment::Horizontal::Center)
+                                    .align_y(Center)
+                                    .align_x(Center)
                                     .style(table_cell()),
                                 container(text(sequence).size(12))
                                     .width(Length::FillPortion(3))
                                     .padding(10)
-                                    .align_y(iced::alignment::Vertical::Center)
+                                    .align_y(Center)
                                     .style(table_cell()),
                             ]
                             .spacing(0),
@@ -529,8 +530,8 @@ pub fn view_blocks<'a>(
                                 container(text("SCRIPTSIG").size(12))
                                     .width(Length::FillPortion(1))
                                     .padding(10)
-                                    .align_y(iced::alignment::Vertical::Center)
-                                    .align_x(iced::alignment::Horizontal::Center)
+                                    .align_y(Center)
+                                    .align_x(Center)
                                     .style(table_cell()),
                                 container(
                                     text(if script_sig.is_empty() {
@@ -543,7 +544,7 @@ pub fn view_blocks<'a>(
                                 )
                                 .width(Length::FillPortion(3))
                                 .padding(12)
-                                .align_y(iced::alignment::Vertical::Center)
+                                .align_y(Center)
                                 .style(table_cell()),
                             ]
                             .spacing(0),
@@ -556,15 +557,15 @@ pub fn view_blocks<'a>(
                                     container(text("WITNESS").size(12))
                                         .width(Length::FillPortion(1))
                                         .padding(10)
-                                        .align_y(iced::alignment::Vertical::Center)
-                                        .align_x(iced::alignment::Horizontal::Center)
+                                        .align_y(Center)
+                                        .align_x(Center)
                                         .style(table_cell()),
                                     container(
                                         text("EMPTY").size(12).color(OFF_WHITE.scale_alpha(0.5))
                                     )
                                     .width(Length::FillPortion(3))
                                     .padding(10)
-                                    .align_y(iced::alignment::Vertical::Center)
+                                    .align_y(Center)
                                     .style(table_cell()),
                                 ]
                                 .spacing(0),
@@ -579,8 +580,8 @@ pub fn view_blocks<'a>(
                                         )
                                         .width(Length::FillPortion(1))
                                         .padding(10)
-                                        .align_y(iced::alignment::Vertical::Center)
-                                        .align_x(iced::alignment::Horizontal::Center)
+                                        .align_y(Center)
+                                        .align_x(Center)
                                         .style(table_cell()),
                                         container(
                                             text(witness_hex)
@@ -589,7 +590,7 @@ pub fn view_blocks<'a>(
                                         )
                                         .width(Length::FillPortion(3))
                                         .padding(10)
-                                        .align_y(iced::alignment::Vertical::Center)
+                                        .align_y(Center)
                                         .style(table_cell()),
                                     ]
                                     .spacing(0),
@@ -607,8 +608,8 @@ pub fn view_blocks<'a>(
                                 .width(Length::Fixed(80.0))
                                 .height(Length::Fill) // Changed from Shrink to Fill
                                 .padding(10)
-                                .align_y(iced::alignment::Vertical::Center)
-                                .align_x(iced::alignment::Horizontal::Center)
+                                .align_y(Center)
+                                .align_x(Center)
                                 .style(table_cell()),
                                 input_rows.width(Length::Fill),
                             ]
@@ -622,8 +623,8 @@ pub fn view_blocks<'a>(
                                 .width(Length::Fill)
                                 .height(CELL_HEIGHT)
                                 .padding(10)
-                                .align_x(iced::alignment::Horizontal::Center)
-                                .align_y(iced::alignment::Vertical::Center)
+                                .align_x(Center)
+                                .align_y(Center)
                                 .style(table_cell()),
                         ]
                         .spacing(0),
@@ -658,21 +659,21 @@ pub fn view_blocks<'a>(
                                 .width(Length::Fixed(80.0))
                                 .height(Length::Fill)
                                 .padding(10)
-                                .align_y(iced::alignment::Vertical::Center)
-                                .align_x(iced::alignment::Horizontal::Center)
+                                .align_y(Center)
+                                .align_x(Center)
                                 .style(table_cell()),
                                 column![
                                     row![
                                         container(text("VALUE").size(12))
                                             .width(Length::FillPortion(1))
                                             .padding(10)
-                                            .align_y(iced::alignment::Vertical::Center)
-                                            .align_x(iced::alignment::Horizontal::Center)
+                                            .align_y(Center)
+                                            .align_x(Center)
                                             .style(table_cell()),
                                         container(text(value).size(12))
                                             .width(Length::FillPortion(3))
                                             .padding(10)
-                                            .align_y(iced::alignment::Vertical::Center)
+                                            .align_y(Center)
                                             .style(table_cell()),
                                     ]
                                     .spacing(0),
@@ -680,13 +681,13 @@ pub fn view_blocks<'a>(
                                         container(text("SCRIPT TYPE").size(12))
                                             .width(Length::FillPortion(1))
                                             .padding(10)
-                                            .align_y(iced::alignment::Vertical::Center)
-                                            .align_x(iced::alignment::Horizontal::Center)
+                                            .align_y(Center)
+                                            .align_x(Center)
                                             .style(table_cell()),
                                         container(text(script_type).size(12))
                                             .width(Length::FillPortion(3))
                                             .padding(10)
-                                            .align_y(iced::alignment::Vertical::Center)
+                                            .align_y(Center)
                                             .style(table_cell()),
                                     ]
                                     .spacing(0),
@@ -694,8 +695,8 @@ pub fn view_blocks<'a>(
                                         container(text("SCRIPTPUBKEY").size(12))
                                             .width(Length::FillPortion(1))
                                             .padding(10)
-                                            .align_y(iced::alignment::Vertical::Center)
-                                            .align_x(iced::alignment::Horizontal::Center)
+                                            .align_y(Center)
+                                            .align_x(Center)
                                             .style(table_cell()),
                                         container(
                                             text(script_pubkey)
@@ -704,7 +705,7 @@ pub fn view_blocks<'a>(
                                         )
                                         .width(Length::FillPortion(3))
                                         .padding(10)
-                                        .align_y(iced::alignment::Vertical::Center)
+                                        .align_y(Center)
                                         .style(table_cell()),
                                     ]
                                     .spacing(0),
