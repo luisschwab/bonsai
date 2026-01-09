@@ -23,7 +23,6 @@ use crate::common::interface::container::common::TABLE_CELL_ICON_SIZE;
 use crate::common::interface::container::common::TABLE_HEADER_FONT_SIZE;
 use crate::node::control::NodeStatus;
 use crate::node::geoip::GeoIpReader;
-use crate::node::interface::common::TITLE_PADDING;
 use crate::node::interface::common::input_field;
 use crate::node::interface::common::table_cell;
 use crate::node::interface::common::title_container;

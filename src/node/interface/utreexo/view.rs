@@ -15,7 +15,6 @@ use iced::widget::tooltip;
 use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::container::content::button_container;
 use crate::common::util::format_thousands;
-use crate::node::interface::common::TITLE_PADDING;
 use crate::node::interface::common::table_cell;
 use crate::node::interface::common::title_container;
 use crate::node::interface::network::style::peer_info_table_container;

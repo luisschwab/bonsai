@@ -1,4 +1,4 @@
-#![allow(unused)]
+//#![allow(unused)]
 
 use core::fmt::Debug;
 
@@ -31,8 +31,6 @@ use iced::window::icon;
 use iced::window::settings::PlatformSpecific;
 use tokio::runtime::Handle;
 
-use crate::common::interface::color::BLACK;
-use crate::common::interface::color::BLUE;
 use crate::common::interface::color::DARK_GREY;
 use crate::common::interface::color::GREEN;
 use crate::common::interface::color::OFF_WHITE;
@@ -85,7 +83,7 @@ pub(crate) const APP_VERSION: &str = concat!("v", env!("CARGO_PKG_VERSION"));
 pub(crate) const GEOIP_ASN_DB_PATH: &str = "./assets/geoip/GeoLite2-ASN.mmdb";
 pub(crate) const GEOIP_CITY_DB_PATH: &str = "./assets/geoip/GeoLite2-City.mmdb";
 pub(crate) const BONSAI_ICON_DARK_PATH: &str = "./assets/icon/bonsai-dark.png";
-pub(crate) const BONSAI_ICON_LIGHT_PATH: &str = "./assets/icon/bonsai-light.png";
+//pub(crate) const BONSAI_ICON_LIGHT_PATH: &str = "./assets/icon/bonsai-light.png";
 
 #[derive(Default, Debug, Clone, Copy, PartialEq)]
 pub(crate) enum Tab {

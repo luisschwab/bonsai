@@ -21,7 +21,6 @@ use crate::common::interface::container::common::shadow_container;
 use crate::common::interface::container::content::button_container;
 use crate::common::interface::font::BERKELEY_MONO_BOLD;
 use crate::common::util::format_thousands;
-use crate::node::interface::common::TITLE_PADDING;
 use crate::node::interface::common::input_field;
 use crate::node::interface::common::table_cell;
 use crate::node::interface::common::title_container;

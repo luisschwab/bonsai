@@ -8,7 +8,6 @@ use iced::Element;
 use iced::Length;
 use iced::Length::Fill;
 use iced::Length::FillPortion;
-use iced::Padding;
 use iced::Theme;
 use iced::border::Radius;
 use iced::theme::palette::Pair;
@@ -22,10 +21,8 @@ use iced::widget::column;
 use iced::widget::container;
 use iced::widget::container::Style as ContainerStyle;
 use iced::widget::row;
-use iced::widget::scrollable;
 use iced::widget::text;
 use iced::widget::text_input;
-use iced::widget::toggler;
 
 use crate::common::interface::color::BLACK;
 use crate::common::interface::color::BLUE;
@@ -37,9 +34,9 @@ use crate::common::interface::color::RED;
 use crate::common::interface::color::YELLOW;
 use crate::common::interface::container::common::BORDER_RADIUS;
 use crate::common::interface::container::common::BORDER_WIDTH;
+use crate::common::interface::container::common::RED_SHADOW;
 use crate::common::interface::container::common::SHADOW;
 use crate::common::interface::container::content::button_container;
-use crate::node::interface::common::table_cell;
 use crate::node::interface::common::title_container;
 use crate::settings::bonsai_settings::AUTO_START_NODE;
 use crate::settings::bonsai_settings::BonsaiSettings;
@@ -200,13 +197,25 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
     .padding(1);
     let user_agent_section = column![user_agent_title, user_agent_input];
 
+    let proxy_title: Container<'_, BonsaiSettingsMessage> = container(text("PROXY").size(24));
+    let proxy_input = container(
+        text_input("123.123.123.123:9050", &settings.proxy_input)
+            .on_input(BonsaiSettingsMessage::ProxyInputChanged)
+            .padding(10)
+            .width(Fill),
+    )
+    .style(title_container())
+    .padding(1);
+    let proxy_section = column![proxy_title, proxy_input];
+
     let left = column![
         network_section,
         auto_start_section,
         powfps_section,
         backfill_section,
         v1_fallback_section,
-        user_agent_section
+        user_agent_section,
+        proxy_section
     ]
     .spacing(15)
     .width(FillPortion(1));
@@ -222,17 +231,6 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
     .style(title_container())
     .padding(1);
     let fixed_peer_section = column![fixed_peer_title, fixed_peer_input];
-
-    let proxy_title: Container<'_, BonsaiSettingsMessage> = container(text("PROXY").size(24));
-    let proxy_input = container(
-        text_input("123.123.123.123:9050", &settings.proxy_input)
-            .on_input(BonsaiSettingsMessage::ProxyInputChanged)
-            .padding(10)
-            .width(Fill),
-    )
-    .style(title_container())
-    .padding(1);
-    let proxy_section = column![proxy_title, proxy_input];
 
     let max_banscore_title: Container<'_, BonsaiSettingsMessage> =
         container(text("MAX BAN SCORE").size(24));
@@ -392,11 +390,11 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
         .height(Length::Fixed(50.0))
     ]
     .spacing(10)
-    .align_y(iced::alignment::Vertical::Center);
+    .align_y(Center);
 
     let restart_button_row = row![
         text(if settings.node_restart_required {
-            "NODE RESTART REQUIRED\nTO APPLY SETTINGS"
+            "CHANGED SETTINGS\nREQUIRE A NODE RESTART"
         } else {
             ""
         })
@@ -423,20 +421,44 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
         .height(Length::Fixed(50.0))
     ]
     .spacing(10)
-    .align_y(iced::alignment::Vertical::Center);
+    .align_y(Center);
 
-    let actions_container = container(column![save_button_row, restart_button_row,].spacing(20))
-        .padding(10)
+    let actions_container = container(column![save_button_row, restart_button_row].spacing(20))
+        .padding(15)
+        .style(title_container())
+        .width(Fill);
+
+    // TODO(@luisschwab): implement data deletion
+    let delete_data_row = row![
+        text("THIS ACTION IS DESTRUCTIVE!\nALL VALIDATION WORK AND\nCOMPACT FILTERS WILL BE LOST")
+            .size(12)
+            .color(RED),
+        Space::new().width(Fill),
+        button(
+            text("DELETE NODE DATA")
+                .color(RED)
+                .size(20)
+                .align_x(Center)
+                .align_y(Center)
+        )
+        .style(delete_button_container())
+        .width(Length::Fixed(220.0))
+        .height(Length::Fixed(50.0))
+    ];
+
+    let danger_container = container(column![delete_data_row])
+        .padding(15)
+        .style(title_container())
         .width(Fill);
 
     let right = column![
         fixed_peer_section,
-        proxy_section,
         max_banscore_section,
         max_outbound_section,
         max_inflight_section,
         Space::new().height(Fill),
-        actions_container
+        actions_container,
+        danger_container
     ]
     .spacing(15)
     .width(FillPortion(1));
@@ -579,42 +601,23 @@ pub(crate) fn table_cell_with_shadow() -> impl Fn(&Theme) -> ContainerStyle {
     }
 }
 
-// Helper function for integer controls with +/- buttons
-fn integer_control<'a, F>(
-    value: u32,
-    on_change: F,
-    step: u32,
-    min: u32,
-    max: u32,
-) -> iced::widget::Row<'a, BonsaiSettingsMessage>
-where
-    F: Fn(u32) -> BonsaiSettingsMessage + 'a + Copy,
-{
-    row![
-        button(text("-").size(14))
-            .on_press_maybe(if value > min {
-                Some(on_change(value.saturating_sub(step)))
-            } else {
-                None
-            })
-            .padding(5)
-            .style(button_container())
-            .width(Length::Fixed(30.0)),
-        container(text(value.to_string()).size(14))
-            .padding(5)
-            .width(Fill)
-            .center_x(Fill)
-            .align_x(Center),
-        button(text("+").size(14))
-            .on_press_maybe(if value < max {
-                Some(on_change(value.saturating_add(step)))
-            } else {
-                None
-            })
-            .padding(5)
-            .style(button_container())
-            .width(Length::Fixed(30.0)),
-    ]
-    .spacing(5)
-    .align_y(iced::alignment::Vertical::Center)
+pub(crate) fn delete_button_container() -> impl Fn(&Theme, ButtonStatus) -> ButtonStyle {
+    |_theme, status| {
+        let text_color = match status {
+            ButtonStatus::Hovered => RED.scale_alpha(0.7),
+            ButtonStatus::Pressed => RED.scale_alpha(0.5),
+            _ => OFF_WHITE,
+        };
+
+        ButtonStyle {
+            border: Border {
+                color: RED,
+                width: BORDER_WIDTH,
+                radius: Radius::new(BORDER_RADIUS),
+            },
+            text_color,
+            shadow: RED_SHADOW,
+            ..Default::default()
+        }
+    }
 }

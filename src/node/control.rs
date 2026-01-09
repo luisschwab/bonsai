@@ -6,7 +6,6 @@ use std::time::Duration;
 use std::time::Instant;
 
 use bdk_floresta::BlockConsumer;
-use bdk_floresta::ChainParams;
 use bdk_floresta::FlorestaNode;
 use bdk_floresta::UtreexoNodeConfig;
 use bdk_floresta::UtxoData;

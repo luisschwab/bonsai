@@ -170,7 +170,7 @@ impl NodeSettings {
             Network::Bitcoin => &self.network_configs.bitcoin,
             Network::Signet => &self.network_configs.signet,
             Network::Testnet => &self.network_configs.testnet3,
-            Network::Testnet => &self.network_configs.testnet4,
+            Network::Testnet4 => &self.network_configs.testnet4,
             Network::Regtest => &self.network_configs.regtest,
             _ => unreachable!(),
         }
@@ -445,7 +445,6 @@ impl BonsaiSettings {
 
             BonsaiSettingsMessage::RestartNode => {
                 self.node_restart_required = false;
-                // This will be handled in Bonsai::update to trigger actual restart
                 Task::none()
             }
 
@@ -453,13 +452,6 @@ impl BonsaiSettings {
                 self.node_restart_required = false;
                 Task::none()
             }
-        }
-    }
-
-    // Helper to save synchronously and log errors
-    fn save_sync(&self) {
-        if let Err(e) = self.save() {
-            eprintln!("Failed to save settings: {}", e);
         }
     }
 }

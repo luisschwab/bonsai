@@ -12,9 +12,16 @@ pub(crate) const TABLE_CELL_FONT_SIZE: u32 = 12;
 pub(crate) const TABLE_CELL_ICON_SIZE: u32 = 24;
 
 use crate::common::interface::color::OFF_WHITE;
+use crate::common::interface::color::RED;
 
 pub(crate) const SHADOW: Shadow = Shadow {
     color: OFF_WHITE,
+    offset: iced::Vector::new(3.0, 3.0),
+    blur_radius: 2.0,
+};
+
+pub(crate) const RED_SHADOW: Shadow = Shadow {
+    color: RED,
     offset: iced::Vector::new(3.0, 3.0),
     blur_radius: 2.0,
 };
