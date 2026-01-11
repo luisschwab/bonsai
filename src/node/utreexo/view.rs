@@ -13,14 +13,14 @@ use iced::widget::text;
 use iced::widget::tooltip;
 
 use crate::common::interface::color::OFF_WHITE;
-use crate::common::interface::container::content::button_container;
+use crate::common::interface::container::button_container;
 use crate::common::util::format_thousands;
-use crate::node::interface::common::table_cell;
-use crate::node::interface::common::title_container;
-use crate::node::interface::network::style::peer_info_table_container;
-use crate::node::interface::utreexo::style::ROOT_CELL_HEIGHT;
 use crate::node::message::NodeMessage;
-use crate::node::statistics::NodeStatistics;
+use crate::node::network::style::peer_info_table_container;
+use crate::node::stats_fetcher::NodeStatistics;
+use crate::node::style::table_cell;
+use crate::node::style::title_container;
+use crate::node::utreexo::style::ROOT_CELL_HEIGHT;
 
 pub fn view_utreexo<'a>(
     statistics: &'a Option<NodeStatistics>,
@@ -40,7 +40,7 @@ pub fn view_utreexo<'a>(
     if let Some(roots_vec) = roots {
         let mut root_iter = roots_vec.into_iter();
 
-        // If the bit at `num_leaves[idx]` is `1`, place the next root there.
+        // If `num_leaves >> 1` is `1`, place the next root there.
         for (idx, root_slot) in roots_in_position.iter_mut().enumerate() {
             if (num_leaves >> idx) & 1 == 1 {
                 *root_slot = root_iter.next();

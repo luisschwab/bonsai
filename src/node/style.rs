@@ -9,9 +9,9 @@ use iced::widget::text_input::Style as TextInputStyle;
 
 use crate::common::interface::color::BLACK;
 use crate::common::interface::color::OFF_WHITE;
-use crate::common::interface::container::common::BORDER_RADIUS;
-use crate::common::interface::container::common::BORDER_WIDTH;
-use crate::common::interface::container::common::SHADOW;
+use crate::common::interface::constants::BORDER_RADIUS;
+use crate::common::interface::constants::BORDER_WIDTH;
+use crate::common::interface::shadow::SHADOW_GRAY;
 
 pub const TITLE_PADDING: Padding = Padding {
     top: 5.0,
@@ -27,7 +27,7 @@ pub(crate) fn title_container() -> impl Fn(&Theme) -> ContainerStyle {
             width: BORDER_WIDTH,
             radius: Radius::new(BORDER_RADIUS),
         },
-        shadow: SHADOW,
+        shadow: SHADOW_GRAY,
         ..Default::default()
     }
 }

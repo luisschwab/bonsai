@@ -14,25 +14,25 @@ use iced::widget::text;
 use iced::widget::text::Wrapping;
 
 use crate::common::interface::color::BLUE;
-use crate::common::interface::color::GREEN;
+use crate::common::interface::color::GREEN_SHAMROCK;
 use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::color::ORANGE;
 use crate::common::interface::color::RED;
 use crate::common::interface::color::network_color;
-use crate::common::interface::container::content::button_container;
+use crate::common::interface::container::button_container;
 use crate::common::util::format_duration;
 use crate::common::util::format_thousands;
 use crate::node::control::NETWORK;
 use crate::node::control::NodeStatus;
-use crate::node::interface::common::TITLE_PADDING;
-use crate::node::interface::common::table_cell;
-use crate::node::interface::common::title_container;
-use crate::node::interface::statistics::style::ControlButton;
-use crate::node::interface::statistics::style::action_button;
-use crate::node::interface::statistics::style::log_container;
 use crate::node::log_capture::LogCapture;
 use crate::node::message::NodeMessage;
-use crate::node::statistics::NodeStatistics;
+use crate::node::statistics::style::ControlButton;
+use crate::node::statistics::style::action_button;
+use crate::node::statistics::style::log_container;
+use crate::node::stats_fetcher::NodeStatistics;
+use crate::node::style::TITLE_PADDING;
+use crate::node::style::table_cell;
+use crate::node::style::title_container;
 use crate::pulse_color;
 
 /// Calculate IBD progress from blocks and headers.
@@ -127,8 +127,8 @@ pub(crate) fn view_statistics<'a>(
 
     let network_color = network_color(NETWORK);
     let node_status_color = match node_status {
-        NodeStatus::Starting => pulse_color(GREEN, app_clock),
-        NodeStatus::Running => GREEN,
+        NodeStatus::Starting => pulse_color(GREEN_SHAMROCK, app_clock),
+        NodeStatus::Running => GREEN_SHAMROCK,
         NodeStatus::Inactive => OFF_WHITE,
         NodeStatus::Failed(_) => RED,
         NodeStatus::ShuttingDown => pulse_color(RED, app_clock),
@@ -339,7 +339,7 @@ pub(crate) fn view_statistics<'a>(
             } else if log.contains("WARN") {
                 ORANGE
             } else if log.contains("INFO") {
-                GREEN
+                GREEN_SHAMROCK
             } else if log.contains("DEBUG") {
                 BLUE
             } else {

@@ -1,7 +1,11 @@
+pub(crate) mod blocks;
 pub(crate) mod control;
 pub(crate) mod error;
 pub(crate) mod geoip;
-pub(crate) mod interface;
 pub(crate) mod log_capture;
 pub(crate) mod message;
+pub(crate) mod network;
 pub(crate) mod statistics;
+pub(crate) mod stats_fetcher;
+pub(crate) mod style;
+pub(crate) mod utreexo;

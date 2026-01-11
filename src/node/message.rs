@@ -8,7 +8,7 @@ use bitcoin::Block;
 use tokio::sync::RwLock;
 
 use crate::node::error::BonsaiNodeError;
-use crate::node::statistics::NodeStatistics;
+use crate::node::stats_fetcher::NodeStatistics;
 
 #[derive(Clone)]
 pub(crate) enum NodeMessage {

@@ -8,13 +8,13 @@ use iced::widget::button::Style as ButtonStyle;
 use iced::widget::container::Style as ContainerStyle;
 
 use crate::common::interface::color::BLACK;
-use crate::common::interface::color::GREEN;
+use crate::common::interface::color::GREEN_SHAMROCK;
 use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::color::ORANGE;
 use crate::common::interface::color::RED;
-use crate::common::interface::container::common::BORDER_RADIUS;
-use crate::common::interface::container::common::BORDER_WIDTH;
-use crate::common::interface::container::common::SHADOW;
+use crate::common::interface::constants::BORDER_RADIUS;
+use crate::common::interface::constants::BORDER_WIDTH;
+use crate::common::interface::shadow::SHADOW_GRAY;
 use crate::node::control::NodeStatus;
 
 /// Container for displaying logs through a `tracing_subscriber`.
@@ -25,7 +25,7 @@ pub(crate) fn log_container() -> impl Fn(&Theme) -> ContainerStyle {
             width: BORDER_WIDTH,
             radius: Radius::new(BORDER_RADIUS),
         },
-        shadow: SHADOW,
+        shadow: SHADOW_GRAY,
         ..Default::default()
     }
 }
@@ -45,7 +45,7 @@ pub(crate) fn action_button(
     move |_theme, button_status| {
         let pair = match action_button {
             ControlButton::Start => Pair {
-                color: GREEN,
+                color: GREEN_SHAMROCK,
                 text: BLACK,
             },
             ControlButton::Restart => Pair {

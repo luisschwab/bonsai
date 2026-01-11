@@ -9,29 +9,12 @@ use iced::widget::button::Status::Disabled;
 use iced::widget::button::Status::Hovered;
 use iced::widget::button::Status::Pressed;
 use iced::widget::button::Style as ButtonStyle;
-use iced::widget::container::Style as ContainerStyle;
 
 use crate::common::interface::color::OFF_WHITE;
-use crate::common::interface::container::common::BORDER_RADIUS;
-use crate::common::interface::container::common::BORDER_WIDTH;
+use crate::common::interface::constants::BORDER_RADIUS;
+use crate::common::interface::constants::BORDER_WIDTH;
 
-pub(crate) const SIDEBAR_WIDTH: f32 = 200.0;
-pub(crate) const SIDEBAR_PADDING: f32 = 10.0;
-pub(crate) const SIDEBAR_BUTTON_HEIGHT: f32 = 45.0;
-pub(crate) const SIDEBAR_BUTTON_SPACING: f32 = 10.0;
-
-pub(crate) fn sidebar_container() -> impl Fn(&Theme) -> ContainerStyle {
-    |_theme| ContainerStyle {
-        border: Border {
-            color: OFF_WHITE,
-            width: BORDER_WIDTH,
-            radius: Radius::new(BORDER_RADIUS),
-        },
-        ..Default::default()
-    }
-}
-
-pub fn sidebar_button(
+pub(crate) fn sidebar_button(
     is_active: bool,
     hover_color: Color,
 ) -> impl Fn(&Theme, ButtonStatus) -> ButtonStyle {

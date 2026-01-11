@@ -80,10 +80,10 @@ pub(crate) const RED: Color = Color::from_rgb(
 );
 
 /// Floresta Green.
-pub(crate) const GREEN: Color = Color::from_rgb(
-    0xc0 as f32 / 255.0,
-    0xcc as f32 / 255.0,
-    0x31 as f32 / 255.0,
+pub(crate) const GREEN_SHAMROCK: Color = Color::from_rgb(
+    0x00 as f32 / 255.0,
+    0x9e as f32 / 255.0,
+    0x60 as f32 / 255.0,
 );
 
 /// Lapis Lazuli Blue.

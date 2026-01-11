@@ -6,6 +6,7 @@ use iced::Alignment::Center;
 use iced::Element;
 use iced::Length;
 use iced::Padding;
+use iced::alignment::Horizontal::Left;
 use iced::widget::Container;
 use iced::widget::button;
 use iced::widget::column;
@@ -17,21 +18,21 @@ use iced::widget::text_input;
 use iced::widget::tooltip;
 
 use crate::common::interface::color::BLACK;
-use crate::common::interface::container::common::CELL_HEIGHT;
-use crate::common::interface::container::common::TABLE_CELL_FONT_SIZE;
-use crate::common::interface::container::common::TABLE_CELL_ICON_SIZE;
-use crate::common::interface::container::common::TABLE_HEADER_FONT_SIZE;
+use crate::common::interface::constants::CELL_HEIGHT;
+use crate::common::interface::constants::TABLE_CELL_FONT_SIZE;
+use crate::common::interface::constants::TABLE_CELL_ICON_SIZE;
+use crate::common::interface::constants::TABLE_HEADER_FONT_SIZE;
 use crate::node::control::NodeStatus;
 use crate::node::geoip::GeoIpReader;
-use crate::node::interface::common::input_field;
-use crate::node::interface::common::table_cell;
-use crate::node::interface::common::title_container;
-use crate::node::interface::network::style::ban_button;
-use crate::node::interface::network::style::disconnect_button;
-use crate::node::interface::network::style::peer_info_table_container;
 use crate::node::message::NodeMessage;
-use crate::node::statistics::NodeImpl;
-use crate::node::statistics::NodeStatistics;
+use crate::node::network::style::ban_button;
+use crate::node::network::style::disconnect_button;
+use crate::node::network::style::peer_info_table_container;
+use crate::node::stats_fetcher::NodeImpl;
+use crate::node::stats_fetcher::NodeStatistics;
+use crate::node::style::input_field;
+use crate::node::style::table_cell;
+use crate::node::style::title_container;
 
 fn get_address_with_asn_tooltip<'a>(
     socket: &'a SocketAddr,
@@ -158,7 +159,7 @@ fn get_services_with_tooltip<'a>(services: &'a ServiceFlags) -> Element<'a, Node
         )
         .style(container::rounded_box),
     )
-    .align_x(iced::alignment::Horizontal::Left)
+    .align_x(Left)
     .align_y(Center)
     .into()
 }
@@ -230,35 +231,35 @@ pub fn view_p2p<'a>(
             .width(Length::FillPortion(16))
             .height(CELL_HEIGHT)
             .padding(LEFT_PADDING)
-            .align_x(iced::alignment::Horizontal::Left)
+            .align_x(Left)
             .align_y(Center)
             .style(table_cell()),
         container(text("IMPLEMENTATION").size(TABLE_HEADER_FONT_SIZE))
             .width(Length::FillPortion(16))
             .height(CELL_HEIGHT)
             .padding(LEFT_PADDING)
-            .align_x(iced::alignment::Horizontal::Left)
+            .align_x(Left)
             .align_y(Center)
             .style(table_cell()),
         container(text("SERVICES").size(TABLE_HEADER_FONT_SIZE))
             .width(Length::FillPortion(10))
             .height(CELL_HEIGHT)
             .padding(LEFT_PADDING)
-            .align_x(iced::alignment::Horizontal::Left)
+            .align_x(Left)
             .align_y(Center)
             .style(table_cell()),
         container(text("TRANSPORT").size(TABLE_HEADER_FONT_SIZE - 4))
             .width(Length::FillPortion(8))
             .height(CELL_HEIGHT)
             .padding(LEFT_PADDING)
-            .align_x(iced::alignment::Horizontal::Left)
+            .align_x(Left)
             .align_y(Center)
             .style(table_cell()),
         container(text("ACTION").size(TABLE_HEADER_FONT_SIZE))
             .width(Length::FillPortion(10))
             .height(CELL_HEIGHT)
             .padding(LEFT_PADDING)
-            .align_x(iced::alignment::Horizontal::Left)
+            .align_x(Left)
             .align_y(Center)
             .style(table_cell()),
     ]);
@@ -308,7 +309,7 @@ pub fn view_p2p<'a>(
                     .style(table_cell())
                     .align_x(Center)
                     .align_y(Center),
-                container(row![disconnect_button, ban_button].spacing(4))
+                container(row![ban_button, disconnect_button].spacing(4))
                     .padding(2)
                     .height(CELL_HEIGHT)
                     .width(Length::FillPortion(10))

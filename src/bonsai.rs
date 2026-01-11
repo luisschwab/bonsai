@@ -33,8 +33,9 @@ use tokio::runtime::Handle;
 use tracing::error;
 use tracing::info;
 
+use crate::common::interface::button::sidebar_button;
 use crate::common::interface::color::DARK_GREY;
-use crate::common::interface::color::GREEN;
+use crate::common::interface::color::GREEN_SHAMROCK;
 use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::color::ORANGE;
 use crate::common::interface::color::PURPLE;
@@ -42,19 +43,18 @@ use crate::common::interface::color::RED;
 use crate::common::interface::color::WHITE;
 use crate::common::interface::color::network_color;
 use crate::common::interface::color::pulse_color;
-use crate::common::interface::container::content::CONTENT_PADDING;
-use crate::common::interface::container::content::CONTENT_SPACING;
-use crate::common::interface::container::content::content_container;
-use crate::common::interface::container::header::HEADER_HEIGHT;
-use crate::common::interface::container::header::HEADER_PADDING;
-use crate::common::interface::container::header::header_container;
-use crate::common::interface::container::sidebar::SIDEBAR_BUTTON_HEIGHT;
-use crate::common::interface::container::sidebar::SIDEBAR_BUTTON_SPACING;
-use crate::common::interface::container::sidebar::SIDEBAR_PADDING;
-use crate::common::interface::container::sidebar::SIDEBAR_WIDTH;
-use crate::common::interface::container::sidebar::sidebar_button;
-use crate::common::interface::container::sidebar::sidebar_container;
-use crate::common::interface::container::window::WINDOW_PADDING;
+use crate::common::interface::constants::CONTENT_PADDING;
+use crate::common::interface::constants::CONTENT_SPACING;
+use crate::common::interface::constants::HEADER_HEIGHT;
+use crate::common::interface::constants::HEADER_PADDING;
+use crate::common::interface::constants::SIDEBAR_BUTTON_HEIGHT;
+use crate::common::interface::constants::SIDEBAR_BUTTON_SPACING;
+use crate::common::interface::constants::SIDEBAR_PADDING;
+use crate::common::interface::constants::SIDEBAR_WIDTH;
+use crate::common::interface::constants::WINDOW_PADDING;
+use crate::common::interface::container::content_container;
+use crate::common::interface::container::header_container;
+use crate::common::interface::container::sidebar_container;
 use crate::common::interface::font::BERKELEY_MONO_BOLD;
 use crate::common::interface::font::BERKELEY_MONO_REGULAR;
 use crate::common::logger::setup_logger;
@@ -66,8 +66,8 @@ use crate::node::control::start_node;
 use crate::node::control::stop_node;
 use crate::node::error::BonsaiNodeError;
 use crate::node::geoip::GeoIpReader;
-use crate::node::interface::common::table_cell;
 use crate::node::message::NodeMessage;
+use crate::node::style::table_cell;
 use crate::settings::bonsai_settings::AUTO_START_NODE;
 use crate::settings::bonsai_settings::BonsaiSettings;
 use crate::settings::bonsai_settings::BonsaiSettingsMessage;
@@ -122,8 +122,8 @@ impl Bonsai {
     fn view(&self) -> Element<'_, BonsaiMessage> {
         let node_status = &self.node.status;
         let status_color = match node_status {
-            NodeStatus::Starting => pulse_color(GREEN, self.app_clock),
-            NodeStatus::Running => GREEN,
+            NodeStatus::Starting => pulse_color(GREEN_SHAMROCK, self.app_clock),
+            NodeStatus::Running => GREEN_SHAMROCK,
             NodeStatus::Inactive => OFF_WHITE,
             NodeStatus::ShuttingDown => pulse_color(RED, self.app_clock),
             NodeStatus::Failed(_) => RED,
@@ -213,25 +213,31 @@ impl Bonsai {
                 .width(Length::Fill)
                 .style(sidebar_button(
                     self.active_tab == Tab::NodeStatistics,
-                    GREEN
+                    GREEN_SHAMROCK
                 )),
             button(text("NETWORK").size(20).align_y(Center).align_x(Center))
                 .on_press(BonsaiMessage::SelectTab(Tab::NodeNetwork))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::NodeNetwork, GREEN)),
+                .style(sidebar_button(
+                    self.active_tab == Tab::NodeNetwork,
+                    GREEN_SHAMROCK
+                )),
             button(text("UTREEXO").size(20).align_y(Center).align_x(Center))
                 .on_press(BonsaiMessage::SelectTab(Tab::NodeUtreexo))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::NodeUtreexo, GREEN)),
+                .style(sidebar_button(
+                    self.active_tab == Tab::NodeUtreexo,
+                    GREEN_SHAMROCK
+                )),
             button(text("BLOCKCHAIN").size(20).align_y(Center).align_x(Center))
                 .on_press(BonsaiMessage::SelectTab(Tab::NodeBlockchain))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(
                     self.active_tab == Tab::NodeBlockchain,
-                    GREEN
+                    GREEN_SHAMROCK
                 )),
             button(text("SETTINGS").size(20).align_y(Center).align_x(Center))
                 .on_press(BonsaiMessage::SelectTab(Tab::Settings))
@@ -528,7 +534,7 @@ fn main() -> iced::Result {
                 background: DARK_GREY,
                 text: OFF_WHITE,
                 primary: ORANGE,
-                success: GREEN,
+                success: GREEN_SHAMROCK,
                 danger: RED,
                 warning: RED,
             },

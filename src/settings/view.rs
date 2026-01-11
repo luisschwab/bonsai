@@ -26,18 +26,18 @@ use iced::widget::text_input;
 
 use crate::common::interface::color::BLACK;
 use crate::common::interface::color::BLUE;
-use crate::common::interface::color::GREEN;
+use crate::common::interface::color::GREEN_SHAMROCK;
 use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::color::ORANGE;
 use crate::common::interface::color::PURPLE;
 use crate::common::interface::color::RED;
 use crate::common::interface::color::YELLOW;
-use crate::common::interface::container::common::BORDER_RADIUS;
-use crate::common::interface::container::common::BORDER_WIDTH;
-use crate::common::interface::container::common::RED_SHADOW;
-use crate::common::interface::container::common::SHADOW;
-use crate::common::interface::container::content::button_container;
-use crate::node::interface::common::title_container;
+use crate::common::interface::constants::BORDER_RADIUS;
+use crate::common::interface::constants::BORDER_WIDTH;
+use crate::common::interface::container::button_container;
+use crate::common::interface::shadow::SHADOW_GRAY;
+use crate::common::interface::shadow::SHADOW_RED;
+use crate::node::style::title_container;
 use crate::settings::bonsai_settings::AUTO_START_NODE;
 use crate::settings::bonsai_settings::BonsaiSettings;
 use crate::settings::bonsai_settings::BonsaiSettingsMessage;
@@ -90,7 +90,7 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
                 "TRUE",
                 true,
                 auto_start,
-                GREEN,
+                GREEN_SHAMROCK,
                 BonsaiSettingsMessage::AutoStartChanged(true)
             ),
             boolean_button_with_disable_logic(
@@ -116,7 +116,7 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
                 "TRUE",
                 true,
                 use_assume_utreexo,
-                GREEN,
+                GREEN_SHAMROCK,
                 BonsaiSettingsMessage::UseAssumeUtreexoChanged(true)
             ),
             boolean_button_with_disable_logic(
@@ -142,7 +142,7 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
                 "TRUE",
                 true,
                 use_powfps,
-                GREEN,
+                GREEN_SHAMROCK,
                 BonsaiSettingsMessage::PowFraudProofsChanged(true)
             ),
             boolean_button_with_disable_logic(
@@ -167,7 +167,7 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
                 "TRUE",
                 true,
                 backfill,
-                GREEN,
+                GREEN_SHAMROCK,
                 BonsaiSettingsMessage::BackfillChanged(true)
             ),
             boolean_button_with_disable_logic(
@@ -193,7 +193,7 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
                 "TRUE",
                 true,
                 allow_v1_fallback,
-                GREEN,
+                GREEN_SHAMROCK,
                 BonsaiSettingsMessage::AllowV1FallbackChanged(true)
             ),
             boolean_button_with_disable_logic(
@@ -219,7 +219,7 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
                 "TRUE",
                 true,
                 disable_dns_seeds,
-                GREEN,
+                GREEN_SHAMROCK,
                 BonsaiSettingsMessage::DisableDnsSeedsChanged(true)
             ),
             boolean_button_with_disable_logic(
@@ -315,7 +315,7 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
             .padding(10)
             .width(FillPortion(2))
             .align_x(Center)
-            .align_y(iced::alignment::Vertical::Center)
+            .align_y(Center)
             .style(table_cell_with_shadow()),
             button(text("-").size(16).align_x(Center).align_y(Center))
                 .on_press_maybe(if max_banscore > 0 {
@@ -358,7 +358,7 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
             .padding(10)
             .width(FillPortion(2))
             .align_x(Center)
-            .align_y(iced::alignment::Vertical::Center)
+            .align_y(Center)
             .style(table_cell_with_shadow()),
             button(text("-").size(16).align_x(Center).align_y(Center))
                 .on_press_maybe(if max_outbound > 1 {
@@ -401,7 +401,7 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
             .padding(10)
             .width(FillPortion(2))
             .align_x(Center)
-            .align_y(iced::alignment::Vertical::Center)
+            .align_y(Center)
             .style(table_cell_with_shadow()),
             button(text("-").size(16).align_x(Center).align_y(Center))
                 .on_press_maybe(if max_inflight > 1 {
@@ -441,7 +441,7 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
         .color(if settings.unsaved_changes {
             ORANGE
         } else {
-            GREEN
+            GREEN_SHAMROCK
         }),
         Space::new().width(Fill),
         button(
@@ -472,7 +472,7 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
         .color(if settings.node_restart_required {
             ORANGE
         } else {
-            GREEN
+            GREEN_SHAMROCK
         }),
         Space::new().width(Fill),
         button(
@@ -669,7 +669,7 @@ pub(crate) fn table_cell_with_shadow() -> impl Fn(&Theme) -> ContainerStyle {
             width: BORDER_WIDTH,
             radius: Radius::new(BORDER_RADIUS),
         },
-        shadow: SHADOW,
+        shadow: SHADOW_GRAY,
         ..Default::default()
     }
 }
@@ -689,7 +689,7 @@ pub(crate) fn delete_button_container() -> impl Fn(&Theme, ButtonStatus) -> Butt
                 radius: Radius::new(BORDER_RADIUS),
             },
             text_color,
-            shadow: RED_SHADOW,
+            shadow: SHADOW_RED,
             ..Default::default()
         }
     }

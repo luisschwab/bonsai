@@ -16,16 +16,16 @@ use iced::widget::text;
 use iced::widget::text_input;
 
 use crate::common::interface::color::OFF_WHITE;
-use crate::common::interface::container::common::CELL_HEIGHT;
-use crate::common::interface::container::common::shadow_container;
-use crate::common::interface::container::content::button_container;
+use crate::common::interface::constants::CELL_HEIGHT;
+use crate::common::interface::container::button_container;
+use crate::common::interface::container::shadow_container;
 use crate::common::interface::font::BERKELEY_MONO_BOLD;
 use crate::common::util::format_thousands;
-use crate::node::interface::common::input_field;
-use crate::node::interface::common::table_cell;
-use crate::node::interface::common::title_container;
-use crate::node::interface::common::transparent_button;
 use crate::node::message::NodeMessage;
+use crate::node::style::input_field;
+use crate::node::style::table_cell;
+use crate::node::style::title_container;
+use crate::node::style::transparent_button;
 
 /// Get the block subsidy in satoshis based on blockheight.
 fn get_block_subsidy(height: u32) -> u64 {

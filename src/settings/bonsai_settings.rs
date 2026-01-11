@@ -1,7 +1,7 @@
+use std::fs;
 use std::net::SocketAddr;
 use std::path::Path;
 use std::path::PathBuf;
-use std::fs;
 
 use bdk_floresta::ChainParams;
 use bdk_floresta::UtreexoNodeConfig;
@@ -10,7 +10,7 @@ use iced::Element;
 use iced::Task;
 use serde::Deserialize;
 use serde::Serialize;
-use tracing::info;
+use tracing::error;
 
 pub(crate) const AUTO_START_NODE: bool = false;
 pub(crate) const SETTINGS_FILE: &str = "bonsai.toml";
@@ -220,14 +220,36 @@ impl BonsaiSettings {
 
     /// Save settings to disk
     pub(crate) fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let path = Self::base_dir().join(SETTINGS_FILE);
-        fs::create_dir_all(Self::base_dir())?;
-        let toml = toml::to_string_pretty(self)?;
-        fs::write(path, toml)?;
+        let data_directory = Self::base_dir();
+        let settings_path = data_directory.join(SETTINGS_FILE);
+
+        match fs::create_dir_all(Self::base_dir()) {
+            Ok(_) => {}
+            Err(e) => {
+                error!(
+                    "Failed to create data directory at {}: {}",
+                    data_directory.to_string_lossy(),
+                    e
+                );
+            }
+        }
+
+        let settings_toml = toml::to_string_pretty(self)?;
+        match fs::write(settings_path.clone(), settings_toml) {
+            Ok(_) => {}
+            Err(e) => {
+                error!(
+                    "Failed to write settings file to {}: {}",
+                    settings_path.to_string_lossy(),
+                    e
+                );
+            }
+        };
+
         Ok(())
     }
 
-    /// Get the UtreexoNodeConfig for starting the node
+    /// Get the [`UtreexoNodeConfig`] for starting the node.
     pub(crate) fn get_node_config(&self, network: Network, data_dir: &Path) -> UtreexoNodeConfig {
         let network = self.bonsai.network.unwrap_or(network);
         let data_dir = data_dir.join(network.to_string());
@@ -251,7 +273,6 @@ impl BonsaiSettings {
 
     pub(crate) fn update(&mut self, message: BonsaiSettingsMessage) -> Task<BonsaiSettingsMessage> {
         match message {
-            // Bonsai app settings
             BonsaiSettingsMessage::NetworkChanged(network) => {
                 if self.bonsai.network != Some(network) {
                     self.bonsai.network = Some(network);
@@ -261,14 +282,12 @@ impl BonsaiSettings {
                 Task::none()
             }
 
-            // Node settings
             BonsaiSettingsMessage::AutoStartChanged(enabled) => {
                 self.node.auto_start = Some(enabled);
                 self.unsaved_changes = true;
                 Task::none()
             }
 
-            // Network-specific settings (apply to current network)
             BonsaiSettingsMessage::UseAssumeUtreexoChanged(enabled) => {
                 let network = self.bonsai.network.unwrap_or(Network::Signet);
                 let config = self.node.get_network_config_mut(network);
@@ -382,41 +401,52 @@ impl BonsaiSettings {
                 let network = self.bonsai.network.unwrap_or(Network::Signet);
                 let config = self.node.get_network_config_mut(network);
 
-                // Apply user agent
                 if !self.user_agent_input.is_empty()
-                    && config.user_agent.as_ref() != Some(&self.user_agent_input)
+                    && Some(&self.user_agent_input) != config.user_agent.as_ref()
                 {
                     config.user_agent = Some(self.user_agent_input.clone());
                     self.node_restart_required = true;
                 }
 
-                // Apply fixed peer
                 let fixed_peer_value = if self.fixed_peer_input.is_empty() {
                     None
                 } else {
-                    Some(self.fixed_peer_input.clone())
+                    match self.fixed_peer_input.parse::<SocketAddr>() {
+                        Ok(_) => Some(self.fixed_peer_input.clone()),
+                        Err(e) => {
+                            error!(
+                                "Invalid fixed peer address '{}': {}",
+                                self.fixed_peer_input, e
+                            );
+                            None
+                        }
+                    }
                 };
                 if config.fixed_peer != fixed_peer_value {
                     config.fixed_peer = fixed_peer_value;
                     self.node_restart_required = true;
                 }
 
-                // Apply proxy
                 let proxy_value = if self.proxy_input.is_empty() {
                     None
                 } else {
-                    self.proxy_input.parse::<SocketAddr>().ok()
+                    match self.proxy_input.parse::<SocketAddr>() {
+                        Ok(addr) => Some(addr),
+                        Err(e) => {
+                            error!("Invalid proxy address '{}': {}", self.proxy_input, e);
+                            None
+                        }
+                    }
                 };
                 if config.proxy != proxy_value {
                     config.proxy = proxy_value;
                     self.node_restart_required = true;
                 }
 
-                if let Err(e) = self.save() {
-                    eprintln!("Failed to save settings: {}", e);
-                } else {
+                if let Ok(_) = self.save() {
                     self.unsaved_changes = false;
                 }
+
                 Task::none()
             }
 

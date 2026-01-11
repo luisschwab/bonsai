@@ -33,8 +33,8 @@ use crate::node::error::BonsaiNodeError;
 use crate::node::geoip::GeoIpReader;
 use crate::node::log_capture::LogCapture;
 use crate::node::message::NodeMessage;
-use crate::node::statistics::NodeStatistics;
-use crate::node::statistics::fetch_stats;
+use crate::node::stats_fetcher::NodeStatistics;
+use crate::node::stats_fetcher::fetch_stats;
 
 pub const DATA_DIR: &str = "./data/";
 pub const NETWORK: Network = Network::Signet;
@@ -517,12 +517,12 @@ impl Node {
     }
 
     fn view_overview(&self, app_clock: usize) -> Element<'_, NodeMessage> {
-        use crate::node::interface::statistics::view;
+        use crate::node::statistics::view;
         view::view_statistics(&self.status, &self.statistics, &self.log_capture, app_clock)
     }
 
     pub(crate) fn view_network(&self) -> Element<'_, NodeMessage> {
-        use crate::node::interface::network::view;
+        use crate::node::network::view;
         view::view_p2p(
             &self.status,
             &self.statistics,
@@ -532,12 +532,12 @@ impl Node {
     }
 
     pub(crate) fn view_utreexo(&self) -> Element<'_, NodeMessage> {
-        use crate::node::interface::utreexo::view;
+        use crate::node::utreexo::view;
         view::view_utreexo(&self.statistics, &self.accumulator_qr_data)
     }
 
     pub(crate) fn view_blocks(&self) -> Element<'_, NodeMessage> {
-        use crate::node::interface::blocks::view;
+        use crate::node::blocks::view;
         view::view_blocks(
             &self.block_explorer_height_str,
             &self.latest_blocks,
