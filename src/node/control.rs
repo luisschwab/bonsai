@@ -405,7 +405,7 @@ impl Node {
                                         info!("Fetching block of height={height} and hash={blockhash}");
                                         blockhash
                                     }
-                                    Err(e) => {
+                                    Err(_) => {
                                         error!("Failed to find a block of height={height} from Floresta's header chain");
                                         return NodeMessage::BlockFetched(None)
                                     }

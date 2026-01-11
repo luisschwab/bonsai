@@ -1,7 +1,8 @@
 use std::net::SocketAddr;
+use std::path::Path;
 use std::path::PathBuf;
+use std::fs;
 
-use bdk_floresta::AssumeUtreexoValue;
 use bdk_floresta::ChainParams;
 use bdk_floresta::UtreexoNodeConfig;
 use bitcoin::Network;
@@ -9,10 +10,7 @@ use iced::Element;
 use iced::Task;
 use serde::Deserialize;
 use serde::Serialize;
-
-use crate::BonsaiMessage;
-use crate::node::control::Node;
-use crate::settings;
+use tracing::info;
 
 pub(crate) const AUTO_START_NODE: bool = false;
 pub(crate) const SETTINGS_FILE: &str = "bonsai.toml";
@@ -112,10 +110,10 @@ pub(crate) struct NodeNetworkSpecific {
 
 impl NodeNetworkSpecific {
     /// Convert to UtreexoNodeConfig, using defaults where options are None
-    pub(crate) fn to_config(&self, network: Network, datadir: String) -> UtreexoNodeConfig {
+    pub(crate) fn to_config(&self, network: Network, data_dir: PathBuf) -> UtreexoNodeConfig {
         let default = UtreexoNodeConfig {
             network,
-            datadir: datadir.clone(),
+            datadir: String::from(data_dir.to_string_lossy()),
             ..Default::default()
         };
 
@@ -128,7 +126,7 @@ impl NodeNetworkSpecific {
 
         UtreexoNodeConfig {
             network,
-            datadir,
+            datadir: String::from(data_dir.to_string_lossy()),
             assume_utreexo,
             pow_fraud_proofs: self.pow_fraud_proofs.unwrap_or(default.pow_fraud_proofs),
             backfill: self.backfill.unwrap_or(true),
@@ -169,7 +167,6 @@ impl NodeSettings {
         match network {
             Network::Bitcoin => &self.network_configs.bitcoin,
             Network::Signet => &self.network_configs.signet,
-            Network::Testnet => &self.network_configs.testnet3,
             Network::Testnet4 => &self.network_configs.testnet4,
             Network::Regtest => &self.network_configs.regtest,
             _ => unreachable!(),
@@ -181,7 +178,6 @@ impl NodeSettings {
         match network {
             Network::Bitcoin => &mut self.network_configs.bitcoin,
             Network::Signet => &mut self.network_configs.signet,
-            Network::Testnet => &mut self.network_configs.testnet3,
             Network::Testnet4 => &mut self.network_configs.testnet4,
             Network::Regtest => &mut self.network_configs.regtest,
             _ => unreachable!(),
@@ -225,19 +221,19 @@ impl BonsaiSettings {
     /// Save settings to disk
     pub(crate) fn save(&self) -> Result<(), Box<dyn std::error::Error>> {
         let path = Self::base_dir().join(SETTINGS_FILE);
-        std::fs::create_dir_all(Self::base_dir())?;
+        fs::create_dir_all(Self::base_dir())?;
         let toml = toml::to_string_pretty(self)?;
-        std::fs::write(path, toml)?;
+        fs::write(path, toml)?;
         Ok(())
     }
 
     /// Get the UtreexoNodeConfig for starting the node
-    pub(crate) fn get_node_config(&self, network: Network, data_dir: &str) -> UtreexoNodeConfig {
+    pub(crate) fn get_node_config(&self, network: Network, data_dir: &Path) -> UtreexoNodeConfig {
         let network = self.bonsai.network.unwrap_or(network);
-        let datadir = format!("{}{}", data_dir, network);
+        let data_dir = data_dir.join(network.to_string());
 
         let network_config = self.node.get_network_config(network);
-        network_config.to_config(network, datadir)
+        network_config.to_config(network, data_dir)
     }
 
     /// Update settings from a UtreexoNodeConfig (called after first run)
@@ -308,25 +304,6 @@ impl BonsaiSettings {
 
             BonsaiSettingsMessage::UserAgentInputChanged(value) => {
                 self.user_agent_input = value;
-                Task::none()
-            }
-
-            BonsaiSettingsMessage::SaveSettings => {
-                // Apply the user agent input when saving
-                let network = self.bonsai.network.unwrap_or(Network::Signet);
-                let config = self.node.get_network_config_mut(network);
-                if !self.user_agent_input.is_empty()
-                    && config.user_agent.as_ref() != Some(&self.user_agent_input)
-                {
-                    config.user_agent = Some(self.user_agent_input.clone());
-                    self.node_restart_required = true;
-                }
-
-                if let Err(e) = self.save() {
-                    eprintln!("Failed to save settings: {}", e);
-                } else {
-                    self.unsaved_changes = false;
-                }
                 Task::none()
             }
 

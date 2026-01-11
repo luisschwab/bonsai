@@ -11,6 +11,7 @@ use iced::widget::container;
 use iced::widget::row;
 use iced::widget::scrollable;
 use iced::widget::text;
+use iced::widget::text::Wrapping;
 
 use crate::common::interface::color::BLUE;
 use crate::common::interface::color::GREEN;
@@ -165,6 +166,16 @@ pub(crate) fn view_statistics<'a>(
                 .style(table_cell()),
             ],
             row![
+                container(text("TOR CIRCUIT").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+                container(text("TODO").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+            ],
+            row![
                 container(text("IBD STATUS").size(14))
                     .padding(10)
                     .width(Length::FillPortion(1))
@@ -297,10 +308,10 @@ pub(crate) fn view_statistics<'a>(
         row![
             text("LOGS").size(24),
             Space::new().width(Length::Fill),
-            button(text("CLEAR").size(16))
+            button(text("CLEAR").size(14))
                 .on_press(NodeMessage::ClearLogs)
                 .style(button_container())
-                .padding(5)
+                .padding(2)
         ]
         .spacing(10)
         .align_y(Center),
@@ -335,12 +346,7 @@ pub(crate) fn view_statistics<'a>(
                 OFF_WHITE
             };
 
-            log_column = log_column.push(
-                text(log)
-                    .size(12)
-                    .color(color)
-                    .wrapping(text::Wrapping::Glyph),
-            );
+            log_column = log_column.push(text(log).size(12).color(color).wrapping(Wrapping::Glyph));
         }
     }
 

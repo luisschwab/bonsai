@@ -30,6 +30,8 @@ use iced::window::Settings;
 use iced::window::icon;
 use iced::window::settings::PlatformSpecific;
 use tokio::runtime::Handle;
+use tracing::error;
+use tracing::info;
 
 use crate::common::interface::color::DARK_GREY;
 use crate::common::interface::color::GREEN;
@@ -57,7 +59,6 @@ use crate::common::interface::font::BERKELEY_MONO_BOLD;
 use crate::common::interface::font::BERKELEY_MONO_REGULAR;
 use crate::common::logger::setup_logger;
 use crate::common::util::format_thousands;
-use crate::node::control::DATA_DIR;
 use crate::node::control::NETWORK;
 use crate::node::control::Node;
 use crate::node::control::NodeStatus;
@@ -367,7 +368,9 @@ impl Bonsai {
                 if should_restart {
                     // Update the node config before restarting
                     let network = self.settings.bonsai.network.unwrap_or(NETWORK);
-                    let node_config = self.settings.get_node_config(network, DATA_DIR);
+                    let node_config = self
+                        .settings
+                        .get_node_config(network, &BonsaiSettings::base_dir());
                     self.node.config = Some(node_config);
 
                     // Trigger node restart
@@ -456,16 +459,30 @@ fn main() -> iced::Result {
     // and save it to disk
     if is_first_run {
         let network = settings.bonsai.network.unwrap_or(Network::Signet);
-        let node_config = settings.get_node_config(network, DATA_DIR);
 
-        if let Err(e) = settings.save() {
-            eprintln!("Failed to save initial settings: {}", e);
+        let node_config = settings.get_node_config(network, &BonsaiSettings::base_dir());
+        settings.update_from_config(&node_config);
+
+        match settings.save() {
+            Ok(_) => {
+                info!(
+                    "Successfully saved default settings to {}",
+                    settings_file.to_string_lossy()
+                );
+            }
+            Err(e) => {
+                error!(
+                    "Failed to save default settings to {}: {}",
+                    settings_file.to_string_lossy(),
+                    e
+                );
+            }
         }
     }
 
     let auto_start_node = settings.node.auto_start.unwrap_or(AUTO_START_NODE);
     let network = settings.bonsai.network.unwrap_or(Network::Signet);
-    let node_config = settings.get_node_config(network, DATA_DIR);
+    let node_config = settings.get_node_config(network, &BonsaiSettings::base_dir());
 
     iced::application(
         move || {
@@ -485,7 +502,7 @@ fn main() -> iced::Result {
 
             let tasks = if auto_start_node {
                 let network = settings.bonsai.network.unwrap_or(Network::Signet);
-                let node_config = settings.get_node_config(network, DATA_DIR);
+                let node_config = settings.get_node_config(network, &BonsaiSettings::base_dir());
 
                 Task::batch([
                     Task::done(BonsaiMessage::Node(NodeMessage::Starting)),
