@@ -13,6 +13,9 @@ use iced::Subscription;
 use iced::Task;
 use iced::Theme;
 use iced::event;
+use iced::keyboard;
+use iced::keyboard::Key;
+use iced::keyboard::Modifiers;
 use iced::theme::Palette;
 use iced::time;
 use iced::widget::Space;
@@ -40,7 +43,6 @@ use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::color::ORANGE;
 use crate::common::interface::color::PURPLE;
 use crate::common::interface::color::RED;
-use crate::common::interface::color::WHITE;
 use crate::common::interface::color::network_color;
 use crate::common::interface::color::pulse_color;
 use crate::common::interface::constants::CONTENT_PADDING;
@@ -90,7 +92,7 @@ pub(crate) const BONSAI_ICON_DARK_PATH: &str = "./assets/icon/bonsai-dark.png";
 pub(crate) enum Tab {
     Wallet,
     #[default]
-    NodeStatistics,
+    NodeMetrics,
     NodeNetwork,
     NodeBlockchain,
     NodeUtreexo,
@@ -101,6 +103,7 @@ pub(crate) enum Tab {
 #[derive(Debug, Clone)]
 pub(crate) enum BonsaiMessage {
     AnimationTick,
+    KeyPressed(Key, Modifiers),
     SelectTab(Tab),
     CloseRequested,
     CloseWindow,
@@ -207,12 +210,12 @@ impl Bonsai {
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::Wallet, ORANGE)),
-            button(text("STATISTICS").size(20).align_y(Center).align_x(Center))
-                .on_press(BonsaiMessage::SelectTab(Tab::NodeStatistics))
+            button(text("METRICS").size(20).align_y(Center).align_x(Center))
+                .on_press(BonsaiMessage::SelectTab(Tab::NodeMetrics))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(
-                    self.active_tab == Tab::NodeStatistics,
+                    self.active_tab == Tab::NodeMetrics,
                     GREEN_SHAMROCK
                 )),
             button(text("NETWORK").size(20).align_y(Center).align_x(Center))
@@ -248,7 +251,7 @@ impl Bonsai {
                 //.on_press(BonsaiMessage::SelectTab(Tab::About))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::About, WHITE)),
+                .style(sidebar_button(self.active_tab == Tab::About, OFF_WHITE)),
         ]
         .spacing(SIDEBAR_BUTTON_SPACING);
 
@@ -260,7 +263,7 @@ impl Bonsai {
 
         let content = match self.active_tab {
             Tab::Wallet => self.wallet.view().map(BonsaiMessage::BdkWallet),
-            Tab::NodeStatistics => self
+            Tab::NodeMetrics => self
                 .node
                 .view_tab(self.active_tab, self.app_clock)
                 .map(BonsaiMessage::Node),
@@ -306,6 +309,51 @@ impl Bonsai {
         match message {
             BonsaiMessage::SelectTab(tab) => {
                 self.active_tab = tab;
+                Task::none()
+            }
+            BonsaiMessage::KeyPressed(key, modifiers) => {
+                use iced::keyboard::key::Named;
+
+                if modifiers.is_empty() {
+                    if let Key::Character(c) = key.as_ref() {
+                        match c.as_ref() {
+                            "w" => self.active_tab = Tab::Wallet,
+                            "m" => self.active_tab = Tab::NodeMetrics,
+                            "n" => self.active_tab = Tab::NodeNetwork,
+                            "u" => self.active_tab = Tab::NodeUtreexo,
+                            "b" => self.active_tab = Tab::NodeBlockchain,
+                            "s" => self.active_tab = Tab::Settings,
+                            "a" => self.active_tab = Tab::About,
+                            _ => {}
+                        }
+                    }
+
+                    match key.as_ref() {
+                        Key::Named(Named::ArrowDown) => {
+                            self.active_tab = match self.active_tab {
+                                Tab::Wallet => Tab::NodeMetrics,
+                                Tab::NodeMetrics => Tab::NodeNetwork,
+                                Tab::NodeNetwork => Tab::NodeUtreexo,
+                                Tab::NodeUtreexo => Tab::NodeBlockchain,
+                                Tab::NodeBlockchain => Tab::Settings,
+                                Tab::Settings => Tab::About,
+                                Tab::About => Tab::Wallet,
+                            };
+                        }
+                        Key::Named(Named::ArrowUp) => {
+                            self.active_tab = match self.active_tab {
+                                Tab::Wallet => Tab::About,
+                                Tab::NodeMetrics => Tab::Wallet,
+                                Tab::NodeNetwork => Tab::NodeMetrics,
+                                Tab::NodeUtreexo => Tab::NodeNetwork,
+                                Tab::NodeBlockchain => Tab::NodeUtreexo,
+                                Tab::Settings => Tab::NodeBlockchain,
+                                Tab::About => Tab::Settings,
+                            };
+                        }
+                        _ => {}
+                    }
+                }
                 Task::none()
             }
             BonsaiMessage::AnimationTick => {
@@ -401,9 +449,17 @@ impl Bonsai {
             }
         });
 
+        let keyboard_events = event::listen_with(|event, _status, _id| {
+            if let Event::Keyboard(keyboard::Event::KeyPressed { key, modifiers, .. }) = event {
+                Some(BonsaiMessage::KeyPressed(key, modifiers))
+            } else {
+                None
+            }
+        });
+
         let tab_subscription = match self.active_tab {
             Tab::Wallet => Subscription::none(),
-            Tab::NodeStatistics => self.node.subscribe().map(BonsaiMessage::Node),
+            Tab::NodeMetrics => self.node.subscribe().map(BonsaiMessage::Node),
             Tab::NodeNetwork => self.node.subscribe().map(BonsaiMessage::Node),
             Tab::NodeBlockchain => self.node.subscribe().map(BonsaiMessage::Node),
             Tab::NodeUtreexo => self.node.subscribe().map(BonsaiMessage::Node),
@@ -411,7 +467,12 @@ impl Bonsai {
             Tab::About => unimplemented!(),
         };
 
-        Subscription::batch([animation_timer, window_events, tab_subscription])
+        Subscription::batch([
+            animation_timer,
+            window_events,
+            keyboard_events,
+            tab_subscription,
+        ])
     }
 }
 

@@ -508,7 +508,7 @@ impl Node {
 
     pub(crate) fn view_tab(&self, tab: Tab, app_clock: usize) -> Element<'_, NodeMessage> {
         match tab {
-            Tab::NodeStatistics => self.view_overview(app_clock),
+            Tab::NodeMetrics => self.view_overview(app_clock),
             Tab::NodeNetwork => self.view_network(),
             Tab::NodeBlockchain => self.view_blocks(),
             Tab::NodeUtreexo => self.view_utreexo(),
