@@ -51,7 +51,7 @@ pub fn view_blocks<'a>(
     let latest_canvas: Container<'_, NodeMessage> = {
         let blocks_column = latest_blocks.iter().take(5).enumerate().fold(
             column![].spacing(0),
-            |col, (_idx, block)| {
+            |col, (idx, block)| {
                 let block_height = block.bip34_block_height().unwrap_or(0);
                 let tx_count = block.txdata.len();
                 let block_size_bytes = bitcoin::consensus::encode::serialize(&block).len();
@@ -90,7 +90,13 @@ pub fn view_blocks<'a>(
                     .style(transparent_button())
                     .on_press(NodeMessage::BlockExplorerHeightUpdate(block_height));
 
-                col.push(block_button)
+                let col = col.push(block_button);
+
+                if idx < 4 {
+                    col.push(Space::new().height(Length::Fill))
+                } else {
+                    col
+                }
             },
         );
 
