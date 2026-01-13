@@ -3,6 +3,8 @@ alias c := check
 alias d := delete
 alias f := fmt
 alias r := run
+alias rr := run-release
+alias h := hot
 
 _default:
     @just --list --list-heading $'bonsai\n'
@@ -14,8 +16,8 @@ build:
 # Check code: formatting, compilation, and linting
 check:
     cargo +nightly fmt --all -- --check
-    cargo check --workspace
-    cargo clippy --all-targets -- -D warnings
+    cargo check
+    cargo clippy -- -D warnings
 
 # Delete files: data, target, lockfile
 delete item="data":
@@ -29,8 +31,17 @@ fmt:
 run:
     cargo run
 
+# Run the code in release mode
+run-release:
+    cargo run --release
+
+# Run with experimental hot-reloading
+hot:
+    cargo hot --features hot-reloading
+
 _delete-data:
     rm -rf data/
+    rm -rf ~/.bonsai
 
 _delete-target:
     rm -rf target/
