@@ -15,8 +15,9 @@ impl Wallet {
 
     pub fn view(&self) -> Element<'_, WalletMessage> {
         column![
-            text("WALLET [TODO]").size(24),
-            text("Powered by BDK").size(16)
+            text("WALLET").size(24),
+            text("Powered by BDK").size(16),
+            text("Coming Soon").size(16)
         ]
         .into()
     }

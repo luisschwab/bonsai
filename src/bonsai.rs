@@ -1,5 +1,3 @@
-//#![allow(unused)]
-
 use core::fmt::Debug;
 
 use bitcoin::Network;
@@ -36,6 +34,7 @@ use tokio::runtime::Handle;
 use tracing::error;
 use tracing::info;
 
+use crate::about::view::view_about;
 use crate::common::interface::button::sidebar_button;
 use crate::common::interface::color::DARK_GREY;
 use crate::common::interface::color::GREEN_SHAMROCK;
@@ -77,6 +76,7 @@ use crate::settings::bonsai_settings::SETTINGS_FILE;
 use crate::wallet::placeholder::Wallet;
 use crate::wallet::placeholder::WalletMessage;
 
+pub(crate) mod about;
 pub(crate) mod common;
 pub(crate) mod node;
 pub(crate) mod settings;
@@ -248,10 +248,13 @@ impl Bonsai {
                 .width(Length::Fill)
                 .style(sidebar_button(self.active_tab == Tab::Settings, PURPLE)),
             button(text("ABOUT").size(20).align_y(Center).align_x(Center))
-                //.on_press(BonsaiMessage::SelectTab(Tab::About))
+                .on_press(BonsaiMessage::SelectTab(Tab::About))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
-                .style(sidebar_button(self.active_tab == Tab::About, OFF_WHITE)),
+                .style(sidebar_button(
+                    self.active_tab == Tab::About,
+                    OFF_WHITE.scale_alpha(0.5)
+                )),
         ]
         .spacing(SIDEBAR_BUTTON_SPACING);
 
@@ -280,7 +283,7 @@ impl Bonsai {
                 .view_tab(self.active_tab, self.app_clock)
                 .map(BonsaiMessage::Node),
             Tab::Settings => self.settings.view().map(BonsaiMessage::Settings),
-            Tab::About => unimplemented!(),
+            Tab::About => view_about(),
         };
 
         let content_area = container(content)
@@ -464,7 +467,7 @@ impl Bonsai {
             Tab::NodeBlockchain => self.node.subscribe().map(BonsaiMessage::Node),
             Tab::NodeUtreexo => self.node.subscribe().map(BonsaiMessage::Node),
             Tab::Settings => Subscription::none(),
-            Tab::About => unimplemented!(),
+            Tab::About => Subscription::none(),
         };
 
         Subscription::batch([

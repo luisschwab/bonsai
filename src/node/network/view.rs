@@ -5,7 +5,6 @@ use bitcoin::p2p::ServiceFlags;
 use iced::Alignment::Center;
 use iced::Element;
 use iced::Length;
-use iced::Padding;
 use iced::alignment::Horizontal::Left;
 use iced::widget::Container;
 use iced::widget::button;
@@ -17,7 +16,6 @@ use iced::widget::text;
 use iced::widget::text_input;
 use iced::widget::tooltip;
 
-use crate::common::interface::color::BLACK;
 use crate::common::interface::constants::CELL_HEIGHT;
 use crate::common::interface::constants::TABLE_CELL_FONT_SIZE;
 use crate::common::interface::constants::TABLE_CELL_ICON_SIZE;
@@ -25,8 +23,7 @@ use crate::common::interface::constants::TABLE_HEADER_FONT_SIZE;
 use crate::node::control::NodeStatus;
 use crate::node::geoip::GeoIpReader;
 use crate::node::message::NodeMessage;
-use crate::node::network::style::ban_button;
-use crate::node::network::style::disconnect_button;
+use crate::node::network::style::network_button;
 use crate::node::network::style::peer_info_table_container;
 use crate::node::stats_fetcher::NodeImpl;
 use crate::node::stats_fetcher::NodeStatistics;
@@ -171,7 +168,7 @@ pub fn view_p2p<'a>(
     geoip_reader: &'a Option<GeoIpReader>,
 ) -> Element<'a, NodeMessage> {
     // Add Peer.
-    let add_peer_title: Container<'_, NodeMessage> = container(text("ADD PEER").size(24));
+    let add_peer_title: Container<'_, NodeMessage> = container(text("ADD PEER").size(21));
     let add_peer_input = container(
         text_input("123.123.123.123:38333", peer_input)
             .on_input(NodeMessage::AddPeerInputChanged)
@@ -182,8 +179,9 @@ pub fn view_p2p<'a>(
     .align_y(Center)
     .height(Length::Fill);
     let add_peer_button = container(
-        button(text("CONNECT").size(12).color(BLACK))
+        button(text("CONNECT").size(12))
             .on_press(NodeMessage::AddPeer)
+            .style(network_button())
             .padding(10),
     )
     .align_y(Center)
@@ -200,7 +198,7 @@ pub fn view_p2p<'a>(
         container(column![add_peer_title, add_peer_container]).height(Length::Fixed(100.0));
 
     // P2P Messages (TODO: requires a node hook for P2P messages)
-    let p2p_messages_title: Container<'_, NodeMessage> = container(text("P2P MESSAGES").size(24));
+    let p2p_messages_title: Container<'_, NodeMessage> = container(text("P2P MESSAGES").size(21));
     let p2p_messages_container = container(row![text(
         "WIP: Requires a node hook for P2P messages on Floresta"
     )])
@@ -216,50 +214,38 @@ pub fn view_p2p<'a>(
         .width(Length::FillPortion(3));
 
     // Peer Info.
-    let peer_info_title = container(text("PEERS").size(24));
-
-    const LEFT_PADDING: Padding = Padding {
-        top: 0.0,
-        right: 0.0,
-        bottom: 0.0,
-        left: 10.0,
-    };
+    let peer_info_title = container(text("PEERS").size(21));
 
     let mut peer_info_table = column![].spacing(0);
     peer_info_table = peer_info_table.push(row![
         container(text("SOCKET").size(TABLE_HEADER_FONT_SIZE))
             .width(Length::FillPortion(16))
             .height(CELL_HEIGHT)
-            .padding(LEFT_PADDING)
-            .align_x(Left)
+            .align_x(Center)
             .align_y(Center)
             .style(table_cell()),
         container(text("IMPLEMENTATION").size(TABLE_HEADER_FONT_SIZE))
             .width(Length::FillPortion(16))
             .height(CELL_HEIGHT)
-            .padding(LEFT_PADDING)
-            .align_x(Left)
+            .align_x(Center)
             .align_y(Center)
             .style(table_cell()),
         container(text("SERVICES").size(TABLE_HEADER_FONT_SIZE))
             .width(Length::FillPortion(10))
             .height(CELL_HEIGHT)
-            .padding(LEFT_PADDING)
-            .align_x(Left)
+            .align_x(Center)
             .align_y(Center)
             .style(table_cell()),
         container(text("TRANSPORT").size(TABLE_HEADER_FONT_SIZE - 4))
             .width(Length::FillPortion(8))
             .height(CELL_HEIGHT)
-            .padding(LEFT_PADDING)
-            .align_x(Left)
+            .align_x(Center)
             .align_y(Center)
             .style(table_cell()),
         container(text("ACTION").size(TABLE_HEADER_FONT_SIZE))
             .width(Length::FillPortion(10))
             .height(CELL_HEIGHT)
-            .padding(LEFT_PADDING)
-            .align_x(Left)
+            .align_x(Center)
             .align_y(Center)
             .style(table_cell()),
     ]);
@@ -275,13 +261,13 @@ pub fn view_p2p<'a>(
         if let Some(peer) = peers.get(i) {
             let disconnect_button = button(text("DISCONNECT").size(10))
                 .on_press(NodeMessage::DisconnectPeer(peer.socket))
-                .style(disconnect_button())
+                .style(network_button())
                 .padding(5);
 
             // TODO: add peer banning logic on `floresta-wire`.
             let ban_button = button(text("BAN").size(10))
-                .on_press(NodeMessage::Tick) // TODO: change this
-                .style(ban_button())
+                .on_press(NodeMessage::Tick)
+                .style(network_button())
                 .padding(5);
 
             peer_info_table = peer_info_table.push(row![

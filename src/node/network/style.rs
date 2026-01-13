@@ -1,4 +1,3 @@
-use iced::Background::Color as BackgroundColor;
 use iced::Border;
 use iced::Theme;
 use iced::border::Radius;
@@ -6,7 +5,6 @@ use iced::widget::button::Status as ButtonStatus;
 use iced::widget::button::Style as ButtonStyle;
 use iced::widget::container::Style as ContainerStyle;
 
-use crate::common::interface::color::BLACK;
 use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::constants::BORDER_RADIUS;
 use crate::common::interface::constants::BORDER_WIDTH;
@@ -25,33 +23,20 @@ pub(crate) fn peer_info_table_container() -> impl Fn(&Theme) -> ContainerStyle {
     }
 }
 
-pub fn disconnect_button() -> impl Fn(&Theme, ButtonStatus) -> ButtonStyle {
+pub fn network_button() -> impl Fn(&Theme, ButtonStatus) -> ButtonStyle {
     |_theme, status| ButtonStyle {
-        background: Some(BackgroundColor(if status == ButtonStatus::Hovered {
-            BLACK.scale_alpha(0.8)
+        background: None,
+        text_color: if status == ButtonStatus::Hovered {
+            OFF_WHITE.scale_alpha(0.8)
         } else {
-            BLACK
-        })),
-        text_color: OFF_WHITE,
-        border: Border {
-            color: OFF_WHITE,
-            width: 1.0,
-            radius: Radius::new(0),
+            OFF_WHITE
         },
-        ..Default::default()
-    }
-}
-
-pub fn ban_button() -> impl Fn(&Theme, ButtonStatus) -> ButtonStyle {
-    |_theme, status| ButtonStyle {
-        background: Some(BackgroundColor(if status == ButtonStatus::Hovered {
-            BLACK.scale_alpha(0.8)
-        } else {
-            BLACK
-        })),
-        text_color: OFF_WHITE,
         border: Border {
-            color: OFF_WHITE,
+            color: if status == ButtonStatus::Hovered {
+                OFF_WHITE.scale_alpha(0.8)
+            } else {
+                OFF_WHITE
+            },
             width: 1.0,
             radius: Radius::new(0),
         },
