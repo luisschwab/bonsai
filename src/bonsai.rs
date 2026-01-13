@@ -86,6 +86,8 @@ pub(crate) const APP_VERSION: &str = concat!("v", env!("CARGO_PKG_VERSION"));
 pub(crate) const GEOIP_ASN_DB_PATH: &str = "./assets/geoip/GeoLite2-ASN.mmdb";
 pub(crate) const GEOIP_CITY_DB_PATH: &str = "./assets/geoip/GeoLite2-City.mmdb";
 pub(crate) const BONSAI_ICON_DARK_PATH: &str = "./assets/icon/bonsai-dark.png";
+pub(crate) const FLORESTA_ICON_PATH: &str = "./assets/icon/floresta.png";
+pub(crate) const BDK_ICON_PATH: &str = "./assets/icon/bdk.png";
 //pub(crate) const BONSAI_ICON_LIGHT_PATH: &str = "./assets/icon/bonsai-light.png";
 
 #[derive(Default, Debug, Clone, Copy, PartialEq)]
@@ -104,6 +106,7 @@ pub(crate) enum Tab {
 pub(crate) enum BonsaiMessage {
     AnimationTick,
     KeyPressed(Key, Modifiers),
+    OpenLink(String),
     SelectTab(Tab),
     CloseRequested,
     CloseWindow,
@@ -319,7 +322,7 @@ impl Bonsai {
 
                 if modifiers.is_empty() {
                     if let Key::Character(c) = key.as_ref() {
-                        match c.as_ref() {
+                        match c {
                             "w" => self.active_tab = Tab::Wallet,
                             "m" => self.active_tab = Tab::NodeMetrics,
                             "n" => self.active_tab = Tab::NodeNetwork,
@@ -356,6 +359,12 @@ impl Bonsai {
                         }
                         _ => {}
                     }
+                }
+                Task::none()
+            }
+            BonsaiMessage::OpenLink(url) => {
+                if let Err(e) = open::that(&url) {
+                    error!("Failed to open URL: {}", e);
                 }
                 Task::none()
             }

@@ -443,7 +443,7 @@ impl BonsaiSettings {
                     self.node_restart_required = true;
                 }
 
-                if let Ok(_) = self.save() {
+                if self.save().is_ok() {
                     self.unsaved_changes = false;
                 }
 

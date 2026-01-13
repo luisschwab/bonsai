@@ -67,3 +67,13 @@ pub(crate) fn sidebar_button(
         }
     }
 }
+
+pub(crate) fn image_button() -> impl Fn(&Theme, ButtonStatus) -> ButtonStyle {
+    move |_theme, _button_status| ButtonStyle {
+        border: Border::default(),
+        background: None,
+        text_color: Default::default(),
+        shadow: Shadow::default(),
+        ..Default::default()
+    }
+}
