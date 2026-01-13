@@ -24,7 +24,7 @@ jobs:
           cache-on-failure: true
 
       - name: Install cargo-audit
-        run: cargo install cargo-audit@0.21.0 --force --locked
+        run: cargo install cargo-audit --force --locked
 
       - name: Check for audit warnings
         run: cargo audit -D warnings
