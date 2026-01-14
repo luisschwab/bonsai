@@ -28,7 +28,7 @@ pub(crate) fn view_about<'a>() -> Element<'a, BonsaiMessage> {
         )
         .style(table_cell())
         .padding(1),
-        text("BONSAI").font(BERKELEY_MONO_BOLD).size(36),
+        text("BONSAI 盆栽").font(BERKELEY_MONO_BOLD).size(36),
         Space::new().height(10.0),
         text("Bonsai is a desktop wallet with an embbeded node, built as a showcase of `bdk_floresta`, a novel chain-source crate for BDK that leverages Floresta and Utreexo to keep a compact full node running within the application, enabling completely trustless and on-device validation and blockchain data fetching. Zero API calls means better user privacy and sovereignty.").align_x(Center),
         Space::new().height(Fill),
