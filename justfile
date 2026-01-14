@@ -19,8 +19,8 @@ check:
     cargo check
     cargo clippy -- -D warnings
 
-# Delete files: data, target, lockfile
-delete item="data":
+# Delete files: data-signet, settings, target, lockfile
+delete item="data-signet":
     just _delete-{{ item }}
 
 # Format code
@@ -39,9 +39,13 @@ run-release:
 hot:
     cargo hot --features hot-reloading
 
-_delete-data:
-    rm -rf data/
-    rm -rf ~/.bonsai
+# Delete signet chaindata
+_delete-data-signet:
+    rm -rf ~/.bonsai/signet
+
+# Delete settings file
+_delete-settings:
+    rm ~/.bonsai/bonsai.toml
 
 _delete-target:
     rm -rf target/
