@@ -436,9 +436,7 @@ impl Node {
             }
 
             NodeMessage::BlockFetched(block) => {
-                if let Some(block) = block {
-                    self.block_explorer_current_block = Some(block);
-                }
+                self.block_explorer_current_block = block;
                 Task::none()
             }
 
