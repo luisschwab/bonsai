@@ -510,7 +510,7 @@ impl Node {
         match tab {
             Tab::NodeMetrics => self.view_overview(app_clock),
             Tab::NodeNetwork => self.view_network(),
-            Tab::NodeBlockchain => self.view_blocks(),
+            Tab::NodeBlocks => self.view_blocks(),
             Tab::NodeUtreexo => self.view_utreexo(),
             _ => unreachable!(),
         }

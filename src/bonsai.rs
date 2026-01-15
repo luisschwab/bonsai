@@ -96,7 +96,7 @@ pub(crate) enum Tab {
     #[default]
     NodeMetrics,
     NodeNetwork,
-    NodeBlockchain,
+    NodeBlocks,
     NodeUtreexo,
     Settings,
     About,
@@ -237,12 +237,12 @@ impl Bonsai {
                     self.active_tab == Tab::NodeUtreexo,
                     GREEN_SHAMROCK
                 )),
-            button(text("BLOCKCHAIN").size(20).align_y(Center).align_x(Center))
-                .on_press(BonsaiMessage::SelectTab(Tab::NodeBlockchain))
+            button(text("BLOCKS").size(20).align_y(Center).align_x(Center))
+                .on_press(BonsaiMessage::SelectTab(Tab::NodeBlocks))
                 .height(SIDEBAR_BUTTON_HEIGHT)
                 .width(Length::Fill)
                 .style(sidebar_button(
-                    self.active_tab == Tab::NodeBlockchain,
+                    self.active_tab == Tab::NodeBlocks,
                     GREEN_SHAMROCK
                 )),
             button(text("SETTINGS").size(20).align_y(Center).align_x(Center))
@@ -277,7 +277,7 @@ impl Bonsai {
                 .node
                 .view_tab(self.active_tab, self.app_clock)
                 .map(BonsaiMessage::Node),
-            Tab::NodeBlockchain => self
+            Tab::NodeBlocks => self
                 .node
                 .view_tab(self.active_tab, self.app_clock)
                 .map(BonsaiMessage::Node),
@@ -327,7 +327,7 @@ impl Bonsai {
                             "m" => self.active_tab = Tab::NodeMetrics,
                             "n" => self.active_tab = Tab::NodeNetwork,
                             "u" => self.active_tab = Tab::NodeUtreexo,
-                            "b" => self.active_tab = Tab::NodeBlockchain,
+                            "b" => self.active_tab = Tab::NodeBlocks,
                             "s" => self.active_tab = Tab::Settings,
                             "a" => self.active_tab = Tab::About,
                             _ => {}
@@ -340,8 +340,8 @@ impl Bonsai {
                                 Tab::Wallet => Tab::NodeMetrics,
                                 Tab::NodeMetrics => Tab::NodeNetwork,
                                 Tab::NodeNetwork => Tab::NodeUtreexo,
-                                Tab::NodeUtreexo => Tab::NodeBlockchain,
-                                Tab::NodeBlockchain => Tab::Settings,
+                                Tab::NodeUtreexo => Tab::NodeBlocks,
+                                Tab::NodeBlocks => Tab::Settings,
                                 Tab::Settings => Tab::About,
                                 Tab::About => Tab::Wallet,
                             };
@@ -352,8 +352,8 @@ impl Bonsai {
                                 Tab::NodeMetrics => Tab::Wallet,
                                 Tab::NodeNetwork => Tab::NodeMetrics,
                                 Tab::NodeUtreexo => Tab::NodeNetwork,
-                                Tab::NodeBlockchain => Tab::NodeUtreexo,
-                                Tab::Settings => Tab::NodeBlockchain,
+                                Tab::NodeBlocks => Tab::NodeUtreexo,
+                                Tab::Settings => Tab::NodeBlocks,
                                 Tab::About => Tab::Settings,
                             };
                         }
@@ -473,7 +473,7 @@ impl Bonsai {
             Tab::Wallet => Subscription::none(),
             Tab::NodeMetrics => self.node.subscribe().map(BonsaiMessage::Node),
             Tab::NodeNetwork => self.node.subscribe().map(BonsaiMessage::Node),
-            Tab::NodeBlockchain => self.node.subscribe().map(BonsaiMessage::Node),
+            Tab::NodeBlocks => self.node.subscribe().map(BonsaiMessage::Node),
             Tab::NodeUtreexo => self.node.subscribe().map(BonsaiMessage::Node),
             Tab::Settings => Subscription::none(),
             Tab::About => Subscription::none(),
