@@ -32,7 +32,7 @@ applications with a nice and sleek user interface.
 
 # Running
 
-This application is implemented in Rust. You need to have
+This application is written in Rust. You need to have
 [`cargo`](https://doc.rust-lang.org/stable/cargo/) installed.
 
 [`just`](https://github.com/casey/just) is used as a convenience tool for command running,
@@ -65,7 +65,7 @@ WIP
 ## Metrics
 
 <div align="center">
-  <img src="assets/showcase/metrics.gif" width="400">
+  <img src="assets/showcase/metrics.gif" width="600">
 </div>
 
 In the **Metrics** tab, the user can `START`, `RESTART` and `STOP` the node, see node
@@ -75,7 +75,7 @@ node's logs.
 ## Network
 
 <div align="center">
-  <img src="assets/showcase/network.png" width="400">
+  <img src="assets/showcase/network.png" width="600">
 </div>
 
 In the **Network** tab, the user can see information about peers the node is connected to,
@@ -90,7 +90,7 @@ that allows exporting the node's validation. This can be scanned by other device
 so that they can start running at the same height as Bonsai without trust assumptions.
 
 <div align="center">
-  <img src="assets/showcase/utreexo.gif" width="400">
+  <img src="assets/showcase/utreexo.gif" width="600">
 </div>
 
 ## Blockchain
@@ -99,7 +99,7 @@ In the **Blockchain** tab, the user can see a live feed of validated blocks, as 
 block by fetching them from the P2P network.
 
 <div align="center">
-  <img src="assets/showcase/blockchain.gif" width="400">
+  <img src="assets/showcase/blockchain.gif" width="600">
 </div>
 
 ## Settings
@@ -109,13 +109,13 @@ including switching the network, setting a custom user agent, SOCKS5 proxy,
 fixed peer, and maximum number of outbound peers.
 
 <div align="center">
-  <img src="assets/showcase/settings.png" width="400">
+  <img src="assets/showcase/settings.png" width="600">
 </div>
 
 ## About
 
 <div align="center">
-  <img src="assets/showcase/about.png" width="400">
+  <img src="assets/showcase/about.png" width="600">
 </div>
 
 

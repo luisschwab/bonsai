@@ -436,9 +436,7 @@ impl Node {
             }
 
             NodeMessage::BlockFetched(block) => {
-                if let Some(block) = block {
-                    self.block_explorer_current_block = Some(block);
-                }
+                self.block_explorer_current_block = block;
                 Task::none()
             }
 
@@ -510,7 +508,7 @@ impl Node {
         match tab {
             Tab::NodeMetrics => self.view_overview(app_clock),
             Tab::NodeNetwork => self.view_network(),
-            Tab::NodeBlockchain => self.view_blocks(),
+            Tab::NodeBlocks => self.view_blocks(),
             Tab::NodeUtreexo => self.view_utreexo(),
             _ => unreachable!(),
         }
