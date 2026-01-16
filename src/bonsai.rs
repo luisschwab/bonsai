@@ -60,8 +60,8 @@ use crate::common::interface::font::BERKELEY_MONO_BOLD;
 use crate::common::interface::font::BERKELEY_MONO_REGULAR;
 use crate::common::logger::setup_logger;
 use crate::common::util::format_thousands;
+use crate::node::control::EmbeddedNode;
 use crate::node::control::NETWORK;
-use crate::node::control::Node;
 use crate::node::control::NodeStatus;
 use crate::node::control::start_node;
 use crate::node::control::stop_node;
@@ -119,7 +119,7 @@ pub(crate) enum BonsaiMessage {
 pub(crate) struct Bonsai {
     pub(crate) app_clock: usize,
     pub(crate) active_tab: Tab,
-    pub(crate) node: Node,
+    pub(crate) node: EmbeddedNode,
     pub(crate) wallet: Wallet,
     pub(crate) settings: BonsaiSettings,
 }
@@ -569,12 +569,12 @@ fn main() -> iced::Result {
                 active_tab: Tab::default(),
                 app_clock: usize::default(),
                 settings: settings.clone(),
-                node: Node {
+                node: EmbeddedNode {
                     config: Some(node_config.clone()),
                     log_capture: log_capture.clone(),
                     geoip_reader: GeoIpReader::new(GEOIP_ASN_DB_PATH, GEOIP_CITY_DB_PATH).ok(),
                     block_explorer_height_str: String::from("0"),
-                    ..Node::default()
+                    ..EmbeddedNode::default()
                 },
                 wallet: Wallet::default(),
             };

@@ -6,10 +6,10 @@ use std::time::Duration;
 use std::time::Instant;
 
 use bdk_floresta::BlockConsumer;
-use bdk_floresta::FlorestaNode;
+use bdk_floresta::Node;
 use bdk_floresta::UtreexoNodeConfig;
 use bdk_floresta::UtxoData;
-use bdk_floresta::builder::FlorestaBuilder;
+use bdk_floresta::builder::Builder;
 use bitcoin::Block;
 use bitcoin::Network;
 use bitcoin::OutPoint;
@@ -87,9 +87,9 @@ impl BlockConsumer for BlockForwarder {
 }
 
 #[derive(Default)]
-pub(crate) struct Node {
+pub(crate) struct EmbeddedNode {
     pub(crate) config: Option<UtreexoNodeConfig>,
-    pub(crate) handle: Option<Arc<RwLock<FlorestaNode>>>,
+    pub(crate) handle: Option<Arc<RwLock<Node>>>,
     pub(crate) status: NodeStatus,
     pub(crate) statistics: Option<NodeStatistics>,
     pub(crate) subscription_active: bool,
@@ -106,7 +106,7 @@ pub(crate) struct Node {
     pub(crate) block_explorer_expanded_tx_idx: Option<usize>,
 }
 
-impl Node {
+impl EmbeddedNode {
     pub fn update(&mut self, message: NodeMessage) -> Task<NodeMessage> {
         match message {
             // `Tick` is useful for triggering an UI re-render.
@@ -547,13 +547,13 @@ impl Node {
 
 pub(crate) async fn start_node(
     node_config: UtreexoNodeConfig,
-) -> Result<Arc<RwLock<FlorestaNode>>, String> {
+) -> Result<Arc<RwLock<Node>>, String> {
     let rt_handle = Handle::current();
 
     rt_handle
         .spawn(async {
-            let node = FlorestaBuilder::new()
-                .with_config(node_config)
+            let node = Builder::new()
+                .from_config(node_config)
                 .build()
                 .await
                 .map_err(|e| e.to_string())?;
@@ -572,7 +572,7 @@ pub(crate) async fn start_node(
         .map_err(|e| e.to_string())?
 }
 
-pub(crate) async fn stop_node(handle: Arc<RwLock<FlorestaNode>>) -> Result<(), String> {
+pub(crate) async fn stop_node(handle: Arc<RwLock<Node>>) -> Result<(), String> {
     match Arc::try_unwrap(handle) {
         Ok(lock) => {
             let node = lock.into_inner();
