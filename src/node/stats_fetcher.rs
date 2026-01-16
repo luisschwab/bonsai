@@ -5,7 +5,7 @@ use std::time::Duration;
 use std::time::Instant;
 
 use bdk_floresta::ConnectionKind;
-use bdk_floresta::FlorestaNode;
+use bdk_floresta::Node;
 use bdk_floresta::PeerInfo;
 use bdk_floresta::PeerStatus;
 use bdk_floresta::TransportProtocol;
@@ -110,7 +110,7 @@ fn process_peer_infos(peer_infos: Vec<PeerInfo>) -> Vec<PeerInformation> {
 }
 
 pub(crate) async fn fetch_stats(
-    node_handle: Arc<RwLock<FlorestaNode>>,
+    node_handle: Arc<RwLock<Node>>,
     start_time: Option<Instant>,
 ) -> NodeMessage {
     let result = async {

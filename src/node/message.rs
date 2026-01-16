@@ -2,7 +2,7 @@ use core::fmt::Debug;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use bdk_floresta::FlorestaNode;
+use bdk_floresta::Node;
 use bdk_floresta::UtreexoNodeConfig;
 use bitcoin::Block;
 use tokio::sync::RwLock;
@@ -16,7 +16,7 @@ pub(crate) enum NodeMessage {
     Start,
     Restart,
     Starting,
-    Running(Arc<RwLock<FlorestaNode>>),
+    Running(Arc<RwLock<Node>>),
     ConfigUsed(UtreexoNodeConfig),
     Shutdown,
     ShuttingDown,
