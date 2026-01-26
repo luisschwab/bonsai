@@ -30,6 +30,11 @@ This application aims to show to developers the full set of capablities that
 [`bdk_floresta`](https://github.com/luisschwab/bdk-floresta) allows for building wallet
 applications with a nice and sleek user interface.
 
+> [!NOTE]
+> Bonsai, [`bdk_floresta`](https://github.com/luisschwab/bdk_floresta),
+> and [`Floresta`](https://github.com/getfloresta/Floresta) are still a work in progress,
+> meaning that functionality is limited. Bonsai will be updated accordingly.
+
 # Running
 
 This application is written in Rust. You need to have
@@ -118,12 +123,8 @@ fixed peer, and maximum number of outbound peers.
   <img src="assets/showcase/about.png" width="600">
 </div>
 
-
-# Implementation and Design
-
-This application was developed using [`iced`](https://github.com/iced-rs/iced),
-a Rust-based GUI framework.
-
-Shoutout to [US Graphics Company](http://usgraphics.com) for the beautiful Berkeley Mono font.
-
-This was designed to have a sleek pseudo-TUI aesthetic, using the Gruvbox Dark color palette.
+# Acknowledgements
+- [Utreexo](https://eprint.iacr.org/2019/611), for the novel UTXO set accumulator scheme that makes embedded nodes possible.
+- [Floresta](https://github.com/getfloresta/Floresta), for the set of libraries which this application is built upon.
+- [iced-rs](https://github.com/iced-rs/iced), for the GUI framework used to implement this.
+- [US Graphics Company](https://usgraphics.com), for the beautiful [`Berkeley Mono`](https://usgraphics.com/products/berkeley-mono) font.
