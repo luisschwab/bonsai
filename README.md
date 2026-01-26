@@ -43,7 +43,7 @@ This application is written in Rust. You need to have
 [`just`](https://github.com/casey/just) is used as a convenience tool for command running,
 installing it is advised.
 
-```rs
+```console
 # List available commands
 ~$ just
 bonsai
@@ -51,7 +51,7 @@ bonsai
     check                     # Check code: formatting, compilation, and linting [alias: c]
     delete item="data-signet" # Delete files: data-signet, settings, target, lockfile [alias: d]
     fmt                       # Format code [alias: f]
-    hot                       # Run with experimental hot-reloading [alias: h]
+    hot                       # Run with experimental hot-reloading (will crash if the node is active) [alias: h]
     run                       # Run the code [alias: r]
     run-release               # Run the code in release mode [alias: rr]
 

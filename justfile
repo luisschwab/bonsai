@@ -35,7 +35,7 @@ run:
 run-release:
     cargo run --release
 
-# Run with experimental hot-reloading
+# Run with experimental hot-reloading (will crash if the node is active)
 hot:
     cargo hot --features hot-reloading
 
