@@ -1,3 +1,4 @@
+use bitcoin::Network;
 use iced::Alignment::Center;
 use iced::Element;
 use iced::Length;
@@ -22,7 +23,6 @@ use crate::common::interface::color::network_color;
 use crate::common::interface::container::button_container;
 use crate::common::util::format_duration;
 use crate::common::util::format_thousands;
-use crate::node::control::NETWORK;
 use crate::node::control::NodeStatus;
 use crate::node::log_capture::LogCapture;
 use crate::node::message::NodeMessage;
@@ -73,6 +73,7 @@ fn control_button_with_disable_logic<'a>(
 }
 
 pub(crate) fn view_statistics<'a>(
+    network: Network,
     node_status: &'a NodeStatus,
     statistics: &'a Option<NodeStatistics>,
     log_capture: &'a LogCapture,
@@ -125,7 +126,7 @@ pub(crate) fn view_statistics<'a>(
         .map(|stats| format_duration(stats.uptime))
         .unwrap_or("00h 00m 00s".to_string());
 
-    let network_color = network_color(NETWORK);
+    let network_color = network_color(&network);
     let node_status_color = match node_status {
         NodeStatus::Starting => pulse_color(GREEN_SHAMROCK, app_clock),
         NodeStatus::Running => GREEN_SHAMROCK,
@@ -157,7 +158,7 @@ pub(crate) fn view_statistics<'a>(
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
                 container(
-                    text(NETWORK.to_string().to_uppercase())
+                    text(network.to_string().to_uppercase())
                         .size(14)
                         .color(network_color)
                 )

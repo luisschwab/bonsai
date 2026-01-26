@@ -115,13 +115,26 @@ pub(crate) enum BonsaiMessage {
     BdkWallet(WalletMessage),
 }
 
-#[derive(Default)]
 pub(crate) struct Bonsai {
     pub(crate) app_clock: usize,
     pub(crate) active_tab: Tab,
+    pub(crate) active_network: Network,
     pub(crate) node: EmbeddedNode,
     pub(crate) wallet: Wallet,
     pub(crate) settings: BonsaiSettings,
+}
+
+impl Default for Bonsai {
+    fn default() -> Self {
+        Bonsai {
+            app_clock: usize::default(),
+            active_tab: Tab::default(),
+            active_network: Network::Signet,
+            node: EmbeddedNode::default(),
+            wallet: Wallet::default(),
+            settings: BonsaiSettings::default(),
+        }
+    }
 }
 
 impl Bonsai {
@@ -135,7 +148,7 @@ impl Bonsai {
             NodeStatus::Failed(_) => RED,
         };
         let blocks = self.node.statistics.as_ref().map(|s| s.blocks).unwrap_or(0);
-        let network_color = network_color(NETWORK);
+        let network_color = network_color(&self.active_network);
 
         let header = container(
             container(
@@ -173,7 +186,7 @@ impl Bonsai {
                                 .size(12)
                                 .font(BERKELEY_MONO_BOLD)
                                 .color(status_color),
-                            text(NETWORK.to_string().to_uppercase())
+                            text(self.active_network.to_string().to_uppercase())
                                 .size(12)
                                 .font(BERKELEY_MONO_BOLD)
                                 .color(network_color),
@@ -271,19 +284,19 @@ impl Bonsai {
             Tab::Wallet => self.wallet.view().map(BonsaiMessage::BdkWallet),
             Tab::NodeMetrics => self
                 .node
-                .view_tab(self.active_tab, self.app_clock)
+                .view_tab(self.active_tab, self.app_clock, self.active_network)
                 .map(BonsaiMessage::Node),
             Tab::NodeNetwork => self
                 .node
-                .view_tab(self.active_tab, self.app_clock)
+                .view_tab(self.active_tab, self.app_clock, self.active_network)
                 .map(BonsaiMessage::Node),
             Tab::NodeBlocks => self
                 .node
-                .view_tab(self.active_tab, self.app_clock)
+                .view_tab(self.active_tab, self.app_clock, self.active_network)
                 .map(BonsaiMessage::Node),
             Tab::NodeUtreexo => self
                 .node
-                .view_tab(self.active_tab, self.app_clock)
+                .view_tab(self.active_tab, self.app_clock, self.active_network)
                 .map(BonsaiMessage::Node),
             Tab::Settings => self.settings.view().map(BonsaiMessage::Settings),
             Tab::About => view_about(),
@@ -431,6 +444,9 @@ impl Bonsai {
 
                 let task = self.settings.update(msg).map(BonsaiMessage::Settings);
 
+                // Sync `active_network` with settings after any settings update
+                self.active_network = self.settings.bonsai.network.unwrap_or(Network::Signet);
+
                 if should_restart {
                     // Update the node config before restarting
                     let network = self.settings.bonsai.network.unwrap_or(NETWORK);
@@ -569,6 +585,7 @@ fn main() -> iced::Result {
                 active_tab: Tab::default(),
                 app_clock: usize::default(),
                 settings: settings.clone(),
+                active_network: network,
                 node: EmbeddedNode {
                     config: Some(node_config.clone()),
                     log_capture: log_capture.clone(),

@@ -6,7 +6,7 @@ use bitcoin::Network;
 use iced::Color;
 
 /// Get the corresponding [`Color`] to a [`Network`];
-pub(crate) fn network_color(network: Network) -> Color {
+pub(crate) fn network_color(network: &Network) -> Color {
     match network {
         Network::Bitcoin => ORANGE,
         Network::Signet => PURPLE,

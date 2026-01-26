@@ -504,9 +504,14 @@ impl EmbeddedNode {
         })
     }
 
-    pub(crate) fn view_tab(&self, tab: Tab, app_clock: usize) -> Element<'_, NodeMessage> {
+    pub(crate) fn view_tab(
+        &self,
+        tab: Tab,
+        app_clock: usize,
+        active_network: Network,
+    ) -> Element<'_, NodeMessage> {
         match tab {
-            Tab::NodeMetrics => self.view_overview(app_clock),
+            Tab::NodeMetrics => self.view_overview(app_clock, active_network),
             Tab::NodeNetwork => self.view_network(),
             Tab::NodeBlocks => self.view_blocks(),
             Tab::NodeUtreexo => self.view_utreexo(),
@@ -514,9 +519,15 @@ impl EmbeddedNode {
         }
     }
 
-    fn view_overview(&self, app_clock: usize) -> Element<'_, NodeMessage> {
+    fn view_overview(&self, app_clock: usize, active_network: Network) -> Element<'_, NodeMessage> {
         use crate::node::statistics::view;
-        view::view_statistics(&self.status, &self.statistics, &self.log_capture, app_clock)
+        view::view_statistics(
+            active_network,
+            &self.status,
+            &self.statistics,
+            &self.log_capture,
+            app_clock,
+        )
     }
 
     pub(crate) fn view_network(&self) -> Element<'_, NodeMessage> {
