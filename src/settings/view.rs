@@ -23,6 +23,7 @@ use iced::widget::container::Style as ContainerStyle;
 use iced::widget::row;
 use iced::widget::text;
 use iced::widget::text_input;
+use iced::widget::tooltip;
 
 use crate::common::interface::color::BLACK;
 use crate::common::interface::color::BLUE;
@@ -34,6 +35,7 @@ use crate::common::interface::color::RED;
 use crate::common::interface::color::YELLOW;
 use crate::common::interface::constants::BORDER_RADIUS;
 use crate::common::interface::constants::BORDER_WIDTH;
+use crate::common::interface::constants::TABLE_CELL_FONT_SIZE;
 use crate::common::interface::container::button_container;
 use crate::common::interface::shadow::SHADOW_GRAY;
 use crate::common::interface::shadow::SHADOW_RED;
@@ -68,11 +70,20 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
     let max_outbound = node_config.max_outbound.unwrap_or_default();
 
     let network_title: Container<'_, BonsaiSettingsMessage> = container(text("NETWORK").size(22));
+    // TODO(@luisschwab): remove once BIP-0183 is final and `utreexod` supports other networks.
     let network_buttons: Container<'_, BonsaiSettingsMessage> = container(
         row![
-            network_button_with_disable_logic("BITCOIN", Network::Bitcoin, active_network, ORANGE),
+            tooltip(
+                network_button_with_disable_logic("BITCOIN", Network::Bitcoin, active_network, ORANGE),
+                text("Support for `Network::Bitcoin` will become available once\nBIP-0183 is final and implemented on `Floresta` and `utreexod`").size(TABLE_CELL_FONT_SIZE),
+                tooltip::Position::FollowCursor
+            ).style(container::rounded_box),
             network_button_with_disable_logic("SIGNET", Network::Signet, active_network, PURPLE),
-            network_button_with_disable_logic("TESTNET4", Network::Testnet4, active_network, BLUE),
+            tooltip(
+                network_button_with_disable_logic("TESTNET4", Network::Testnet4, active_network, BLUE),
+                text("Support for `Network::Testnet4` will become available once\nBIP-0183 is final and implemented on `Floresta` and `utreexod`").size(TABLE_CELL_FONT_SIZE),
+                tooltip::Position::FollowCursor
+            ).style(container::rounded_box),
             network_button_with_disable_logic("REGTEST", Network::Regtest, active_network, YELLOW),
         ]
         .height(Length::Fixed(SECTION_BOX_HEIGHT))
@@ -593,7 +604,9 @@ fn network_button_with_disable_logic<'a>(
         .style(network_button_style(button_network, active_network, color));
 
     if !is_network_active
-        && (button_network == Network::Bitcoin || button_network == Network::Signet)
+        && (button_network == Network::Signet || button_network == Network::Regtest)
+    // TODO(@luisschwab): remove once BIP-0183 is final and `utreexod` supports other networks.
+    // && (button_network == Network::Bitcoin || button_network == Network::Signet)
     {
         button.on_press(BonsaiSettingsMessage::NetworkChanged(button_network))
     } else {
