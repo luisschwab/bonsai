@@ -32,8 +32,6 @@ pub(crate) enum BonsaiSettingsMessage {
     FixedPeerInputChanged(String),
     ProxyInputChanged(String),
     MaxBanscoreChanged(String),
-    MaxOutboundChanged(String),
-    MaxInflightChanged(String),
     DisableDnsSeedsChanged(bool),
 
     // Actions
@@ -102,8 +100,6 @@ pub(crate) struct NodeNetworkSpecific {
     pub(crate) allow_v1_fallback: Option<bool>,
     pub(crate) fixed_peer: Option<String>,
     pub(crate) max_banscore: Option<u32>,
-    pub(crate) max_outbound: Option<u32>,
-    pub(crate) max_inflight: Option<u32>,
     pub(crate) disable_dns_seeds: Option<bool>,
     pub(crate) proxy: Option<SocketAddr>,
 }
@@ -134,8 +130,6 @@ impl NodeNetworkSpecific {
             allow_v1_fallback: self.allow_v1_fallback.unwrap_or(default.allow_v1_fallback),
             fixed_peer: self.fixed_peer.clone().or(default.fixed_peer),
             max_banscore: self.max_banscore.unwrap_or(default.max_banscore),
-            max_outbound: self.max_outbound.unwrap_or(default.max_outbound),
-            max_inflight: self.max_inflight.unwrap_or(default.max_inflight),
             disable_dns_seeds: self.disable_dns_seeds.unwrap_or(default.disable_dns_seeds),
             proxy: self.proxy.or(default.proxy),
             compact_filters: true,
@@ -153,8 +147,6 @@ impl NodeNetworkSpecific {
             allow_v1_fallback: Some(config.allow_v1_fallback),
             fixed_peer: config.fixed_peer.clone(),
             max_banscore: Some(config.max_banscore),
-            max_outbound: Some(config.max_outbound),
-            max_inflight: Some(config.max_inflight),
             disable_dns_seeds: Some(config.disable_dns_seeds),
             proxy: config.proxy,
         }
@@ -353,32 +345,6 @@ impl BonsaiSettings {
                     let config = self.node.get_network_config_mut(network);
                     if config.max_banscore != Some(banscore) {
                         config.max_banscore = Some(banscore);
-                        self.node_restart_required = true;
-                        self.unsaved_changes = true;
-                    }
-                }
-                Task::none()
-            }
-
-            BonsaiSettingsMessage::MaxOutboundChanged(value) => {
-                if let Ok(outbound) = value.parse::<u32>() {
-                    let network = self.bonsai.network.unwrap_or(Network::Signet);
-                    let config = self.node.get_network_config_mut(network);
-                    if config.max_outbound != Some(outbound) {
-                        config.max_outbound = Some(outbound);
-                        self.node_restart_required = true;
-                        self.unsaved_changes = true;
-                    }
-                }
-                Task::none()
-            }
-
-            BonsaiSettingsMessage::MaxInflightChanged(value) => {
-                if let Ok(inflight) = value.parse::<u32>() {
-                    let network = self.bonsai.network.unwrap_or(Network::Signet);
-                    let config = self.node.get_network_config_mut(network);
-                    if config.max_inflight != Some(inflight) {
-                        config.max_inflight = Some(inflight);
                         self.node_restart_required = true;
                         self.unsaved_changes = true;
                     }
