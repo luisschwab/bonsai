@@ -324,7 +324,7 @@ impl EmbeddedNode {
                 // Clear the input field after button press.
                 self.peer_input.clear();
 
-                // TODO(@luisschwab): add a success notification on top-right corner.
+                // TODO(@luisschwab): add a success/error notification on top-right corner.
                 Task::none()
             }
             NodeMessage::DisconnectPeer(socket) => {
@@ -355,7 +355,7 @@ impl EmbeddedNode {
             }
 
             NodeMessage::PeerDisconnected(_peer) => {
-                // TODO add success notification
+                // TODO add success/error notification
                 Task::none()
             }
             NodeMessage::CopyAccumulatorData => {

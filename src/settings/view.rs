@@ -66,8 +66,6 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
     let fixed_peer = node_config.fixed_peer.clone();
     let proxy = node_config.proxy;
     let max_banscore = node_config.max_banscore.unwrap_or_default();
-    let max_inflight = node_config.max_inflight.unwrap_or_default();
-    let max_outbound = node_config.max_outbound.unwrap_or_default();
 
     let network_title: Container<'_, BonsaiSettingsMessage> = container(text("NETWORK").size(22));
     // TODO(@luisschwab): remove once BIP-0183 is final and `utreexod` supports other networks.
@@ -248,21 +246,6 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
     .padding(10);
     let disable_dns_seeds_section = column![disable_dns_seeds_title, disable_dns_seeds_buttons];
 
-    let user_agent_title: Container<'_, BonsaiSettingsMessage> =
-        container(text("USER AGENT").size(21));
-    let user_agent_input = container(
-        text_input(
-            user_agent.as_deref().unwrap_or("NULL"),
-            &settings.user_agent_input,
-        )
-        .on_input(BonsaiSettingsMessage::UserAgentInputChanged)
-        .padding(10)
-        .width(Fill),
-    )
-    .style(title_container())
-    .padding(1);
-    let user_agent_section = column![user_agent_title, user_agent_input];
-
     let left = column![
         network_section,
         Space::new().height(Length::Fill),
@@ -277,10 +260,23 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
         v1_fallback_section,
         Space::new().height(Length::Fill),
         disable_dns_seeds_section,
-        Space::new().height(Length::Fill),
-        user_agent_section,
     ]
     .width(FillPortion(1));
+
+    let user_agent_title: Container<'_, BonsaiSettingsMessage> =
+        container(text("USER AGENT").size(21));
+    let user_agent_input = container(
+        text_input(
+            user_agent.as_deref().unwrap_or("NULL"),
+            &settings.user_agent_input,
+        )
+        .on_input(BonsaiSettingsMessage::UserAgentInputChanged)
+        .padding(10)
+        .width(Fill),
+    )
+    .style(title_container())
+    .padding(1);
+    let user_agent_section = column![user_agent_title, user_agent_input];
 
     let proxy_title: Container<'_, BonsaiSettingsMessage> = container(text("PROXY").size(21));
     let proxy_input = container(
@@ -356,92 +352,6 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
     .padding(10);
     let max_banscore_section = column![max_banscore_title, max_banscore_controls];
 
-    let max_outbound_title: Container<'_, BonsaiSettingsMessage> =
-        container(text("MAX OUTBOUND PEERS").size(21));
-    let max_outbound_controls = container(
-        row![
-            container(
-                text(max_outbound.to_string())
-                    .align_x(Center)
-                    .align_y(Center)
-                    .size(16)
-            )
-            .padding(10)
-            .width(FillPortion(2))
-            .align_x(Center)
-            .align_y(Center)
-            .style(table_cell_with_shadow()),
-            button(text("-").size(16).align_x(Center).align_y(Center))
-                .on_press_maybe(if max_outbound > 1 {
-                    Some(BonsaiSettingsMessage::MaxOutboundChanged(
-                        (max_outbound - 1).to_string(),
-                    ))
-                } else {
-                    None
-                })
-                .width(FillPortion(1))
-                .style(button_container()),
-            button(text("+").size(16).align_x(Center).align_y(Center))
-                .on_press_maybe(if max_outbound < 100 {
-                    Some(BonsaiSettingsMessage::MaxOutboundChanged(
-                        (max_outbound + 1).to_string(),
-                    ))
-                } else {
-                    None
-                })
-                .width(FillPortion(1))
-                .style(button_container()),
-        ]
-        .spacing(10)
-        .height(Length::Fixed(SECTION_BOX_HEIGHT)),
-    )
-    .style(title_container())
-    .padding(10);
-    let max_outbound_section = column![max_outbound_title, max_outbound_controls];
-
-    let max_inflight_title: Container<'_, BonsaiSettingsMessage> =
-        container(text("MAX INFLIGHT REQUESTS").size(21));
-    let max_inflight_controls = container(
-        row![
-            container(
-                text(max_inflight.to_string())
-                    .align_x(Center)
-                    .align_y(Center)
-                    .size(16)
-            )
-            .padding(10)
-            .width(FillPortion(2))
-            .align_x(Center)
-            .align_y(Center)
-            .style(table_cell_with_shadow()),
-            button(text("-").size(16).align_x(Center).align_y(Center))
-                .on_press_maybe(if max_inflight > 1 {
-                    Some(BonsaiSettingsMessage::MaxInflightChanged(
-                        (max_inflight - 1).to_string(),
-                    ))
-                } else {
-                    None
-                })
-                .width(FillPortion(1))
-                .style(button_container()),
-            button(text("+").size(16).align_x(Center).align_y(Center))
-                .on_press_maybe(if max_inflight < 100 {
-                    Some(BonsaiSettingsMessage::MaxInflightChanged(
-                        (max_inflight + 1).to_string(),
-                    ))
-                } else {
-                    None
-                })
-                .width(FillPortion(1))
-                .style(button_container()),
-        ]
-        .spacing(10)
-        .height(Length::Fixed(SECTION_BOX_HEIGHT)),
-    )
-    .style(title_container())
-    .padding(10);
-    let max_inflight_section = column![max_inflight_title, max_inflight_controls];
-
     let save_button_row = row![
         text(if settings.unsaved_changes {
             "UNSAVED CHANGES"
@@ -511,7 +421,7 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
 
     // TODO(@luisschwab): implement data deletion
     let delete_data_row = row![
-        text("THIS ACTION IS DESTRUCTIVE!\nALL VALIDATION WORK AND\nCOMPACT FILTERS WILL BE LOST")
+        text("THIS ACTION IS DESTRUCTIVE\nALL VALIDATION WORK FOR\nTHIS NETWORK WILL BE LOST")
             .size(12)
             .color(RED),
         Space::new().width(Fill),
@@ -533,11 +443,10 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
         .width(Fill);
 
     let right = column![
+        user_agent_section,
         proxy_section,
         fixed_peer_section,
         max_banscore_section,
-        max_outbound_section,
-        max_inflight_section,
         Space::new().height(Fill),
         actions_container,
         danger_container

@@ -266,7 +266,7 @@ pub fn view_p2p<'a>(
 
             // TODO: add peer banning logic on `floresta-wire`.
             let ban_button = button(text("BAN").size(10))
-                .on_press(NodeMessage::Tick)
+                //.on_press(NodeMessage::Tick)
                 .style(network_button())
                 .padding(5);
 
