@@ -40,6 +40,7 @@ use crate::common::interface::container::button_container;
 use crate::common::interface::shadow::SHADOW_GRAY;
 use crate::common::interface::shadow::SHADOW_RED;
 use crate::node::style::title_container;
+use crate::node::style::title_container_red;
 use crate::settings::bonsai_settings::AUTO_START_NODE;
 use crate::settings::bonsai_settings::BonsaiSettings;
 use crate::settings::bonsai_settings::BonsaiSettingsMessage;
@@ -414,10 +415,13 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
     .spacing(10)
     .align_y(Center);
 
+    let actions_title: Container<'_, BonsaiSettingsMessage> =
+        container(text("SAVE CHANGES & RESTART").size(21));
     let actions_container = container(column![save_button_row, restart_button_row].spacing(20))
         .padding(15)
         .style(title_container())
         .width(Fill);
+    let actions_section = column![actions_title, actions_container];
 
     // TODO(@luisschwab): implement data deletion
     let delete_data_row = row![
@@ -436,11 +440,13 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
         .width(Length::Fixed(220.0))
         .height(Length::Fixed(50.0))
     ];
-
     let danger_container = container(column![delete_data_row])
         .padding(15)
-        .style(title_container())
+        .style(title_container_red())
         .width(Fill);
+    let danger_title: Container<'_, BonsaiSettingsMessage> =
+        container(text("DANGER ZONE").size(21).color(RED));
+    let danger_section = column![danger_title, danger_container];
 
     let right = column![
         user_agent_section,
@@ -448,8 +454,8 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
         fixed_peer_section,
         max_banscore_section,
         Space::new().height(Fill),
-        actions_container,
-        danger_container
+        actions_section,
+        danger_section
     ]
     .spacing(15)
     .width(FillPortion(1));
