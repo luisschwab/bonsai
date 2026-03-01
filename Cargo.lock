@@ -430,7 +430,7 @@ dependencies = [
 [[package]]
 name = "bdk_floresta"
 version = "0.1.0"
-source = "git+https://github.com/luisschwab/bdk-floresta#b9985e85fe69af273359158b878bafe09c09c8f1"
+source = "git+https://github.com/luisschwab/bdk-floresta#7f6f2232d1cd10918d2cf59e80850cb4ba158a87"
 dependencies = [
  "bdk_wallet",
  "bitcoin",
@@ -1209,7 +1209,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1353,7 +1353,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1477,7 +1477,7 @@ checksum = "8bf7cc16383c4b8d58b9905a8509f02926ce3058053c056376248d958c9df1e8"
 [[package]]
 name = "floresta-chain"
 version = "0.4.0"
-source = "git+https://github.com/getfloresta/Floresta.git?rev=abeebe90e45e172d18c40ce1cd767ee713869773#abeebe90e45e172d18c40ce1cd767ee713869773"
+source = "git+https://github.com/getfloresta/Floresta.git?rev=87e33b0381db516ee40bfc0ce0f838137eec5dfc#87e33b0381db516ee40bfc0ce0f838137eec5dfc"
 dependencies = [
  "bitcoin",
  "floresta-common",
@@ -1493,7 +1493,7 @@ dependencies = [
 [[package]]
 name = "floresta-common"
 version = "0.4.0"
-source = "git+https://github.com/getfloresta/Floresta.git?rev=abeebe90e45e172d18c40ce1cd767ee713869773#abeebe90e45e172d18c40ce1cd767ee713869773"
+source = "git+https://github.com/getfloresta/Floresta.git?rev=87e33b0381db516ee40bfc0ce0f838137eec5dfc#87e33b0381db516ee40bfc0ce0f838137eec5dfc"
 dependencies = [
  "bitcoin",
  "hashbrown 0.16.1",
@@ -1505,7 +1505,7 @@ dependencies = [
 [[package]]
 name = "floresta-compact-filters"
 version = "0.4.0"
-source = "git+https://github.com/getfloresta/Floresta.git?rev=abeebe90e45e172d18c40ce1cd767ee713869773#abeebe90e45e172d18c40ce1cd767ee713869773"
+source = "git+https://github.com/getfloresta/Floresta.git?rev=87e33b0381db516ee40bfc0ce0f838137eec5dfc#87e33b0381db516ee40bfc0ce0f838137eec5dfc"
 dependencies = [
  "bitcoin",
  "floresta-chain",
@@ -1514,19 +1514,20 @@ dependencies = [
 [[package]]
 name = "floresta-mempool"
 version = "0.4.0"
-source = "git+https://github.com/getfloresta/Floresta.git?rev=abeebe90e45e172d18c40ce1cd767ee713869773#abeebe90e45e172d18c40ce1cd767ee713869773"
+source = "git+https://github.com/getfloresta/Floresta.git?rev=87e33b0381db516ee40bfc0ce0f838137eec5dfc#87e33b0381db516ee40bfc0ce0f838137eec5dfc"
 dependencies = [
  "ahash",
  "bitcoin",
  "floresta-chain",
  "rand 0.8.5",
  "rustreexo",
+ "tracing",
 ]
 
 [[package]]
 name = "floresta-wire"
 version = "0.4.0"
-source = "git+https://github.com/getfloresta/Floresta.git?rev=abeebe90e45e172d18c40ce1cd767ee713869773#abeebe90e45e172d18c40ce1cd767ee713869773"
+source = "git+https://github.com/getfloresta/Floresta.git?rev=87e33b0381db516ee40bfc0ce0f838137eec5dfc#87e33b0381db516ee40bfc0ce0f838137eec5dfc"
 dependencies = [
  "bip324",
  "bitcoin",
@@ -2011,7 +2012,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.62.2",
+ "windows-core 0.58.0",
 ]
 
 [[package]]
@@ -2952,7 +2953,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4021,7 +4022,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.11.0",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4420,9 +4421,6 @@ name = "spin"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d5fe4ccb98d9c292d56fec89a5e07da7fc4cf0dc11e156b41793132775d3e591"
-dependencies = [
- "lock_api",
-]
 
 [[package]]
 name = "spirv"
@@ -4543,7 +4541,7 @@ dependencies = [
  "getrandom 0.3.4",
  "once_cell",
  "rustix 1.1.3",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -5484,7 +5482,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
