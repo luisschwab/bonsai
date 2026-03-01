@@ -31,7 +31,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "time"] }
 tracing-appender = "0.2"
 chrono = "0.4.42"
-regex = "1.12.2"
+regex = "1.12.3"
 memmap2 = "0.9.9"
 hex = "0.4.3"
 bitcoin = "0.32.8"
