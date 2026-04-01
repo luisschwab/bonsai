@@ -430,17 +430,21 @@ dependencies = [
 [[package]]
 name = "bdk_floresta"
 version = "0.1.0"
-source = "git+https://github.com/luisschwab/bdk-floresta#b9985e85fe69af273359158b878bafe09c09c8f1"
+source = "git+https://github.com/luisschwab/bdk-floresta#7188944ecac2906dffd866907c89f01e367a2e3b"
 dependencies = [
  "bdk_wallet",
  "bitcoin",
+ "dns-lookup",
  "floresta-chain",
  "floresta-compact-filters",
  "floresta-mempool",
  "floresta-wire",
+ "lazy_static",
  "thiserror 2.0.18",
+ "time",
  "tokio",
- "toml",
+ "tokio-util",
+ "toml 1.0.6+spec-1.1.0",
  "tracing",
  "tracing-appender",
  "tracing-subscriber",
@@ -497,9 +501,9 @@ dependencies = [
 
 [[package]]
 name = "bip324"
-version = "0.7.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53157fcb2d6ec2851c7602d0690536d0b79209e393972cb2b36bd5d72dbd1879"
+checksum = "10e93f07cf774278cf032e8f1d97343a08d079017a33bb20097df380fd55d26c"
 dependencies = [
  "bitcoin",
  "bitcoin_hashes 0.15.0",
@@ -549,6 +553,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "bitcoin-consensus-encoding"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8d7ca3dc8ff835693ad73bf1596240c06f974a31eeb3f611aaedf855f1f2725"
+dependencies = [
+ "bitcoin-internals 0.5.0",
+]
+
+[[package]]
+name = "bitcoin-consensus-encoding"
+version = "1.0.0-rc.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9cd69023e5db2f3f7241672de6be29408373ba0ff407e7fda71d70d728bec05a"
+dependencies = [
+ "bitcoin-internals 0.5.0",
+]
+
+[[package]]
 name = "bitcoin-internals"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -562,6 +584,18 @@ name = "bitcoin-internals"
 version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a90bbbfa552b49101a230fb2668f3f9ef968c81e6f83cf577e1d4b80f689e1aa"
+dependencies = [
+ "hex-conservative 0.3.1",
+]
+
+[[package]]
+name = "bitcoin-internals"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a30a22d1f112dde8e16be7b45c63645dc165cef254f835b3e1e9553e485cfa64"
+dependencies = [
+ "hex-conservative 0.3.1",
+]
 
 [[package]]
 name = "bitcoin-io"
@@ -576,6 +610,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26792cd2bf245069a1c5acb06aa7ad7abe1de69b507c90b490bca81e0665d0ee"
 dependencies = [
  "bitcoin-internals 0.4.2",
+]
+
+[[package]]
+name = "bitcoin-io"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cd1a5e0e2112a702941a5c82fe0a31954c2900686053c33f59af64feab61d981"
+dependencies = [
+ "bitcoin-consensus-encoding 1.0.0-rc.3",
+ "bitcoin-internals 0.4.2",
+ "bitcoin_hashes 0.18.0",
 ]
 
 [[package]]
@@ -606,6 +651,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e0982261c82a50d89d1a411602afee0498b3e0debe3d36693f0c661352809639"
 dependencies = [
  "bitcoin-io 0.2.0",
+ "hex-conservative 0.3.1",
+]
+
+[[package]]
+name = "bitcoin_hashes"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0cb7fdb8e07d365e9cd16993fb3c4e04f734c66e334b9cb3c0479fa5437b0ed5"
+dependencies = [
+ "bitcoin-consensus-encoding 1.0.0-rc.3",
+ "bitcoin-internals 0.4.2",
+ "hex-conservative 0.3.1",
+]
+
+[[package]]
+name = "bitcoin_hashes"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a8a45c2b41c457a9a9e4670422fcbdf109afb3b22bc920b4045e8bdfd788a3d"
+dependencies = [
+ "bitcoin-consensus-encoding 0.1.0",
+ "bitcoin-internals 0.5.0",
  "hex-conservative 0.3.1",
 ]
 
@@ -695,7 +762,7 @@ dependencies = [
  "serde",
  "thiserror 2.0.18",
  "tokio",
- "toml",
+ "toml 0.9.11+spec-1.1.0",
  "tracing",
  "tracing-appender",
  "tracing-subscriber",
@@ -1209,7 +1276,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1353,7 +1420,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -1476,8 +1543,8 @@ checksum = "8bf7cc16383c4b8d58b9905a8509f02926ce3058053c056376248d958c9df1e8"
 
 [[package]]
 name = "floresta-chain"
-version = "0.4.0"
-source = "git+https://github.com/getfloresta/Floresta.git?rev=abeebe90e45e172d18c40ce1cd767ee713869773#abeebe90e45e172d18c40ce1cd767ee713869773"
+version = "0.5.0"
+source = "git+https://github.com/getfloresta/Floresta.git?rev=1c7ab888ee76611436dd6a91289d0626d109501c#1c7ab888ee76611436dd6a91289d0626d109501c"
 dependencies = [
  "bitcoin",
  "floresta-common",
@@ -1492,8 +1559,8 @@ dependencies = [
 
 [[package]]
 name = "floresta-common"
-version = "0.4.0"
-source = "git+https://github.com/getfloresta/Floresta.git?rev=abeebe90e45e172d18c40ce1cd767ee713869773#abeebe90e45e172d18c40ce1cd767ee713869773"
+version = "0.5.0"
+source = "git+https://github.com/getfloresta/Floresta.git?rev=1c7ab888ee76611436dd6a91289d0626d109501c#1c7ab888ee76611436dd6a91289d0626d109501c"
 dependencies = [
  "bitcoin",
  "hashbrown 0.16.1",
@@ -1504,8 +1571,8 @@ dependencies = [
 
 [[package]]
 name = "floresta-compact-filters"
-version = "0.4.0"
-source = "git+https://github.com/getfloresta/Floresta.git?rev=abeebe90e45e172d18c40ce1cd767ee713869773#abeebe90e45e172d18c40ce1cd767ee713869773"
+version = "0.5.0"
+source = "git+https://github.com/getfloresta/Floresta.git?rev=1c7ab888ee76611436dd6a91289d0626d109501c#1c7ab888ee76611436dd6a91289d0626d109501c"
 dependencies = [
  "bitcoin",
  "floresta-chain",
@@ -1513,20 +1580,21 @@ dependencies = [
 
 [[package]]
 name = "floresta-mempool"
-version = "0.4.0"
-source = "git+https://github.com/getfloresta/Floresta.git?rev=abeebe90e45e172d18c40ce1cd767ee713869773#abeebe90e45e172d18c40ce1cd767ee713869773"
+version = "0.5.0"
+source = "git+https://github.com/getfloresta/Floresta.git?rev=1c7ab888ee76611436dd6a91289d0626d109501c#1c7ab888ee76611436dd6a91289d0626d109501c"
 dependencies = [
  "ahash",
  "bitcoin",
  "floresta-chain",
  "rand 0.8.5",
  "rustreexo",
+ "tracing",
 ]
 
 [[package]]
 name = "floresta-wire"
-version = "0.4.0"
-source = "git+https://github.com/getfloresta/Floresta.git?rev=abeebe90e45e172d18c40ce1cd767ee713869773#abeebe90e45e172d18c40ce1cd767ee713869773"
+version = "0.5.0"
+source = "git+https://github.com/getfloresta/Floresta.git?rev=1c7ab888ee76611436dd6a91289d0626d109501c#1c7ab888ee76611436dd6a91289d0626d109501c"
 dependencies = [
  "bip324",
  "bitcoin",
@@ -1972,6 +2040,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "hex-conservative"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "366fa3443ac84474447710ec17bb00b05dfbd096137817981e86f992f21a2793"
+
+[[package]]
 name = "hex_lit"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2011,7 +2085,7 @@ dependencies = [
  "js-sys",
  "log",
  "wasm-bindgen",
- "windows-core 0.62.2",
+ "windows-core 0.58.0",
 ]
 
 [[package]]
@@ -2952,7 +3026,7 @@ version = "0.50.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7957b9740744892f114936ab4a57b3f487491bbeafaf8083688b16841a4240e5"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4021,7 +4095,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.11.0",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4062,11 +4136,14 @@ dependencies = [
 
 [[package]]
 name = "rustreexo"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64bce4e1e36c12aaee94f9604187b1dbb2b826bbcb6807f757f41b1cc9946bc7"
+checksum = "8353cd48bea30340eced2a11770e47bb6b83f0e7e679742301f3332e6ec1f6ab"
 dependencies = [
- "bitcoin_hashes 0.14.1",
+ "bitcoin-io 0.3.0",
+ "bitcoin_hashes 0.20.0",
+ "hashbrown 0.16.1",
+ "hex-conservative 1.0.1",
 ]
 
 [[package]]
@@ -4420,9 +4497,6 @@ name = "spin"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d5fe4ccb98d9c292d56fec89a5e07da7fc4cf0dc11e156b41793132775d3e591"
-dependencies = [
- "lock_api",
-]
 
 [[package]]
 name = "spirv"
@@ -4543,7 +4617,7 @@ dependencies = [
  "getrandom 0.3.4",
  "once_cell",
  "rustix 1.1.3",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -4714,9 +4788,9 @@ checksum = "1f3ccbac311fea05f86f61904b462b55fb3df8837a366dfc601a0161d0532f20"
 
 [[package]]
 name = "tokio"
-version = "1.49.0"
+version = "1.50.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72a2903cd7736441aac9df9d7688bd0ce48edccaadf181c3b90be801e81d3d86"
+checksum = "27ad5e34374e03cfffefc301becb44e9dc3c17584f414349ebe29ed26661822d"
 dependencies = [
  "bytes",
  "libc",
@@ -4741,6 +4815,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "tokio-util"
+version = "0.7.18"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ae9cec805b01e8fc3fd2fe289f89149a9b66dd16786abd8b19cfa7b48cb0098"
+dependencies = [
+ "bytes",
+ "futures-core",
+ "futures-sink",
+ "pin-project-lite",
+ "tokio",
+]
+
+[[package]]
 name = "toml"
 version = "0.9.11+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4749,10 +4836,25 @@ dependencies = [
  "indexmap",
  "serde_core",
  "serde_spanned",
- "toml_datetime",
+ "toml_datetime 0.7.5+spec-1.1.0",
  "toml_parser",
  "toml_writer",
- "winnow",
+ "winnow 0.7.14",
+]
+
+[[package]]
+name = "toml"
+version = "1.0.6+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "399b1124a3c9e16766831c6bba21e50192572cdd98706ea114f9502509686ffc"
+dependencies = [
+ "indexmap",
+ "serde_core",
+ "serde_spanned",
+ "toml_datetime 1.1.1+spec-1.1.0",
+ "toml_parser",
+ "toml_writer",
+ "winnow 0.7.14",
 ]
 
 [[package]]
@@ -4765,24 +4867,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "toml_datetime"
+version = "1.1.1+spec-1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3165f65f62e28e0115a00b2ebdd37eb6f3b641855f9d636d3cd4103767159ad7"
+dependencies = [
+ "serde_core",
+]
+
+[[package]]
 name = "toml_edit"
 version = "0.23.10+spec-1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "84c8b9f757e028cee9fa244aea147aab2a9ec09d5325a9b01e0a49730c2b5269"
 dependencies = [
  "indexmap",
- "toml_datetime",
+ "toml_datetime 0.7.5+spec-1.1.0",
  "toml_parser",
- "winnow",
+ "winnow 0.7.14",
 ]
 
 [[package]]
 name = "toml_parser"
-version = "1.0.6+spec-1.1.0"
+version = "1.1.1+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a3198b4b0a8e11f09dd03e133c0280504d0801269e9afa46362ffde1cbeebf44"
+checksum = "39ca317ebc49f06bd748bfba29533eac9485569dc9bf80b849024b025e814fb9"
 dependencies = [
- "winnow",
+ "winnow 1.0.1",
 ]
 
 [[package]]
@@ -5484,7 +5595,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -5974,6 +6085,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "winnow"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09dac053f1cd375980747450bfc7250c264eaae0583872e845c0c7cd578872b5"
+
+[[package]]
 name = "wit-bindgen"
 version = "0.51.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6112,7 +6229,7 @@ dependencies = [
  "uds_windows",
  "uuid",
  "windows-sys 0.61.2",
- "winnow",
+ "winnow 0.7.14",
  "zbus_macros",
  "zbus_names",
  "zvariant",
@@ -6140,7 +6257,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ffd8af6d5b78619bab301ff3c560a5bd22426150253db278f164d6cf3b72c50f"
 dependencies = [
  "serde",
- "winnow",
+ "winnow 0.7.14",
  "zvariant",
 ]
 
@@ -6284,7 +6401,7 @@ dependencies = [
  "endi",
  "enumflags2",
  "serde",
- "winnow",
+ "winnow 0.7.14",
  "zvariant_derive",
  "zvariant_utils",
 ]
@@ -6312,5 +6429,5 @@ dependencies = [
  "quote",
  "serde",
  "syn",
- "winnow",
+ "winnow 0.7.14",
 ]
