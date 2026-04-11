@@ -61,7 +61,6 @@ use crate::common::interface::font::BERKELEY_MONO_REGULAR;
 use crate::common::logger::setup_logger;
 use crate::common::util::format_thousands;
 use crate::node::control::EmbeddedNode;
-use crate::node::control::NETWORK;
 use crate::node::control::NodeStatus;
 use crate::node::control::start_node;
 use crate::node::control::stop_node;
@@ -449,7 +448,7 @@ impl Bonsai {
 
                 if should_restart {
                     // Update the node config before restarting
-                    let network = self.settings.bonsai.network.unwrap_or(NETWORK);
+                    let network = self.settings.bonsai.network.unwrap_or(Network::Signet);
                     let node_config = self
                         .settings
                         .get_node_config(network, &BonsaiSettings::base_dir());
@@ -505,8 +504,12 @@ impl Bonsai {
 }
 
 fn main() -> iced::Result {
+    // Load [`BonsaiSettings`] from disk.
+    let mut settings = BonsaiSettings::load();
+    let network = settings.bonsai.network.unwrap_or(Network::Signet);
+
     // Setup the logger.
-    let log_capture = setup_logger();
+    let log_capture = setup_logger(network);
 
     // Create a Tokio runtime for the underlying node to run on.
     let rt = tokio::runtime::Builder::new_multi_thread()
@@ -542,9 +545,6 @@ fn main() -> iced::Result {
         minimizable: true,
         blur: false,
     };
-
-    // Load [`BonsaiSettings`] from disk.
-    let mut settings = BonsaiSettings::load();
 
     // Check if this is the first run by seeing if the file exists
     let settings_file = BonsaiSettings::base_dir().join(SETTINGS_FILE);

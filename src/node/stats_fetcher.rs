@@ -9,10 +9,11 @@ use bdk_floresta::Node;
 use bdk_floresta::PeerInfo;
 use bdk_floresta::PeerStatus;
 use bdk_floresta::TransportProtocol;
-use bdk_floresta::rustreexo::accumulator::stump::Stump;
+use bdk_floresta::rustreexo::stump::Stump;
 use bitcoin::p2p::ServiceFlags;
 use regex::Regex;
 use tokio::sync::RwLock;
+use tracing::error;
 
 use crate::node::message::NodeMessage;
 
@@ -68,7 +69,7 @@ pub(crate) struct NodeStatistics {
 fn encode_stump(stump: &Stump) -> String {
     let mut buffer = Vec::new();
     if let Err(e) = stump.serialize(&mut buffer) {
-        tracing::error!("Failed to serialize stump: {}", e);
+        error!("Failed to serialize stump: {:?}", e);
         return String::new();
     }
     hex::encode(buffer)
@@ -116,7 +117,7 @@ pub(crate) async fn fetch_stats(
     let result = async {
         let node_handle = node_handle.read().await;
 
-        let in_ibd = node_handle.in_ibd().unwrap();
+        let in_ibd = node_handle.in_ibd();
         let headers = node_handle.get_height().unwrap_or(0);
         let blocks = node_handle.get_validation_height().unwrap_or(0);
         let accumulator = node_handle.get_accumulator().unwrap();

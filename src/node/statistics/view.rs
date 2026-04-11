@@ -257,7 +257,7 @@ pub(crate) fn view_statistics<'a>(
                     .height(Length::Fixed(60.0))
                     .align_y(Center)
                     .style(table_cell()),
-                container(text(user_agent).size(12))
+                container(text(user_agent).size(10))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .height(Length::Fixed(60.0))

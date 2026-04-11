@@ -3,8 +3,7 @@ use std::net::SocketAddr;
 use std::path::Path;
 use std::path::PathBuf;
 
-use bdk_floresta::ChainParams;
-use bdk_floresta::UtreexoNodeConfig;
+use bdk_floresta::builder::NodeConfig;
 use bitcoin::Network;
 use iced::Element;
 use iced::Task;
@@ -94,61 +93,38 @@ pub(crate) struct NetworkConfigs {
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub(crate) struct NodeNetworkSpecific {
     pub(crate) use_assume_utreexo: Option<bool>,
-    pub(crate) pow_fraud_proofs: Option<bool>,
-    pub(crate) backfill: Option<bool>,
+    pub(crate) enable_powfps: Option<bool>,
+    pub(crate) perform_backfill: Option<bool>,
     pub(crate) user_agent: Option<String>,
-    pub(crate) allow_v1_fallback: Option<bool>,
-    pub(crate) fixed_peer: Option<String>,
+    pub(crate) allow_p2pv1_fallback: Option<bool>,
+    pub(crate) fixed_peer: Option<SocketAddr>,
     pub(crate) max_banscore: Option<u32>,
     pub(crate) disable_dns_seeds: Option<bool>,
-    pub(crate) proxy: Option<SocketAddr>,
+    pub(crate) socks5_proxy: Option<SocketAddr>,
 }
 
 impl NodeNetworkSpecific {
     /// Convert to UtreexoNodeConfig, using defaults where options are None
-    pub(crate) fn to_config(&self, network: Network, data_dir: PathBuf) -> UtreexoNodeConfig {
-        let default = UtreexoNodeConfig {
+    pub(crate) fn to_config(&self, network: Network, data_dir: PathBuf) -> NodeConfig {
+        NodeConfig {
             network,
-            datadir: String::from(data_dir.to_string_lossy()),
+            data_directory: data_dir,
             ..Default::default()
-        };
-
-        // Get assume_utreexo value based on network if enabled
-        let assume_utreexo = if self.use_assume_utreexo.unwrap_or(false) {
-            Some(ChainParams::get_assume_utreexo(network))
-        } else {
-            None
-        };
-
-        UtreexoNodeConfig {
-            network,
-            datadir: String::from(data_dir.to_string_lossy()),
-            assume_utreexo,
-            pow_fraud_proofs: self.pow_fraud_proofs.unwrap_or(default.pow_fraud_proofs),
-            backfill: self.backfill.unwrap_or(true),
-            user_agent: self.user_agent.clone().unwrap_or(default.user_agent),
-            allow_v1_fallback: self.allow_v1_fallback.unwrap_or(default.allow_v1_fallback),
-            fixed_peer: self.fixed_peer.clone().or(default.fixed_peer),
-            max_banscore: self.max_banscore.unwrap_or(default.max_banscore),
-            disable_dns_seeds: self.disable_dns_seeds.unwrap_or(default.disable_dns_seeds),
-            proxy: self.proxy.or(default.proxy),
-            compact_filters: true,
-            filter_start_height: Some(0),
         }
     }
 
     /// Create from UtreexoNodeConfig
-    pub(crate) fn from_config(config: &UtreexoNodeConfig) -> Self {
+    pub(crate) fn from_config(config: &NodeConfig) -> Self {
         NodeNetworkSpecific {
-            use_assume_utreexo: Some(config.assume_utreexo.is_some()),
-            pow_fraud_proofs: Some(config.pow_fraud_proofs),
-            backfill: Some(config.backfill),
+            use_assume_utreexo: Some(config.assume_utreexo),
+            enable_powfps: Some(config.enable_powfps),
+            perform_backfill: Some(config.perform_backfill),
             user_agent: Some(config.user_agent.clone()),
-            allow_v1_fallback: Some(config.allow_v1_fallback),
-            fixed_peer: config.fixed_peer.clone(),
+            allow_p2pv1_fallback: Some(config.allow_p2pv1_fallback),
+            fixed_peer: config.fixed_peer,
             max_banscore: Some(config.max_banscore),
             disable_dns_seeds: Some(config.disable_dns_seeds),
-            proxy: config.proxy,
+            socks5_proxy: config.socks5_proxy,
         }
     }
 }
@@ -201,8 +177,14 @@ impl BonsaiSettings {
                 let network = settings.bonsai.network.unwrap_or(Network::Signet);
                 let config = settings.node.get_network_config(network);
                 settings.user_agent_input = config.user_agent.clone().unwrap_or_default();
-                settings.fixed_peer_input = config.fixed_peer.clone().unwrap_or_default();
-                settings.proxy_input = config.proxy.map(|p| p.to_string()).unwrap_or_default();
+                settings.fixed_peer_input = config
+                    .fixed_peer
+                    .map(|addr| addr.to_string())
+                    .unwrap_or_default();
+                settings.proxy_input = config
+                    .socks5_proxy
+                    .map(|p| p.to_string())
+                    .unwrap_or_default();
 
                 settings
             }
@@ -242,7 +224,7 @@ impl BonsaiSettings {
     }
 
     /// Get the [`UtreexoNodeConfig`] for starting the node.
-    pub(crate) fn get_node_config(&self, network: Network, data_dir: &Path) -> UtreexoNodeConfig {
+    pub(crate) fn get_node_config(&self, network: Network, data_dir: &Path) -> NodeConfig {
         let network = self.bonsai.network.unwrap_or(network);
         let data_dir = data_dir.join(network.to_string());
 
@@ -251,7 +233,7 @@ impl BonsaiSettings {
     }
 
     /// Update settings from a UtreexoNodeConfig (called after first run)
-    pub(crate) fn update_from_config(&mut self, config: &UtreexoNodeConfig) {
+    pub(crate) fn update_from_config(&mut self, config: &NodeConfig) {
         self.bonsai.network = Some(config.network);
 
         let network_config = self.node.get_network_config_mut(config.network);
@@ -294,8 +276,8 @@ impl BonsaiSettings {
             BonsaiSettingsMessage::PowFraudProofsChanged(enabled) => {
                 let network = self.bonsai.network.unwrap_or(Network::Signet);
                 let config = self.node.get_network_config_mut(network);
-                if config.pow_fraud_proofs != Some(enabled) {
-                    config.pow_fraud_proofs = Some(enabled);
+                if config.enable_powfps != Some(enabled) {
+                    config.enable_powfps = Some(enabled);
                     self.node_restart_required = true;
                     self.unsaved_changes = true;
                 }
@@ -305,8 +287,8 @@ impl BonsaiSettings {
             BonsaiSettingsMessage::BackfillChanged(enabled) => {
                 let network = self.bonsai.network.unwrap_or(Network::Signet);
                 let config = self.node.get_network_config_mut(network);
-                if config.backfill != Some(enabled) {
-                    config.backfill = Some(enabled);
+                if config.perform_backfill != Some(enabled) {
+                    config.perform_backfill = Some(enabled);
                     self.node_restart_required = true;
                     self.unsaved_changes = true;
                 }
@@ -321,8 +303,8 @@ impl BonsaiSettings {
             BonsaiSettingsMessage::AllowV1FallbackChanged(enabled) => {
                 let network = self.bonsai.network.unwrap_or(Network::Signet);
                 let config = self.node.get_network_config_mut(network);
-                if config.allow_v1_fallback != Some(enabled) {
-                    config.allow_v1_fallback = Some(enabled);
+                if config.allow_p2pv1_fallback != Some(enabled) {
+                    config.allow_p2pv1_fallback = Some(enabled);
                     self.node_restart_required = true;
                     self.unsaved_changes = true;
                 }
@@ -388,9 +370,13 @@ impl BonsaiSettings {
                         }
                     }
                 };
-                if config.fixed_peer != fixed_peer_value {
-                    config.fixed_peer = fixed_peer_value;
-                    self.node_restart_required = true;
+                let fixed_peer_parsed: Option<SocketAddr> = fixed_peer_value
+                    .as_deref()
+                    .filter(|s| !s.is_empty())
+                    .and_then(|s| s.parse().ok());
+
+                if config.fixed_peer != fixed_peer_parsed {
+                    config.fixed_peer = fixed_peer_parsed;
                 }
 
                 let proxy_value = if self.proxy_input.is_empty() {
@@ -404,8 +390,8 @@ impl BonsaiSettings {
                         }
                     }
                 };
-                if config.proxy != proxy_value {
-                    config.proxy = proxy_value;
+                if config.socks5_proxy != proxy_value {
+                    config.socks5_proxy = proxy_value;
                     self.node_restart_required = true;
                 }
 

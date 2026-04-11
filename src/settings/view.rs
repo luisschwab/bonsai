@@ -59,30 +59,31 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
     let node_config = settings.node.get_network_config(active_network);
 
     let use_assume_utreexo = node_config.use_assume_utreexo.unwrap_or(true);
-    let use_powfps = node_config.pow_fraud_proofs.unwrap_or(true);
-    let backfill = node_config.backfill.unwrap_or(true);
-    let allow_v1_fallback = node_config.allow_v1_fallback.unwrap_or(true);
+    let use_powfps = node_config.enable_powfps.unwrap_or(true);
+    let backfill = node_config.perform_backfill.unwrap_or(true);
+    let allow_v1_fallback = node_config.allow_p2pv1_fallback.unwrap_or(true);
     let disable_dns_seeds = node_config.disable_dns_seeds.unwrap_or(false);
     let user_agent = node_config.user_agent.clone();
-    let fixed_peer = node_config.fixed_peer.clone();
-    let proxy = node_config.proxy;
+    let fixed_peer = node_config.fixed_peer;
+    let proxy = node_config.socks5_proxy;
     let max_banscore = node_config.max_banscore.unwrap_or_default();
 
     let network_title: Container<'_, BonsaiSettingsMessage> = container(text("NETWORK").size(22));
-    // TODO(@luisschwab): remove once BIP-0183 is final and `utreexod` supports other networks.
     let network_buttons: Container<'_, BonsaiSettingsMessage> = container(
         row![
-            tooltip(
-                network_button_with_disable_logic("BITCOIN", Network::Bitcoin, active_network, ORANGE),
-                text("Support for `Network::Bitcoin` will become available once\nBIP-0183 is final and implemented on `Floresta` and `utreexod`").size(TABLE_CELL_FONT_SIZE),
-                tooltip::Position::FollowCursor
-            ).style(container::rounded_box),
+            network_button_with_disable_logic("BITCOIN", Network::Bitcoin, active_network, ORANGE),
             network_button_with_disable_logic("SIGNET", Network::Signet, active_network, PURPLE),
             tooltip(
-                network_button_with_disable_logic("TESTNET4", Network::Testnet4, active_network, BLUE),
-                text("Support for `Network::Testnet4` will become available once\nBIP-0183 is final and implemented on `Floresta` and `utreexod`").size(TABLE_CELL_FONT_SIZE),
+                network_button_with_disable_logic(
+                    "TESTNET4",
+                    Network::Testnet4,
+                    active_network,
+                    BLUE
+                ),
+                text("No `Network::Testnet4` bridges are available yet").size(TABLE_CELL_FONT_SIZE),
                 tooltip::Position::FollowCursor
-            ).style(container::rounded_box),
+            )
+            .style(container::rounded_box),
             network_button_with_disable_logic("REGTEST", Network::Regtest, active_network, YELLOW),
         ]
         .height(Length::Fixed(SECTION_BOX_HEIGHT))
@@ -299,7 +300,7 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
         container(text("FIXED PEER").size(21));
     let fixed_peer_input = container(
         text_input(
-            fixed_peer.as_deref().unwrap_or("NULL"),
+            &fixed_peer.map_or("NULL".to_string(), |addr| addr.to_string()),
             &settings.fixed_peer_input,
         )
         .on_input(BonsaiSettingsMessage::FixedPeerInputChanged)
@@ -505,7 +506,6 @@ pub(crate) fn network_button_style(
     }
 }
 
-// TODO(@luisschwab): enable other networks once we have bridges.
 fn network_button_with_disable_logic<'a>(
     label: &'static str,
     button_network: Network,
@@ -519,9 +519,9 @@ fn network_button_with_disable_logic<'a>(
         .style(network_button_style(button_network, active_network, color));
 
     if !is_network_active
-        && (button_network == Network::Signet || button_network == Network::Regtest)
-    // TODO(@luisschwab): remove once BIP-0183 is final and `utreexod` supports other networks.
-    // && (button_network == Network::Bitcoin || button_network == Network::Signet)
+        && (button_network == Network::Bitcoin
+            || button_network == Network::Signet
+            || button_network == Network::Regtest)
     {
         button.on_press(BonsaiSettingsMessage::NetworkChanged(button_network))
     } else {
