@@ -1,4 +1,4 @@
-use bdk_floresta::rustreexo::accumulator::node_hash::BitcoinNodeHash;
+use bdk_floresta::rustreexo::node_hash::BitcoinNodeHash;
 use iced::Alignment::Center;
 use iced::Element;
 use iced::Length;

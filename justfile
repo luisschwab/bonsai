@@ -42,6 +42,7 @@ hot:
 # Delete signet chaindata
 _delete-data-signet:
     rm -rf ~/.bonsai/signet
+    rm -rf ~/.bonsai/bitcoin
 
 # Delete settings file
 _delete-settings:

@@ -16,16 +16,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: setup rust
-        uses: dtolnay/rust-toolchain@b95584d8105b9ab200e15821fa671848cf2b7017 # nightly
-        with:
-          components: clippy, rustfmt
-
       - name: setup just
-        uses: extractions/setup-just@e33e0265a09d6d736e2ee1e0eb685ef1de4669ff # v3
+        uses: extractions/setup-just@f8a3cce218d9f83db3a2ecd90e41ac3de6cdfd9b # v3.1.0
+
+      - name: install nightly rustfmt
+        run: rustup toolchain install nightly --component rustfmt --profile minimal
 
       - name: rust cache
-        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.8.2
+        uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2.9.1
 
       - name: check
         run: just check

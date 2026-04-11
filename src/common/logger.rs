@@ -1,16 +1,16 @@
+use bitcoin::Network;
 use tracing_subscriber::EnvFilter;
 use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-use crate::node::control::DATA_DIR;
-use crate::node::control::NETWORK;
 use crate::node::log_capture::LogCapture;
 use crate::node::log_capture::LogCaptureLayer;
+use crate::settings::bonsai_settings::BonsaiSettings;
 
-pub(crate) fn setup_logger() -> LogCapture {
+pub(crate) fn setup_logger(network: Network) -> LogCapture {
     // Create the data directory, if needed.
-    let data_dir = format!("{}{}", DATA_DIR, NETWORK);
+    let data_dir = BonsaiSettings::base_dir().join(network.to_string());
     std::fs::create_dir_all(&data_dir).expect("Failed to create data directory");
 
     let file_appender = tracing_appender::rolling::never(&data_dir, "bonsai.log");

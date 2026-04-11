@@ -7,9 +7,9 @@ use std::time::Instant;
 
 use bdk_floresta::BlockConsumer;
 use bdk_floresta::Node;
-use bdk_floresta::UtreexoNodeConfig;
 use bdk_floresta::UtxoData;
 use bdk_floresta::builder::Builder;
+use bdk_floresta::builder::NodeConfig;
 use bitcoin::Block;
 use bitcoin::Network;
 use bitcoin::OutPoint;
@@ -36,8 +36,6 @@ use crate::node::message::NodeMessage;
 use crate::node::stats_fetcher::NodeStatistics;
 use crate::node::stats_fetcher::fetch_stats;
 
-pub const DATA_DIR: &str = "./data/";
-pub const NETWORK: Network = Network::Signet;
 pub const FETCH_STATISTICS_TIME: u64 = 1;
 
 static BLOCK_RECEIVER: Lazy<Arc<Mutex<Option<mpsc::UnboundedReceiver<Block>>>>> =
@@ -88,7 +86,7 @@ impl BlockConsumer for BlockForwarder {
 
 #[derive(Default)]
 pub(crate) struct EmbeddedNode {
-    pub(crate) config: Option<UtreexoNodeConfig>,
+    pub(crate) config: Option<NodeConfig>,
     pub(crate) handle: Option<Arc<RwLock<Node>>>,
     pub(crate) status: NodeStatus,
     pub(crate) statistics: Option<NodeStatistics>,
@@ -400,7 +398,7 @@ impl EmbeddedNode {
                             .spawn(async move {
                                 let node = handle.read().await;
 
-                                let blockhash = match node.get_blockhash(height as u32) {
+                                let blockhash = match node.get_block_hash(height as u32) {
                                     Ok(blockhash) => {
                                         info!("Fetching block of height={height} and hash={blockhash}");
                                         blockhash
@@ -411,7 +409,7 @@ impl EmbeddedNode {
                                     }
                                 };
 
-                                match node.get_block(blockhash).await {
+                                match node.fetch_block(blockhash).await {
                                     Ok(Some(block)) => {
                                         info!("Fetched block of height={height} and hash={blockhash}");
                                         NodeMessage::BlockFetched(Some(block))
@@ -556,17 +554,14 @@ impl EmbeddedNode {
     }
 }
 
-pub(crate) async fn start_node(
-    node_config: UtreexoNodeConfig,
-) -> Result<Arc<RwLock<Node>>, String> {
+pub(crate) async fn start_node(node_config: NodeConfig) -> Result<Arc<RwLock<Node>>, String> {
     let rt_handle = Handle::current();
 
     rt_handle
         .spawn(async {
-            let node = Builder::new()
+            let mut node = Builder::new()
                 .from_config(node_config)
                 .build()
-                .await
                 .map_err(|e| e.to_string())?;
 
             let (block_tx, block_rx) = mpsc::unbounded_channel();
@@ -577,6 +572,8 @@ pub(crate) async fn start_node(
             // Store receiver globally
             *BLOCK_RECEIVER.lock().await = Some(block_rx);
 
+            node.run().await.map_err(|e| e.to_string())?;
+
             Ok(Arc::new(RwLock::new(node)))
         })
         .await
@@ -584,14 +581,10 @@ pub(crate) async fn start_node(
 }
 
 pub(crate) async fn stop_node(handle: Arc<RwLock<Node>>) -> Result<(), String> {
-    match Arc::try_unwrap(handle) {
-        Ok(lock) => {
-            let node = lock.into_inner();
-            node.shutdown().await.map_err(|e| e.to_string())
-        }
-        Err(arc) => {
-            let count = Arc::strong_count(&arc);
-            Err(format!("Cannot shutdown: {} references remain", count))
-        }
-    }
+    handle
+        .write()
+        .await
+        .shutdown()
+        .await
+        .map_err(|e| e.to_string())
 }
