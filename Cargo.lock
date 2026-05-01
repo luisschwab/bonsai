@@ -430,7 +430,7 @@ name = "bdk_floresta"
 version = "0.1.0"
 source = "git+https://github.com/luisschwab/bdk-floresta?rev=b558db0ca23f0d358856968f5bc459d541024dcc#b558db0ca23f0d358856968f5bc459d541024dcc"
 dependencies = [
- "bdk_wallet",
+ "bdk_wallet 2.4.0",
  "bitcoin",
  "dns-lookup",
  "floresta-chain",
@@ -448,9 +448,23 @@ dependencies = [
 
 [[package]]
 name = "bdk_wallet"
-version = "2.3.0"
+version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b03f1e31ccc562f600981f747d2262b84428cbff52c9c9cdf14d15fb15bd2286"
+checksum = "c99821af39c7df004bd411ece2ef22d9fba5a631b4489f3d9a0ac0d19637e2d0"
+dependencies = [
+ "bdk_chain",
+ "bitcoin",
+ "miniscript",
+ "rand_core 0.6.4",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "bdk_wallet"
+version = "3.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "67f3c4f9526d22374fca5b7ff1d6bf8d921ab56db2dac8df66a2c5561b31d4ef"
 dependencies = [
  "bdk_chain",
  "bitcoin",
@@ -744,7 +758,7 @@ name = "bonsai_wallet"
 version = "0.1.0"
 dependencies = [
  "bdk_floresta",
- "bdk_wallet",
+ "bdk_wallet 3.0.0",
  "bitcoin",
  "chrono",
  "dirs",

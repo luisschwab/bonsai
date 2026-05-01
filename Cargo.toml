@@ -22,7 +22,7 @@ icon = ["assets/icon/bonsai.icns"]
 
 [dependencies]
 bdk_floresta = { git = "https://github.com/luisschwab/bdk-floresta", rev = "b558db0ca23f0d358856968f5bc459d541024dcc", default-features = false }
-bdk_wallet = "2.3.0"
+bdk_wallet = "3.0.0"
 maxminddb = { version = "0.27", features = ["mmap"] }
 iced = { version = "0.14.0", features = ["tokio", "image", "qr_code"] }
 thiserror = "2"
