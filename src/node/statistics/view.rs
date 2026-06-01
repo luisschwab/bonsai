@@ -4,6 +4,7 @@ use iced::Element;
 use iced::Length;
 use iced::Length::Fill;
 use iced::Padding;
+use iced::widget::Column;
 use iced::widget::Container;
 use iced::widget::Space;
 use iced::widget::button;
@@ -24,6 +25,7 @@ use crate::common::interface::container::button_container;
 use crate::common::util::format_duration;
 use crate::common::util::format_thousands;
 use crate::node::control::NodeStatus;
+use crate::node::control::node_status_color;
 use crate::node::log_capture::LogCapture;
 use crate::node::message::NodeMessage;
 use crate::node::statistics::style::ControlButton;
@@ -33,7 +35,8 @@ use crate::node::stats_fetcher::NodeStatistics;
 use crate::node::style::TITLE_PADDING;
 use crate::node::style::table_cell;
 use crate::node::style::title_container;
-use crate::pulse_color;
+
+const UNAVAILABLE: &str = "UNAVAILABLE";
 
 /// Calculate IBD progress from blocks and headers.
 fn calculate_progress(blocks: u32, headers: u32) -> f64 {
@@ -72,14 +75,7 @@ fn control_button_with_disable_logic<'a>(
     }
 }
 
-pub(crate) fn view_statistics<'a>(
-    network: Network,
-    node_status: &'a NodeStatus,
-    statistics: &'a Option<NodeStatistics>,
-    log_capture: &'a LogCapture,
-    app_clock: usize,
-) -> Element<'a, NodeMessage> {
-    // Control Button Section.
+fn view_control<'a>(node_status: &'a NodeStatus) -> Column<'a, NodeMessage> {
     let control_button_title: Container<'_, NodeMessage> = container(text("NODE CONTROL").size(24));
     let control_button_container: Container<'_, NodeMessage> = container(
         row![
@@ -106,205 +102,11 @@ pub(crate) fn view_statistics<'a>(
     )
     .style(title_container())
     .padding(10);
-    let control = column![control_button_title, control_button_container];
 
-    // Metrics Section.
-    let ibd_status = statistics.as_ref().map(|s| s.in_ibd).unwrap_or(true);
-    let headers = statistics.as_ref().map(|s| s.headers).unwrap_or(0);
-    let blocks = statistics.as_ref().map(|s| s.blocks).unwrap_or(0);
-    let ibd_progress = calculate_progress(blocks, headers);
-    let user_agent = statistics
-        .as_ref()
-        .map(|s| s.user_agent.clone())
-        .unwrap_or("NULL".to_string());
-    let peer_count = statistics
-        .as_ref()
-        .map(|s| s.peer_informations.len())
-        .unwrap_or(0);
-    let uptime = statistics
-        .as_ref()
-        .map(|stats| format_duration(stats.uptime))
-        .unwrap_or("00h 00m 00s".to_string());
+    column![control_button_title, control_button_container]
+}
 
-    let network_color = network_color(&network);
-    let node_status_color = match node_status {
-        NodeStatus::Starting => pulse_color(GREEN_SHAMROCK, app_clock),
-        NodeStatus::Running => GREEN_SHAMROCK,
-        NodeStatus::Inactive => OFF_WHITE,
-        NodeStatus::Failed(_) => RED,
-        NodeStatus::ShuttingDown => pulse_color(RED, app_clock),
-    };
-
-    let metrics_title = container(text("NODE STATISTICS").size(24));
-    let metrics_table = container(
-        column![
-            row![
-                container(text("STATUS").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-                container(
-                    text(node_status.to_string())
-                        .size(14)
-                        .color(node_status_color)
-                )
-                .padding(10)
-                .width(Length::FillPortion(1))
-                .style(table_cell()),
-            ],
-            row![
-                container(text("NETWORK").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-                container(
-                    text(network.to_string().to_uppercase())
-                        .size(14)
-                        .color(network_color)
-                )
-                .padding(10)
-                .width(Length::FillPortion(1))
-                .style(table_cell()),
-            ],
-            row![
-                container(text("TOR CIRCUIT").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-                container(text("TODO").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-            ],
-            row![
-                container(text("IBD STATUS").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-                container(text(ibd_status.to_string().to_uppercase()).size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-            ],
-            row![
-                container(text("IBD PROGRESS").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-                container(text(format!("{:.2}%", ibd_progress)).size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-            ],
-            row![
-                container(text("BACKFILL").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-                container(text("TODO").size(14)) // TODO: add backfill status getter to NodeInterface
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-            ],
-            row![
-                container(text("BLOCKS").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-                container(text(format_thousands(blocks)).size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-            ],
-            row![
-                container(text("HEADERS").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-                container(text(format_thousands(headers)).size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-            ],
-            row![
-                container(text("COMPACT\nBLOCK FILTERS").size(14)) // TODO: add CBF info getter to NodeInterface
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .height(Length::Fixed(60.0))
-                    .align_y(Center)
-                    .style(table_cell()),
-                container(text("TODO").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .height(Length::Fixed(60.0))
-                    .align_y(Center)
-                    .style(table_cell()),
-            ],
-            row![
-                container(text("PEERS").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-                container(text(peer_count).size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-            ],
-            row![
-                container(text("USER AGENT").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .height(Length::Fixed(60.0))
-                    .align_y(Center)
-                    .style(table_cell()),
-                container(text(user_agent).size(10))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .height(Length::Fixed(60.0))
-                    .align_y(Center)
-                    .style(table_cell()),
-            ],
-            row![
-                container(text("UPTIME").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-                container(text(uptime).size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-            ],
-            row![
-                container(text("MEMORY [USED]").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-                container(text("TODO").size(14).wrapping(text::Wrapping::None))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-            ],
-            row![
-                container(text("MEMORY [ALLOCATED]").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-                container(text("TODO").size(14))
-                    .padding(10)
-                    .width(Length::FillPortion(1))
-                    .style(table_cell()),
-            ],
-        ]
-        .spacing(0),
-    )
-    .style(title_container());
-    let metrics = column![metrics_title, metrics_table].spacing(0);
-
-    let left = column![control, metrics]
-        .spacing(20)
-        .width(Length::FillPortion(4));
-
-    // Logs Section.
+fn view_logs<'a>(log_capture: &'a LogCapture) -> Column<'a, NodeMessage> {
     let log_title = container(
         row![
             text("LOGS").size(24),
@@ -358,9 +160,217 @@ pub(crate) fn view_statistics<'a>(
         .height(Length::Fill)
         .width(Length::FillPortion(6));
 
-    let right = column![log_title, logs_container]
+    column![log_title, logs_container]
         .width(Length::FillPortion(6))
-        .spacing(5);
+        .spacing(5)
+}
+
+pub(crate) fn view_statistics<'a>(
+    network: Network,
+    node_status: &'a NodeStatus,
+    statistics: &'a Option<NodeStatistics>,
+    log_capture: &'a LogCapture,
+    app_clock: usize,
+) -> Element<'a, NodeMessage> {
+    // Control Button Section.
+    let control = view_control(node_status);
+
+    // Metrics Section.
+    let ibd_status = statistics.as_ref().map(|s| s.in_ibd).unwrap_or(true);
+    let headers = statistics.as_ref().map(|s| s.headers).unwrap_or(0);
+    let blocks = statistics.as_ref().map(|s| s.blocks).unwrap_or(0);
+    let ibd_progress = calculate_progress(blocks, headers);
+    let user_agent = statistics
+        .as_ref()
+        .map(|s| s.user_agent.clone())
+        .unwrap_or("NULL".to_string());
+    let peer_count = statistics
+        .as_ref()
+        .map(|s| s.peer_informations.len())
+        .unwrap_or(0);
+    let uptime = statistics
+        .as_ref()
+        .map(|stats| format_duration(stats.uptime))
+        .unwrap_or("00h 00m 00s".to_string());
+
+    let network_color = network_color(&network);
+    let node_status_color = node_status_color(node_status, app_clock);
+
+    let metrics_title = container(text("NODE STATISTICS").size(24));
+    let metrics_table = container(
+        column![
+            row![
+                container(text("STATUS").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+                container(
+                    text(node_status.to_string())
+                        .size(14)
+                        .color(node_status_color)
+                )
+                .padding(10)
+                .width(Length::FillPortion(1))
+                .style(table_cell()),
+            ],
+            row![
+                container(text("NETWORK").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+                container(
+                    text(network.to_string().to_uppercase())
+                        .size(14)
+                        .color(network_color)
+                )
+                .padding(10)
+                .width(Length::FillPortion(1))
+                .style(table_cell()),
+            ],
+            row![
+                container(text("TOR CIRCUIT").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+                container(text(UNAVAILABLE).size(14).color(OFF_WHITE.scale_alpha(0.5)))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+            ],
+            row![
+                container(text("IBD STATUS").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+                container(text(ibd_status.to_string().to_uppercase()).size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+            ],
+            row![
+                container(text("IBD PROGRESS").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+                container(text(format!("{:.2}%", ibd_progress)).size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+            ],
+            row![
+                container(text("BACKFILL").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+                container(text(UNAVAILABLE).size(14).color(OFF_WHITE.scale_alpha(0.5))) // TODO: add backfill status getter to NodeInterface
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+            ],
+            row![
+                container(text("BLOCKS").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+                container(text(format_thousands(blocks)).size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+            ],
+            row![
+                container(text("HEADERS").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+                container(text(format_thousands(headers)).size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+            ],
+            row![
+                container(text("COMPACT\nBLOCK FILTERS").size(14)) // TODO: add CBF info getter to NodeInterface
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .height(Length::Fixed(60.0))
+                    .align_y(Center)
+                    .style(table_cell()),
+                container(text(UNAVAILABLE).size(14).color(OFF_WHITE.scale_alpha(0.5)))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .height(Length::Fixed(60.0))
+                    .align_y(Center)
+                    .style(table_cell()),
+            ],
+            row![
+                container(text("PEERS").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+                container(text(peer_count).size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+            ],
+            row![
+                container(text("USER AGENT").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .height(Length::Fixed(60.0))
+                    .align_y(Center)
+                    .style(table_cell()),
+                container(text(user_agent).size(10))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .height(Length::Fixed(60.0))
+                    .align_y(Center)
+                    .style(table_cell()),
+            ],
+            row![
+                container(text("UPTIME").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+                container(text(uptime).size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+            ],
+            row![
+                container(text("MEMORY [USED]").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+                container(
+                    text(UNAVAILABLE)
+                        .size(14)
+                        .color(OFF_WHITE.scale_alpha(0.5))
+                        .wrapping(text::Wrapping::None)
+                )
+                .padding(10)
+                .width(Length::FillPortion(1))
+                .style(table_cell()),
+            ],
+            row![
+                container(text("MEMORY [ALLOCATED]").size(14))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+                container(text(UNAVAILABLE).size(14).color(OFF_WHITE.scale_alpha(0.5)))
+                    .padding(10)
+                    .width(Length::FillPortion(1))
+                    .style(table_cell()),
+            ],
+        ]
+        .spacing(0),
+    )
+    .style(title_container());
+    let metrics = column![metrics_title, metrics_table].spacing(0);
+
+    let left = column![control, metrics]
+        .spacing(20)
+        .width(Length::FillPortion(4));
+
+    let right = view_logs(log_capture);
 
     row![left, right].spacing(20).into()
 }

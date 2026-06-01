@@ -11,13 +11,16 @@ use bdk_floresta::PeerStatus;
 use bdk_floresta::TransportProtocol;
 use bdk_floresta::rustreexo::stump::Stump;
 use bitcoin::p2p::ServiceFlags;
+use once_cell::sync::Lazy;
 use regex::Regex;
 use tokio::sync::RwLock;
 use tracing::error;
 
+use crate::node::error::BonsaiNodeError;
+use crate::node::message::NodeActionTarget;
 use crate::node::message::NodeMessage;
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone, Default, Debug, PartialEq, Eq)]
 pub(crate) enum NodeImpl {
     Btcd,
     Core,
@@ -26,6 +29,20 @@ pub(crate) enum NodeImpl {
     Knots,
     #[default]
     Unknown,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::NodeImpl;
+    use super::regex_user_agent;
+
+    #[test]
+    fn classifies_common_user_agents() {
+        assert_eq!(regex_user_agent("/Satoshi:27.0.0/"), NodeImpl::Core);
+        assert_eq!(regex_user_agent("/Satoshi:Knots20240325/"), NodeImpl::Knots);
+        assert_eq!(regex_user_agent("/floresta:0.5.0/"), NodeImpl::Floresta);
+        assert_eq!(regex_user_agent("/unknown:0.1.0/"), NodeImpl::Unknown);
+    }
 }
 
 impl Display for NodeImpl {
@@ -76,9 +93,14 @@ fn encode_stump(stump: &Stump) -> String {
 }
 
 fn regex_user_agent(user_agent: &str) -> NodeImpl {
-    if Regex::new(r"Satoshi.*Knots").unwrap().is_match(user_agent) {
+    static KNOTS_REGEX: Lazy<Regex> =
+        Lazy::new(|| Regex::new(r"Satoshi.*Knots").expect("valid knots user-agent regex"));
+    static CORE_REGEX: Lazy<Regex> =
+        Lazy::new(|| Regex::new(r"Satoshi").expect("valid core user-agent regex"));
+
+    if KNOTS_REGEX.is_match(user_agent) {
         NodeImpl::Knots
-    } else if Regex::new(r"Satoshi").unwrap().is_match(user_agent) {
+    } else if CORE_REGEX.is_match(user_agent) {
         NodeImpl::Core
     } else if user_agent.contains("btcd") {
         NodeImpl::Btcd
@@ -114,14 +136,14 @@ pub(crate) async fn fetch_stats(
     node_handle: Arc<RwLock<Node>>,
     start_time: Option<Instant>,
 ) -> NodeMessage {
-    let result = async {
+    let result: Result<NodeStatistics, BonsaiNodeError> = async {
         let node_handle = node_handle.read().await;
 
         let in_ibd = node_handle.in_ibd();
         let headers = node_handle.get_height().unwrap_or(0);
         let blocks = node_handle.get_validation_height().unwrap_or(0);
-        let accumulator = node_handle.get_accumulator().unwrap();
-        let user_agent = node_handle.get_config().await.unwrap().user_agent;
+        let accumulator = node_handle.get_accumulator()?;
+        let user_agent = node_handle.get_config().await?.user_agent;
         let uptime = start_time
             .map(|t| t.elapsed())
             .unwrap_or(Duration::from_secs(0));
@@ -150,6 +172,6 @@ pub(crate) async fn fetch_stats(
 
     match result {
         Ok(stats) => NodeMessage::Statistics(stats),
-        Err(e) => NodeMessage::Error(e),
+        Err(e) => NodeMessage::ActionFailed(NodeActionTarget::General, e),
     }
 }

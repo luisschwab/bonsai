@@ -36,6 +36,10 @@ pub(crate) enum BonsaiSettingsMessage {
     // Actions
     SaveSettings,
     RestartNode,
+    RequestDeleteNodeData,
+    CancelDeleteNodeData,
+    ConfirmDeleteNodeData,
+    DeleteNodeDataBlocked(String),
     #[default]
     ClearRestartFlag,
 }
@@ -61,6 +65,16 @@ pub(crate) struct BonsaiSettings {
     pub(crate) fixed_peer_input: String,
     #[serde(skip)]
     pub(crate) proxy_input: String,
+    #[serde(skip)]
+    pub(crate) fixed_peer_error: Option<String>,
+    #[serde(skip)]
+    pub(crate) proxy_error: Option<String>,
+    #[serde(skip)]
+    pub(crate) delete_node_data_confirm: bool,
+    #[serde(skip)]
+    pub(crate) delete_node_data_status: Option<String>,
+    #[serde(skip)]
+    pub(crate) delete_node_data_error: Option<String>,
 }
 
 #[derive(Clone, Default, Serialize, Deserialize)]
@@ -106,11 +120,41 @@ pub(crate) struct NodeNetworkSpecific {
 impl NodeNetworkSpecific {
     /// Convert to UtreexoNodeConfig, using defaults where options are None
     pub(crate) fn to_config(&self, network: Network, data_dir: PathBuf) -> NodeConfig {
-        NodeConfig {
+        let mut config = NodeConfig {
             network,
             data_directory: data_dir,
             ..Default::default()
+        };
+
+        if let Some(use_assume_utreexo) = self.use_assume_utreexo {
+            config.assume_utreexo = use_assume_utreexo;
         }
+        if let Some(enable_powfps) = self.enable_powfps {
+            config.enable_powfps = enable_powfps;
+        }
+        if let Some(perform_backfill) = self.perform_backfill {
+            config.perform_backfill = perform_backfill;
+        }
+        if let Some(user_agent) = &self.user_agent {
+            config.user_agent = user_agent.clone();
+        }
+        if let Some(allow_p2pv1_fallback) = self.allow_p2pv1_fallback {
+            config.allow_p2pv1_fallback = allow_p2pv1_fallback;
+        }
+        if let Some(fixed_peer) = self.fixed_peer {
+            config.fixed_peer = Some(fixed_peer);
+        }
+        if let Some(max_banscore) = self.max_banscore {
+            config.max_banscore = max_banscore;
+        }
+        if let Some(disable_dns_seeds) = self.disable_dns_seeds {
+            config.disable_dns_seeds = disable_dns_seeds;
+        }
+        if let Some(socks5_proxy) = self.socks5_proxy {
+            config.socks5_proxy = Some(socks5_proxy);
+        }
+
+        config
     }
 
     /// Create from UtreexoNodeConfig
@@ -154,10 +198,57 @@ impl NodeSettings {
 }
 
 impl BonsaiSettings {
+    pub(crate) fn active_network(&self) -> Network {
+        self.bonsai.network.unwrap_or(Network::Signet)
+    }
+
     pub(crate) fn base_dir() -> PathBuf {
         dirs::home_dir()
-            .expect("Could not find home")
+            .or_else(dirs::data_dir)
+            .unwrap_or_else(|| PathBuf::from("."))
             .join(".bonsai")
+    }
+
+    fn current_network_config_mut(&mut self) -> &mut NodeNetworkSpecific {
+        let network = self.active_network();
+        self.node.get_network_config_mut(network)
+    }
+
+    fn mark_node_config_changed(&mut self) {
+        self.node_restart_required = true;
+        self.unsaved_changes = true;
+    }
+
+    fn update_node_config<T: PartialEq>(
+        &mut self,
+        update: impl FnOnce(&mut NodeNetworkSpecific) -> (&mut Option<T>, T),
+    ) {
+        let config = self.current_network_config_mut();
+        let (field, value) = update(config);
+        if field.as_ref() != Some(&value) {
+            *field = Some(value);
+            self.mark_node_config_changed();
+        }
+    }
+
+    fn update_unsaved_input_state(&mut self) {
+        let config = self.node.get_network_config(self.active_network());
+        let user_agent_changed =
+            config.user_agent.as_deref().unwrap_or_default() != self.user_agent_input.as_str();
+        let fixed_peer_changed = config
+            .fixed_peer
+            .map(|addr| addr.to_string())
+            .unwrap_or_default()
+            != self.fixed_peer_input;
+        let proxy_changed = config
+            .socks5_proxy
+            .map(|addr| addr.to_string())
+            .unwrap_or_default()
+            != self.proxy_input;
+
+        if user_agent_changed || fixed_peer_changed || proxy_changed {
+            self.unsaved_changes = true;
+        }
     }
 
     /// Load settings from disk, or return default if file doesn't exist
@@ -174,7 +265,7 @@ impl BonsaiSettings {
                 settings.node_restart_required = false;
 
                 // Initialize input fields with current values
-                let network = settings.bonsai.network.unwrap_or(Network::Signet);
+                let network = settings.active_network();
                 let config = settings.node.get_network_config(network);
                 settings.user_agent_input = config.user_agent.clone().unwrap_or_default();
                 settings.fixed_peer_input = config
@@ -197,28 +288,24 @@ impl BonsaiSettings {
         let data_directory = Self::base_dir();
         let settings_path = data_directory.join(SETTINGS_FILE);
 
-        match fs::create_dir_all(Self::base_dir()) {
-            Ok(_) => {}
-            Err(e) => {
-                error!(
-                    "Failed to create data directory at {}: {}",
-                    data_directory.to_string_lossy(),
-                    e
-                );
-            }
-        }
+        fs::create_dir_all(&data_directory).map_err(|e| {
+            error!(
+                "Failed to create data directory at {}: {}",
+                data_directory.to_string_lossy(),
+                e
+            );
+            e
+        })?;
 
         let settings_toml = toml::to_string_pretty(self)?;
-        match fs::write(settings_path.clone(), settings_toml) {
-            Ok(_) => {}
-            Err(e) => {
-                error!(
-                    "Failed to write settings file to {}: {}",
-                    settings_path.to_string_lossy(),
-                    e
-                );
-            }
-        };
+        fs::write(&settings_path, settings_toml).map_err(|e| {
+            error!(
+                "Failed to write settings file to {}: {}",
+                settings_path.to_string_lossy(),
+                e
+            );
+            e
+        })?;
 
         Ok(())
     }
@@ -230,6 +317,10 @@ impl BonsaiSettings {
 
         let network_config = self.node.get_network_config(network);
         network_config.to_config(network, data_dir)
+    }
+
+    pub(crate) fn active_network_data_dir(&self) -> PathBuf {
+        Self::base_dir().join(self.active_network().to_string())
     }
 
     /// Update settings from a UtreexoNodeConfig (called after first run)
@@ -263,140 +354,123 @@ impl BonsaiSettings {
             }
 
             BonsaiSettingsMessage::UseAssumeUtreexoChanged(enabled) => {
-                let network = self.bonsai.network.unwrap_or(Network::Signet);
-                let config = self.node.get_network_config_mut(network);
-                if config.use_assume_utreexo != Some(enabled) {
-                    config.use_assume_utreexo = Some(enabled);
-                    self.node_restart_required = true;
-                    self.unsaved_changes = true;
-                }
+                self.update_node_config(|config| (&mut config.use_assume_utreexo, enabled));
                 Task::none()
             }
 
             BonsaiSettingsMessage::PowFraudProofsChanged(enabled) => {
-                let network = self.bonsai.network.unwrap_or(Network::Signet);
-                let config = self.node.get_network_config_mut(network);
-                if config.enable_powfps != Some(enabled) {
-                    config.enable_powfps = Some(enabled);
-                    self.node_restart_required = true;
-                    self.unsaved_changes = true;
-                }
+                self.update_node_config(|config| (&mut config.enable_powfps, enabled));
                 Task::none()
             }
 
             BonsaiSettingsMessage::BackfillChanged(enabled) => {
-                let network = self.bonsai.network.unwrap_or(Network::Signet);
-                let config = self.node.get_network_config_mut(network);
-                if config.perform_backfill != Some(enabled) {
-                    config.perform_backfill = Some(enabled);
-                    self.node_restart_required = true;
-                    self.unsaved_changes = true;
-                }
+                self.update_node_config(|config| (&mut config.perform_backfill, enabled));
                 Task::none()
             }
 
             BonsaiSettingsMessage::UserAgentInputChanged(value) => {
                 self.user_agent_input = value;
+                self.update_unsaved_input_state();
                 Task::none()
             }
 
             BonsaiSettingsMessage::AllowV1FallbackChanged(enabled) => {
-                let network = self.bonsai.network.unwrap_or(Network::Signet);
-                let config = self.node.get_network_config_mut(network);
-                if config.allow_p2pv1_fallback != Some(enabled) {
-                    config.allow_p2pv1_fallback = Some(enabled);
-                    self.node_restart_required = true;
-                    self.unsaved_changes = true;
-                }
+                self.update_node_config(|config| (&mut config.allow_p2pv1_fallback, enabled));
                 Task::none()
             }
 
             BonsaiSettingsMessage::FixedPeerInputChanged(value) => {
                 self.fixed_peer_input = value;
+                self.fixed_peer_error = None;
+                self.update_unsaved_input_state();
                 Task::none()
             }
 
             BonsaiSettingsMessage::ProxyInputChanged(value) => {
                 self.proxy_input = value;
+                self.proxy_error = None;
+                self.update_unsaved_input_state();
                 Task::none()
             }
 
             BonsaiSettingsMessage::MaxBanscoreChanged(value) => {
                 if let Ok(banscore) = value.parse::<u32>() {
-                    let network = self.bonsai.network.unwrap_or(Network::Signet);
-                    let config = self.node.get_network_config_mut(network);
-                    if config.max_banscore != Some(banscore) {
-                        config.max_banscore = Some(banscore);
-                        self.node_restart_required = true;
-                        self.unsaved_changes = true;
-                    }
+                    self.update_node_config(|config| (&mut config.max_banscore, banscore));
                 }
                 Task::none()
             }
 
             BonsaiSettingsMessage::DisableDnsSeedsChanged(enabled) => {
-                let network = self.bonsai.network.unwrap_or(Network::Signet);
-                let config = self.node.get_network_config_mut(network);
-                if config.disable_dns_seeds != Some(enabled) {
-                    config.disable_dns_seeds = Some(enabled);
-                    self.node_restart_required = true;
-                    self.unsaved_changes = true;
-                }
+                self.update_node_config(|config| (&mut config.disable_dns_seeds, enabled));
                 Task::none()
             }
 
             BonsaiSettingsMessage::SaveSettings => {
-                let network = self.bonsai.network.unwrap_or(Network::Signet);
-                let config = self.node.get_network_config_mut(network);
+                let mut changed = false;
+                let mut restart_required = false;
+                let user_agent_input = self.user_agent_input.clone();
+                let fixed_peer_input = self.fixed_peer_input.clone();
+                let proxy_input = self.proxy_input.clone();
 
-                if !self.user_agent_input.is_empty()
-                    && Some(&self.user_agent_input) != config.user_agent.as_ref()
-                {
-                    config.user_agent = Some(self.user_agent_input.clone());
-                    self.node_restart_required = true;
-                }
-
-                let fixed_peer_value = if self.fixed_peer_input.is_empty() {
+                let fixed_peer_parsed = if fixed_peer_input.is_empty() {
                     None
                 } else {
-                    match self.fixed_peer_input.parse::<SocketAddr>() {
-                        Ok(_) => Some(self.fixed_peer_input.clone()),
+                    match fixed_peer_input.parse::<SocketAddr>() {
+                        Ok(addr) => Some(addr),
                         Err(e) => {
-                            error!(
-                                "Invalid fixed peer address '{}': {}",
-                                self.fixed_peer_input, e
-                            );
-                            None
+                            self.fixed_peer_error = Some(format!("Invalid socket address: {e}"));
+                            error!("Invalid fixed peer address '{}': {}", fixed_peer_input, e);
+                            return Task::none();
                         }
                     }
                 };
-                let fixed_peer_parsed: Option<SocketAddr> = fixed_peer_value
-                    .as_deref()
-                    .filter(|s| !s.is_empty())
-                    .and_then(|s| s.parse().ok());
+
+                let proxy_value = if proxy_input.is_empty() {
+                    None
+                } else {
+                    match proxy_input.parse::<SocketAddr>() {
+                        Ok(addr) => Some(addr),
+                        Err(e) => {
+                            self.proxy_error = Some(format!("Invalid socket address: {e}"));
+                            error!("Invalid proxy address '{}': {}", proxy_input, e);
+                            return Task::none();
+                        }
+                    }
+                };
+
+                let config = self.current_network_config_mut();
+
+                if !user_agent_input.is_empty()
+                    && Some(&user_agent_input) != config.user_agent.as_ref()
+                {
+                    config.user_agent = Some(user_agent_input);
+                    changed = true;
+                    restart_required = true;
+                }
 
                 if config.fixed_peer != fixed_peer_parsed {
                     config.fixed_peer = fixed_peer_parsed;
+                    changed = true;
+                    restart_required = true;
                 }
 
-                let proxy_value = if self.proxy_input.is_empty() {
-                    None
-                } else {
-                    match self.proxy_input.parse::<SocketAddr>() {
-                        Ok(addr) => Some(addr),
-                        Err(e) => {
-                            error!("Invalid proxy address '{}': {}", self.proxy_input, e);
-                            None
-                        }
-                    }
-                };
                 if config.socks5_proxy != proxy_value {
                     config.socks5_proxy = proxy_value;
+                    changed = true;
+                    restart_required = true;
+                }
+
+                if changed {
+                    self.unsaved_changes = true;
+                }
+                if restart_required {
                     self.node_restart_required = true;
                 }
 
                 if self.save().is_ok() {
                     self.unsaved_changes = false;
+                    self.fixed_peer_error = None;
+                    self.proxy_error = None;
                 }
 
                 Task::none()
@@ -407,10 +481,189 @@ impl BonsaiSettings {
                 Task::none()
             }
 
+            BonsaiSettingsMessage::RequestDeleteNodeData => {
+                self.delete_node_data_confirm = true;
+                self.delete_node_data_status = None;
+                self.delete_node_data_error = None;
+                Task::none()
+            }
+
+            BonsaiSettingsMessage::CancelDeleteNodeData => {
+                self.delete_node_data_confirm = false;
+                Task::none()
+            }
+
+            BonsaiSettingsMessage::ConfirmDeleteNodeData => {
+                let data_dir = self.active_network_data_dir();
+                self.delete_node_data_confirm = false;
+                self.delete_node_data_status = None;
+                self.delete_node_data_error = None;
+
+                if !data_dir.exists() {
+                    self.delete_node_data_status = Some(format!(
+                        "No node data found for {}",
+                        self.active_network().to_string().to_uppercase()
+                    ));
+                    return Task::none();
+                }
+
+                match fs::remove_dir_all(&data_dir) {
+                    Ok(_) => {
+                        self.delete_node_data_status = Some(format!(
+                            "Deleted node data for {}",
+                            self.active_network().to_string().to_uppercase()
+                        ));
+                    }
+                    Err(e) => {
+                        self.delete_node_data_error = Some(format!(
+                            "Failed to delete {}: {e}",
+                            data_dir.to_string_lossy()
+                        ));
+                        error!(
+                            "Failed to delete node data at {}: {}",
+                            data_dir.to_string_lossy(),
+                            e
+                        );
+                    }
+                }
+
+                Task::none()
+            }
+
+            BonsaiSettingsMessage::DeleteNodeDataBlocked(reason) => {
+                self.delete_node_data_confirm = false;
+                self.delete_node_data_status = None;
+                self.delete_node_data_error = Some(reason);
+                Task::none()
+            }
+
             BonsaiSettingsMessage::ClearRestartFlag => {
                 self.node_restart_required = false;
                 Task::none()
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::net::SocketAddr;
+    use std::path::PathBuf;
+
+    use bitcoin::Network;
+
+    use super::BonsaiSettings;
+    use super::BonsaiSettingsMessage;
+
+    #[test]
+    fn invalid_fixed_peer_does_not_clear_existing_config() {
+        let existing_peer: SocketAddr = "127.0.0.1:8333".parse().unwrap();
+        let mut settings = BonsaiSettings::default();
+        settings.bonsai.network = Some(Network::Signet);
+        settings
+            .node
+            .get_network_config_mut(Network::Signet)
+            .fixed_peer = Some(existing_peer);
+        settings.fixed_peer_input = "not-a-socket".to_string();
+
+        let _ = settings.update(BonsaiSettingsMessage::SaveSettings);
+
+        assert_eq!(
+            settings.node.get_network_config(Network::Signet).fixed_peer,
+            Some(existing_peer)
+        );
+        assert!(settings.fixed_peer_error.is_some());
+    }
+
+    #[test]
+    fn invalid_proxy_does_not_clear_existing_config() {
+        let existing_proxy: SocketAddr = "127.0.0.1:9050".parse().unwrap();
+        let mut settings = BonsaiSettings::default();
+        settings.bonsai.network = Some(Network::Signet);
+        settings
+            .node
+            .get_network_config_mut(Network::Signet)
+            .socks5_proxy = Some(existing_proxy);
+        settings.proxy_input = "not-a-socket".to_string();
+
+        let _ = settings.update(BonsaiSettingsMessage::SaveSettings);
+
+        assert_eq!(
+            settings
+                .node
+                .get_network_config(Network::Signet)
+                .socks5_proxy,
+            Some(existing_proxy)
+        );
+        assert!(settings.proxy_error.is_some());
+    }
+
+    #[test]
+    fn text_input_changes_mark_settings_unsaved() {
+        let mut settings = BonsaiSettings::default();
+
+        let _ = settings.update(BonsaiSettingsMessage::FixedPeerInputChanged(
+            "127.0.0.1:8333".to_string(),
+        ));
+
+        assert!(settings.unsaved_changes);
+    }
+
+    #[test]
+    fn node_config_includes_network_specific_settings() {
+        let fixed_peer: SocketAddr = "127.0.0.1:38333".parse().unwrap();
+        let proxy: SocketAddr = "127.0.0.1:9050".parse().unwrap();
+        let mut settings = BonsaiSettings::default();
+        settings.bonsai.network = Some(Network::Signet);
+
+        let network_config = settings.node.get_network_config_mut(Network::Signet);
+        network_config.use_assume_utreexo = Some(false);
+        network_config.enable_powfps = Some(false);
+        network_config.perform_backfill = Some(false);
+        network_config.user_agent = Some("bonsai-test".to_string());
+        network_config.allow_p2pv1_fallback = Some(false);
+        network_config.fixed_peer = Some(fixed_peer);
+        network_config.max_banscore = Some(42);
+        network_config.disable_dns_seeds = Some(true);
+        network_config.socks5_proxy = Some(proxy);
+
+        let node_config =
+            settings.get_node_config(Network::Signet, &PathBuf::from("/tmp/bonsai-test"));
+
+        assert!(!node_config.assume_utreexo);
+        assert!(!node_config.enable_powfps);
+        assert!(!node_config.perform_backfill);
+        assert_eq!(node_config.user_agent, "bonsai-test");
+        assert!(!node_config.allow_p2pv1_fallback);
+        assert_eq!(node_config.fixed_peer, Some(fixed_peer));
+        assert_eq!(node_config.max_banscore, 42);
+        assert!(node_config.disable_dns_seeds);
+        assert_eq!(node_config.socks5_proxy, Some(proxy));
+    }
+
+    #[test]
+    fn delete_node_data_request_requires_confirmation() {
+        let mut settings = BonsaiSettings::default();
+
+        let _ = settings.update(BonsaiSettingsMessage::RequestDeleteNodeData);
+        assert!(settings.delete_node_data_confirm);
+
+        let _ = settings.update(BonsaiSettingsMessage::CancelDeleteNodeData);
+        assert!(!settings.delete_node_data_confirm);
+    }
+
+    #[test]
+    fn blocked_node_data_delete_records_error() {
+        let mut settings = BonsaiSettings::default();
+
+        let _ = settings.update(BonsaiSettingsMessage::DeleteNodeDataBlocked(
+            "stop node first".to_string(),
+        ));
+
+        assert!(!settings.delete_node_data_confirm);
+        assert_eq!(
+            settings.delete_node_data_error.as_deref(),
+            Some("stop node first")
+        );
     }
 }

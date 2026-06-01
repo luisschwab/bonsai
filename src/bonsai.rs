@@ -43,7 +43,6 @@ use crate::common::interface::color::ORANGE;
 use crate::common::interface::color::PURPLE;
 use crate::common::interface::color::RED;
 use crate::common::interface::color::network_color;
-use crate::common::interface::color::pulse_color;
 use crate::common::interface::constants::CONTENT_PADDING;
 use crate::common::interface::constants::CONTENT_SPACING;
 use crate::common::interface::constants::HEADER_HEIGHT;
@@ -61,7 +60,7 @@ use crate::common::interface::font::BERKELEY_MONO_REGULAR;
 use crate::common::logger::setup_logger;
 use crate::common::util::format_thousands;
 use crate::node::control::EmbeddedNode;
-use crate::node::control::NodeStatus;
+use crate::node::control::node_status_color;
 use crate::node::control::start_node;
 use crate::node::control::stop_node;
 use crate::node::error::BonsaiNodeError;
@@ -139,13 +138,7 @@ impl Default for Bonsai {
 impl Bonsai {
     fn view(&self) -> Element<'_, BonsaiMessage> {
         let node_status = &self.node.status;
-        let status_color = match node_status {
-            NodeStatus::Starting => pulse_color(GREEN_SHAMROCK, self.app_clock),
-            NodeStatus::Running => GREEN_SHAMROCK,
-            NodeStatus::Inactive => OFF_WHITE,
-            NodeStatus::ShuttingDown => pulse_color(RED, self.app_clock),
-            NodeStatus::Failed(_) => RED,
-        };
+        let status_color = node_status_color(node_status, self.app_clock);
         let blocks = self.node.statistics.as_ref().map(|s| s.blocks).unwrap_or(0);
         let network_color = network_color(&self.active_network);
 
@@ -390,15 +383,13 @@ impl Bonsai {
             }
             BonsaiMessage::CloseRequested => {
                 if let Err(e) = self.settings.save() {
-                    eprintln!("Failed to save settings on close: {}", e);
+                    error!("Failed to save settings on close: {}", e);
                 }
 
-                if self.node.handle.is_some() {
+                if let Some(node_handle) = self.node.handle.take() {
                     let stopping_task = Task::done(BonsaiMessage::Node(NodeMessage::ShuttingDown));
                     self.node.unsubscribe();
 
-                    // Take the handle for shutdown
-                    let node_handle = self.node.handle.take().unwrap();
                     let rt_handle = Handle::current();
 
                     let shutdown_task = Task::future(async move {
@@ -422,14 +413,14 @@ impl Bonsai {
                 match &msg {
                     NodeMessage::Shutdown | NodeMessage::Restart => {
                         if let Err(e) = self.settings.save() {
-                            eprintln!("Failed to save settings: {}", e);
+                            error!("Failed to save settings: {}", e);
                         }
                     }
                     NodeMessage::ConfigUsed(config) => {
                         // Update settings with the actual config used by the node
                         self.settings.update_from_config(config);
                         if let Err(e) = self.settings.save() {
-                            eprintln!("Failed to save actual node config: {}", e);
+                            error!("Failed to save actual node config: {}", e);
                         }
                     }
                     _ => {}
@@ -440,15 +431,26 @@ impl Bonsai {
             BonsaiMessage::Settings(msg) => {
                 // Check if it's a restart request before updating
                 let should_restart = matches!(msg, BonsaiSettingsMessage::RestartNode);
+                let is_delete_node_data =
+                    matches!(msg, BonsaiSettingsMessage::ConfirmDeleteNodeData);
+
+                if is_delete_node_data && self.node.handle.is_some() {
+                    return self
+                        .settings
+                        .update(BonsaiSettingsMessage::DeleteNodeDataBlocked(
+                            "Stop the node before deleting node data".to_string(),
+                        ))
+                        .map(BonsaiMessage::Settings);
+                }
 
                 let task = self.settings.update(msg).map(BonsaiMessage::Settings);
 
                 // Sync `active_network` with settings after any settings update
-                self.active_network = self.settings.bonsai.network.unwrap_or(Network::Signet);
+                self.active_network = self.settings.active_network();
 
                 if should_restart {
                     // Update the node config before restarting
-                    let network = self.settings.bonsai.network.unwrap_or(Network::Signet);
+                    let network = self.settings.active_network();
                     let node_config = self
                         .settings
                         .get_node_config(network, &BonsaiSettings::base_dir());
@@ -506,7 +508,7 @@ impl Bonsai {
 fn main() -> iced::Result {
     // Load [`BonsaiSettings`] from disk.
     let mut settings = BonsaiSettings::load();
-    let network = settings.bonsai.network.unwrap_or(Network::Signet);
+    let network = settings.active_network();
 
     // Setup the logger.
     let log_capture = setup_logger(network);
@@ -517,13 +519,19 @@ fn main() -> iced::Result {
         .worker_threads(4)
         .thread_name("bonsai-rt")
         .build()
-        .unwrap();
+        .expect("failed to build bonsai tokio runtime");
     // Get a guard to the runtime so it keeps running.
     let _guard = rt.enter();
     std::mem::forget(rt);
 
     // Create an [`Icon`] from a PNG.
-    let icon: Icon = icon::from_file(BONSAI_ICON_DARK_PATH).unwrap();
+    let icon: Option<Icon> = match icon::from_file(BONSAI_ICON_DARK_PATH) {
+        Ok(icon) => Some(icon),
+        Err(e) => {
+            error!("Failed to load window icon from {BONSAI_ICON_DARK_PATH}: {e}");
+            None
+        }
+    };
 
     // Define some window [`Settings`].
     let window_settings: Settings = Settings {
@@ -536,7 +544,7 @@ fn main() -> iced::Result {
         decorations: true,
         transparent: true,
         level: Level::Normal,
-        icon: Some(icon),
+        icon,
         platform_specific: PlatformSpecific::default(),
         exit_on_close_request: false,
         maximized: false,
@@ -553,7 +561,7 @@ fn main() -> iced::Result {
     // On first run, populate settings with the actual config that will be used
     // and save it to disk
     if is_first_run {
-        let network = settings.bonsai.network.unwrap_or(Network::Signet);
+        let network = settings.active_network();
 
         let node_config = settings.get_node_config(network, &BonsaiSettings::base_dir());
         settings.update_from_config(&node_config);
@@ -576,7 +584,7 @@ fn main() -> iced::Result {
     }
 
     let auto_start_node = settings.node.auto_start.unwrap_or(AUTO_START_NODE);
-    let network = settings.bonsai.network.unwrap_or(Network::Signet);
+    let network = settings.active_network();
     let node_config = settings.get_node_config(network, &BonsaiSettings::base_dir());
 
     iced::application(
@@ -597,7 +605,7 @@ fn main() -> iced::Result {
             };
 
             let tasks = if auto_start_node {
-                let network = settings.bonsai.network.unwrap_or(Network::Signet);
+                let network = settings.active_network();
                 let node_config = settings.get_node_config(network, &BonsaiSettings::base_dir());
 
                 Task::batch([
