@@ -6,6 +6,8 @@ use std::sync::Mutex;
 use tracing::Subscriber;
 use tracing_subscriber::Layer;
 
+const DEFAULT_LOG_VERSION: usize = 0;
+
 #[derive(Clone, Default)]
 pub struct LogCapture {
     logs: Arc<Mutex<VecDeque<String>>>,
@@ -23,29 +25,42 @@ impl LogCapture {
     }
 
     pub fn version(&self) -> usize {
-        *self.version.lock().unwrap()
+        self.version
+            .lock()
+            .map(|version| *version)
+            .unwrap_or(DEFAULT_LOG_VERSION)
     }
 
     pub fn add_log(&self, log: String) {
-        let mut logs = self.logs.lock().unwrap();
-        logs.push_back(log);
-        if logs.len() > self.max_logs {
-            logs.pop_front();
+        if let Ok(mut logs) = self.logs.lock() {
+            logs.push_back(log);
+            if logs.len() > self.max_logs {
+                logs.pop_front();
+            }
         }
-        drop(logs);
 
-        let mut version = self.version.lock().unwrap();
-        *version = version.wrapping_add(1);
+        self.bump_version();
     }
 
     pub fn get_logs(&self) -> Vec<String> {
-        self.logs.lock().unwrap().iter().cloned().collect()
+        self.logs
+            .lock()
+            .map(|logs| logs.iter().cloned().collect())
+            .unwrap_or_default()
     }
 
     pub fn clear(&self) {
-        self.logs.lock().unwrap().clear();
+        if let Ok(mut logs) = self.logs.lock() {
+            logs.clear();
+        }
 
-        *self.version.lock().unwrap() += 1;
+        self.bump_version();
+    }
+
+    fn bump_version(&self) {
+        if let Ok(mut version) = self.version.lock() {
+            *version = version.wrapping_add(1);
+        }
     }
 }
 

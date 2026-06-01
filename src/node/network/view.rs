@@ -16,6 +16,7 @@ use iced::widget::text;
 use iced::widget::text_input;
 use iced::widget::tooltip;
 
+use crate::common::interface::color::OFF_WHITE;
 use crate::common::interface::constants::CELL_HEIGHT;
 use crate::common::interface::constants::TABLE_CELL_FONT_SIZE;
 use crate::common::interface::constants::TABLE_CELL_ICON_SIZE;
@@ -166,6 +167,7 @@ pub fn view_p2p<'a>(
     statistics: &'a Option<NodeStatistics>,
     peer_input: &'a str,
     geoip_reader: &'a Option<GeoIpReader>,
+    last_action_error: Option<&'a str>,
 ) -> Element<'a, NodeMessage> {
     // Add Peer.
     let add_peer_title: Container<'_, NodeMessage> = container(text("ADD PEER").size(21));
@@ -194,14 +196,19 @@ pub fn view_p2p<'a>(
     )
     .style(title_container())
     .padding(10);
-    let add_peer =
-        container(column![add_peer_title, add_peer_container]).height(Length::Fixed(100.0));
+    let add_peer_error = text(last_action_error.unwrap_or(""))
+        .size(12)
+        .color(OFF_WHITE.scale_alpha(0.8));
+    let add_peer = container(column![add_peer_title, add_peer_container, add_peer_error])
+        .height(Length::Fixed(120.0));
 
     // P2P Messages (TODO: requires a node hook for P2P messages)
     let p2p_messages_title: Container<'_, NodeMessage> = container(text("P2P MESSAGES").size(21));
-    let p2p_messages_container = container(row![text(
-        "WIP: Requires a node hook for P2P messages on Floresta"
-    )])
+    let p2p_messages_container = container(row![
+        text("UNAVAILABLE\nNODE MESSAGE HOOK NOT EXPOSED")
+            .size(12)
+            .color(OFF_WHITE.scale_alpha(0.5))
+    ])
     .style(title_container())
     .padding(10)
     .height(Length::Fill)

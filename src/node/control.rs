@@ -1,5 +1,6 @@
 use core::fmt::Display;
 use std::collections::HashMap;
+use std::future::Future;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
@@ -32,6 +33,7 @@ use crate::common::util::format_thousands;
 use crate::node::error::BonsaiNodeError;
 use crate::node::geoip::GeoIpReader;
 use crate::node::log_capture::LogCapture;
+use crate::node::message::NodeActionTarget;
 use crate::node::message::NodeMessage;
 use crate::node::stats_fetcher::NodeStatistics;
 use crate::node::stats_fetcher::fetch_stats;
@@ -62,6 +64,38 @@ impl Display for NodeStatus {
             Self::Failed(e) => write!(f, "FAILED [{}]", e),
         }
     }
+}
+
+pub(crate) fn node_status_color(node_status: &NodeStatus, app_clock: usize) -> iced::Color {
+    use crate::common::interface::color::GREEN_SHAMROCK;
+    use crate::common::interface::color::OFF_WHITE;
+    use crate::common::interface::color::RED;
+    use crate::common::interface::color::pulse_color;
+
+    match node_status {
+        NodeStatus::Starting => pulse_color(GREEN_SHAMROCK, app_clock),
+        NodeStatus::Running => GREEN_SHAMROCK,
+        NodeStatus::Inactive => OFF_WHITE,
+        NodeStatus::ShuttingDown => pulse_color(RED, app_clock),
+        NodeStatus::Failed(_) => RED,
+    }
+}
+
+pub(crate) fn spawn_node_task<T>(
+    task: impl Future<Output = T> + Send + 'static,
+    fallback: impl FnOnce(tokio::task::JoinError) -> NodeMessage + Send + 'static,
+) -> Task<NodeMessage>
+where
+    T: Into<NodeMessage> + Send + 'static,
+{
+    let rt_handle = Handle::current();
+
+    Task::future(async move {
+        match rt_handle.spawn(task).await {
+            Ok(message) => message.into(),
+            Err(e) => fallback(e),
+        }
+    })
 }
 
 pub(crate) struct BlockForwarder {
@@ -102,9 +136,30 @@ pub(crate) struct EmbeddedNode {
     pub(crate) latest_blocks: Vec<Block>,
     pub(crate) block_explorer_current_block: Option<Block>,
     pub(crate) block_explorer_expanded_tx_idx: Option<usize>,
+    pub(crate) last_block_action_error: Option<String>,
+    pub(crate) last_network_action_error: Option<String>,
 }
 
 impl EmbeddedNode {
+    fn stop_node_task(
+        node_handle: Arc<RwLock<Node>>,
+        success_message: NodeMessage,
+    ) -> Task<NodeMessage> {
+        let rt_handle = Handle::current();
+
+        Task::future(async move {
+            let result = rt_handle
+                .spawn(async move { stop_node(node_handle).await })
+                .await;
+
+            match result {
+                Ok(Ok(_)) => success_message,
+                Ok(Err(e)) => NodeMessage::Error(BonsaiNodeError::from(e)),
+                Err(e) => NodeMessage::Error(BonsaiNodeError::Generic(e.to_string())),
+            }
+        })
+    }
+
     pub fn update(&mut self, message: NodeMessage) -> Task<NodeMessage> {
         match message {
             // `Tick` is useful for triggering an UI re-render.
@@ -137,19 +192,7 @@ impl EmbeddedNode {
                 self.start_time = None;
 
                 if let Some(node_handle) = self.handle.take() {
-                    let rt_handle = Handle::current();
-
-                    Task::future(async move {
-                        let result = rt_handle
-                            .spawn(async move { stop_node(node_handle).await })
-                            .await;
-
-                        match result {
-                            Ok(Ok(_)) => NodeMessage::Start,
-                            Ok(Err(e)) => NodeMessage::Error(BonsaiNodeError::from(e)),
-                            Err(e) => NodeMessage::Error(BonsaiNodeError::Generic(e.to_string())),
-                        }
-                    })
+                    Self::stop_node_task(node_handle, NodeMessage::Start)
                 } else {
                     Task::done(NodeMessage::Start)
                 }
@@ -164,6 +207,8 @@ impl EmbeddedNode {
                 self.status = NodeStatus::Running;
                 self.subscription_active = true;
                 self.is_shutting_down = false;
+                self.last_block_action_error = None;
+                self.last_network_action_error = None;
                 self.start_time = Some(Instant::now());
 
                 // Get the actual config from the running node and emit it
@@ -190,19 +235,7 @@ impl EmbeddedNode {
                 self.start_time = None;
 
                 if let Some(node_handle) = self.handle.take() {
-                    let rt_handle = Handle::current();
-
-                    Task::future(async move {
-                        let result = rt_handle
-                            .spawn(async move { stop_node(node_handle).await })
-                            .await;
-
-                        match result {
-                            Ok(Ok(_)) => NodeMessage::ShutdownComplete,
-                            Ok(Err(e)) => NodeMessage::Error(BonsaiNodeError::from(e)),
-                            Err(e) => NodeMessage::Error(BonsaiNodeError::Generic(e.to_string())),
-                        }
-                    })
+                    Self::stop_node_task(node_handle, NodeMessage::ShutdownComplete)
                 } else {
                     Task::done(NodeMessage::ShutdownComplete)
                 }
@@ -242,29 +275,38 @@ impl EmbeddedNode {
                 Task::none()
             }
             NodeMessage::Error(e) => {
-                //TODO fix this
-                //self.status = NodeStatus::Failed(err);
-                //self.subscription_active = false;
                 error!("Node Error: {e}");
+                self.status = NodeStatus::Failed(e);
+                self.subscription_active = false;
+                self.is_shutting_down = false;
+                Task::none()
+            }
+            NodeMessage::ActionFailed(target, e) => {
+                error!("Node action failed: {e}");
+                match target {
+                    NodeActionTarget::Blocks => self.last_block_action_error = Some(e.to_string()),
+                    NodeActionTarget::Network => {
+                        self.last_network_action_error = Some(e.to_string());
+                    }
+                    NodeActionTarget::General => {}
+                }
                 Task::none()
             }
             NodeMessage::GetStatistics => {
                 if self.subscription_active {
                     if let Some(handle) = &self.handle {
                         let handle = handle.clone();
-                        let rt_handle = Handle::current();
                         let start_time = self.start_time;
 
-                        Task::future(async move {
-                            rt_handle
-                                .spawn(async move { fetch_stats(handle, start_time).await })
-                                .await
-                                .unwrap_or_else(|_| {
-                                    NodeMessage::Error(BonsaiNodeError::Generic(
-                                        "Failed to fetch stats".to_string(),
-                                    ))
-                                })
-                        })
+                        spawn_node_task(
+                            async move { fetch_stats(handle, start_time).await },
+                            |_| {
+                                NodeMessage::ActionFailed(
+                                    NodeActionTarget::General,
+                                    BonsaiNodeError::Generic("Failed to fetch stats".to_string()),
+                                )
+                            },
+                        )
                     } else {
                         Task::none()
                     }
@@ -274,6 +316,7 @@ impl EmbeddedNode {
             }
             NodeMessage::AddPeerInputChanged(peer) => {
                 self.peer_input = peer;
+                self.last_network_action_error = None;
                 Task::none()
             }
             NodeMessage::AddPeer => {
@@ -281,46 +324,54 @@ impl EmbeddedNode {
 
                 if let Some(handle) = &self.handle {
                     let handle = handle.clone();
-                    let rt_handle = Handle::current();
-
-                    Task::future(async move {
-                        let result = rt_handle
-                            .spawn(async move {
-                                // Parse the address
-                                let addr: SocketAddr = match peer_address.parse() {
-                                    Ok(addr) => addr,
-                                    Err(e) => {
-                                        return NodeMessage::Error(BonsaiNodeError::Generic(
-                                            format!("Invalid peer address: {}", e),
-                                        ));
-                                    }
-                                };
-
-                                // Connect to the peer
-                                let node = handle.read().await;
-                                match node.connect_peer(&addr).await {
-                                    Ok(true) => NodeMessage::PeerConnected(peer_address),
-                                    Ok(false) => NodeMessage::Error(BonsaiNodeError::Generic(
-                                        "Failed to connect to peer".to_string(),
-                                    )),
-                                    Err(e) => NodeMessage::Error(BonsaiNodeError::from(e)),
+                    spawn_node_task(
+                        async move {
+                            let addr: SocketAddr = match peer_address.parse() {
+                                Ok(addr) => addr,
+                                Err(e) => {
+                                    return NodeMessage::ActionFailed(
+                                        NodeActionTarget::Network,
+                                        BonsaiNodeError::Generic(format!(
+                                            "Invalid peer address: {}",
+                                            e
+                                        )),
+                                    );
                                 }
-                            })
-                            .await;
+                            };
 
-                        result.unwrap_or_else(|e| {
-                            NodeMessage::Error(BonsaiNodeError::Generic(e.to_string()))
-                        })
-                    })
+                            let node = handle.read().await;
+                            match node.connect_peer(&addr).await {
+                                Ok(true) => NodeMessage::PeerConnected(peer_address),
+                                Ok(false) => NodeMessage::ActionFailed(
+                                    NodeActionTarget::Network,
+                                    BonsaiNodeError::Generic(
+                                        "Failed to connect to peer".to_string(),
+                                    ),
+                                ),
+                                Err(e) => NodeMessage::ActionFailed(
+                                    NodeActionTarget::Network,
+                                    BonsaiNodeError::from(e),
+                                ),
+                            }
+                        },
+                        |e| {
+                            NodeMessage::ActionFailed(
+                                NodeActionTarget::Network,
+                                BonsaiNodeError::Generic(e.to_string()),
+                            )
+                        },
+                    )
                 } else {
-                    Task::done(NodeMessage::Error(BonsaiNodeError::Generic(
-                        "Node not running".to_string(),
-                    )))
+                    Task::done(NodeMessage::ActionFailed(
+                        NodeActionTarget::Network,
+                        BonsaiNodeError::Generic("Node not running".to_string()),
+                    ))
                 }
             }
             NodeMessage::PeerConnected(_peer) => {
                 // Clear the input field after button press.
                 self.peer_input.clear();
+                self.last_network_action_error = None;
 
                 // TODO(@luisschwab): add a success/error notification on top-right corner.
                 Task::none()
@@ -328,31 +379,34 @@ impl EmbeddedNode {
             NodeMessage::DisconnectPeer(socket) => {
                 if let Some(handle) = &self.handle {
                     let handle = handle.clone();
-                    let rt_handle = Handle::current();
-
-                    Task::future(async move {
-                        let result = rt_handle
-                            .spawn(async move {
-                                let node = handle.read().await;
-                                match node.disconnect_peer(&socket).await {
-                                    Ok(_) => NodeMessage::PeerDisconnected(socket),
-                                    Err(e) => NodeMessage::Error(BonsaiNodeError::from(e)),
-                                }
-                            })
-                            .await;
-
-                        result.unwrap_or_else(|e| {
-                            NodeMessage::Error(BonsaiNodeError::Generic(e.to_string()))
-                        })
-                    })
+                    spawn_node_task(
+                        async move {
+                            let node = handle.read().await;
+                            match node.disconnect_peer(&socket).await {
+                                Ok(_) => NodeMessage::PeerDisconnected(socket),
+                                Err(e) => NodeMessage::ActionFailed(
+                                    NodeActionTarget::Network,
+                                    BonsaiNodeError::from(e),
+                                ),
+                            }
+                        },
+                        |e| {
+                            NodeMessage::ActionFailed(
+                                NodeActionTarget::Network,
+                                BonsaiNodeError::Generic(e.to_string()),
+                            )
+                        },
+                    )
                 } else {
-                    Task::done(NodeMessage::Error(BonsaiNodeError::Generic(
-                        "Node not running".to_string(),
-                    )))
+                    Task::done(NodeMessage::ActionFailed(
+                        NodeActionTarget::Network,
+                        BonsaiNodeError::Generic("Node not running".to_string()),
+                    ))
                 }
             }
 
             NodeMessage::PeerDisconnected(_peer) => {
+                self.last_network_action_error = None;
                 // TODO add success/error notification
                 Task::none()
             }
@@ -371,6 +425,7 @@ impl EmbeddedNode {
                 Task::none()
             }
             NodeMessage::BlockHeightInputChanged(value) => {
+                self.last_block_action_error = None;
                 let clean = value.replace(",", "");
 
                 if clean.is_empty() || clean.chars().all(|c| c.is_numeric()) {
@@ -384,6 +439,7 @@ impl EmbeddedNode {
                 Task::none()
             }
             NodeMessage::BlockExplorerHeightUpdate(height) => {
+                self.last_block_action_error = None;
                 self.block_explorer_height_str = format_thousands(height);
                 self.update(NodeMessage::FetchBlock(height))
             }
@@ -391,49 +447,56 @@ impl EmbeddedNode {
             NodeMessage::FetchBlock(height) => {
                 if let Some(handle) = &self.handle {
                     let handle = handle.clone();
-                    let rt_handle = Handle::current();
+                    spawn_node_task(
+                        async move {
+                            let node = handle.read().await;
 
-                    Task::future(async move {
-                        let result = rt_handle
-                            .spawn(async move {
-                                let node = handle.read().await;
-
-                                let blockhash = match node.get_block_hash(height as u32) {
-                                    Ok(blockhash) => {
-                                        info!("Fetching block of height={height} and hash={blockhash}");
-                                        blockhash
-                                    }
-                                    Err(_) => {
-                                        error!("Failed to find a block of height={height} from Floresta's header chain");
-                                        return NodeMessage::BlockFetched(None)
-                                    }
-                                };
-
-                                match node.fetch_block(blockhash).await {
-                                    Ok(Some(block)) => {
-                                        info!("Fetched block of height={height} and hash={blockhash}");
-                                        NodeMessage::BlockFetched(Some(block))
-                                    }
-                                    Ok(None) => {
-                                        error!("Failed to fetch block of height={height} and hash={blockhash}: 404 Not Found");
-                                        NodeMessage::BlockFetched(None)
-                                    }
-                                    Err(e) => {
-                                        error!("Failed to fetch block of height={height} and hash={blockhash}: {e}");
-                                        NodeMessage::Error(BonsaiNodeError::from(e))
-                                    }
+                            let blockhash = match node.get_block_hash(height as u32) {
+                                Ok(blockhash) => {
+                                    info!("Fetching block of height={height} and hash={blockhash}");
+                                    blockhash
                                 }
-                            })
-                            .await;
+                                Err(_) => {
+                                    error!(
+                                        "Failed to find a block of height={height} from Floresta's header chain"
+                                    );
+                                    return NodeMessage::BlockFetched(None);
+                                }
+                            };
 
-                        result.unwrap_or(NodeMessage::BlockFetched(None))
-                    })
+                            match node.fetch_block(blockhash).await {
+                                Ok(Some(block)) => {
+                                    info!("Fetched block of height={height} and hash={blockhash}");
+                                    NodeMessage::BlockFetched(Some(block))
+                                }
+                                Ok(None) => {
+                                    error!(
+                                        "Failed to fetch block of height={height} and hash={blockhash}: 404 Not Found"
+                                    );
+                                    NodeMessage::BlockFetched(None)
+                                }
+                                Err(e) => {
+                                    error!(
+                                        "Failed to fetch block of height={height} and hash={blockhash}: {e}"
+                                    );
+                                    NodeMessage::ActionFailed(
+                                        NodeActionTarget::Blocks,
+                                        BonsaiNodeError::from(e),
+                                    )
+                                }
+                            }
+                        },
+                        |_| NodeMessage::BlockFetched(None),
+                    )
                 } else {
                     Task::none()
                 }
             }
 
             NodeMessage::BlockFetched(block) => {
+                if block.is_some() {
+                    self.last_block_action_error = None;
+                }
                 self.block_explorer_current_block = block;
                 Task::none()
             }
@@ -535,6 +598,7 @@ impl EmbeddedNode {
             &self.statistics,
             &self.peer_input,
             &self.geoip_reader,
+            self.last_network_action_error.as_deref(),
         )
     }
 
@@ -550,6 +614,7 @@ impl EmbeddedNode {
             &self.latest_blocks,
             &self.block_explorer_current_block,
             &self.block_explorer_expanded_tx_idx,
+            self.last_block_action_error.as_deref(),
         )
     }
 }
@@ -587,4 +652,52 @@ pub(crate) async fn stop_node(handle: Arc<RwLock<Node>>) -> Result<(), String> {
         .shutdown()
         .await
         .map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::EmbeddedNode;
+    use super::NodeStatus;
+    use crate::node::error::BonsaiNodeError;
+    use crate::node::message::NodeActionTarget;
+    use crate::node::message::NodeMessage;
+
+    #[test]
+    fn action_failed_does_not_fail_node_status() {
+        let mut node = EmbeddedNode {
+            status: NodeStatus::Running,
+            subscription_active: true,
+            ..EmbeddedNode::default()
+        };
+
+        let _ = node.update(NodeMessage::ActionFailed(
+            NodeActionTarget::Network,
+            BonsaiNodeError::Generic("recoverable".to_string()),
+        ));
+
+        assert!(matches!(node.status, NodeStatus::Running));
+        assert!(node.subscription_active);
+        assert_eq!(
+            node.last_network_action_error.as_deref(),
+            Some("Generic Error: recoverable")
+        );
+    }
+
+    #[test]
+    fn node_error_marks_node_failed() {
+        let mut node = EmbeddedNode {
+            status: NodeStatus::Running,
+            subscription_active: true,
+            is_shutting_down: true,
+            ..EmbeddedNode::default()
+        };
+
+        let _ = node.update(NodeMessage::Error(BonsaiNodeError::Generic(
+            "fatal".to_string(),
+        )));
+
+        assert!(matches!(node.status, NodeStatus::Failed(_)));
+        assert!(!node.subscription_active);
+        assert!(!node.is_shutting_down);
+    }
 }

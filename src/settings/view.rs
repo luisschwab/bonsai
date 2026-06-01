@@ -1,4 +1,5 @@
-use bdk_floresta::UtreexoNodeConfig;
+use std::net::SocketAddr;
+
 use bitcoin::Network;
 use iced::Alignment::Center;
 use iced::Background::Color as BackgroundColor;
@@ -12,6 +13,7 @@ use iced::Theme;
 use iced::border::Radius;
 use iced::theme::palette::Pair;
 use iced::widget::Button;
+use iced::widget::Column;
 use iced::widget::Container;
 use iced::widget::Space;
 use iced::widget::button;
@@ -47,29 +49,40 @@ use crate::settings::bonsai_settings::BonsaiSettingsMessage;
 
 const SECTION_BOX_HEIGHT: f32 = 30.0;
 
-pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSettingsMessage> {
-    let utreexo_node_config_default = UtreexoNodeConfig::default();
+fn section_title<'a>(label: &'static str, size: u32) -> Container<'a, BonsaiSettingsMessage> {
+    container(text(label).size(size))
+}
 
-    let auto_start = settings.node.auto_start.unwrap_or(AUTO_START_NODE);
-    let active_network = settings
-        .bonsai
-        .network
-        .unwrap_or(utreexo_node_config_default.network);
+fn boolean_section<'a>(
+    title: &'static str,
+    active_value: bool,
+    true_message: BonsaiSettingsMessage,
+    false_message: BonsaiSettingsMessage,
+) -> Column<'a, BonsaiSettingsMessage> {
+    let title = section_title(title, 21);
+    let buttons = container(
+        row![
+            boolean_button_with_disable_logic(
+                "TRUE",
+                true,
+                active_value,
+                GREEN_SHAMROCK,
+                true_message
+            ),
+            boolean_button_with_disable_logic("FALSE", false, active_value, RED, false_message),
+        ]
+        .height(Length::Fixed(SECTION_BOX_HEIGHT))
+        .spacing(10),
+    )
+    .style(title_container())
+    .padding(10);
 
-    let node_config = settings.node.get_network_config(active_network);
+    column![title, buttons]
+}
 
-    let use_assume_utreexo = node_config.use_assume_utreexo.unwrap_or(true);
-    let use_powfps = node_config.enable_powfps.unwrap_or(true);
-    let backfill = node_config.perform_backfill.unwrap_or(true);
-    let allow_v1_fallback = node_config.allow_p2pv1_fallback.unwrap_or(true);
-    let disable_dns_seeds = node_config.disable_dns_seeds.unwrap_or(false);
-    let user_agent = node_config.user_agent.clone();
-    let fixed_peer = node_config.fixed_peer;
-    let proxy = node_config.socks5_proxy;
-    let max_banscore = node_config.max_banscore.unwrap_or_default();
-
-    let network_title: Container<'_, BonsaiSettingsMessage> = container(text("NETWORK").size(22));
-    let network_buttons: Container<'_, BonsaiSettingsMessage> = container(
+fn network_section<'a>(active_network: Network) -> Column<'a, BonsaiSettingsMessage> {
+    let title = section_title("NETWORK", 22);
+    let buttons = container(
         row![
             network_button_with_disable_logic("BITCOIN", Network::Bitcoin, active_network, ORANGE),
             network_button_with_disable_logic("SIGNET", Network::Signet, active_network, PURPLE),
@@ -91,229 +104,35 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
     )
     .style(title_container())
     .padding(10);
-    let network_section = column![network_title, network_buttons];
 
-    let auto_start_title: Container<'_, BonsaiSettingsMessage> =
-        container(text("AUTO START NODE").size(21));
-    let auto_start_buttons = container(
-        row![
-            boolean_button_with_disable_logic(
-                "TRUE",
-                true,
-                auto_start,
-                GREEN_SHAMROCK,
-                BonsaiSettingsMessage::AutoStartChanged(true)
-            ),
-            boolean_button_with_disable_logic(
-                "FALSE",
-                false,
-                auto_start,
-                RED,
-                BonsaiSettingsMessage::AutoStartChanged(false)
-            ),
-        ]
-        .height(Length::Fixed(SECTION_BOX_HEIGHT))
-        .spacing(10),
+    column![title, buttons]
+}
+
+fn text_input_section<'a>(
+    title: &'static str,
+    placeholder: String,
+    value: &'a str,
+    on_input: fn(String) -> BonsaiSettingsMessage,
+    error: Option<&'a str>,
+) -> Column<'a, BonsaiSettingsMessage> {
+    let input = container(
+        text_input(&placeholder, value)
+            .on_input(on_input)
+            .padding(10)
+            .width(Fill),
     )
     .style(title_container())
-    .padding(10);
-    let auto_start_section = column![auto_start_title, auto_start_buttons];
+    .padding(1);
 
-    let assume_utreexo_title: Container<'_, BonsaiSettingsMessage> =
-        container(text("ASSUME UTREEXO").size(21));
-    let assume_utreexo_buttons = container(
-        row![
-            boolean_button_with_disable_logic(
-                "TRUE",
-                true,
-                use_assume_utreexo,
-                GREEN_SHAMROCK,
-                BonsaiSettingsMessage::UseAssumeUtreexoChanged(true)
-            ),
-            boolean_button_with_disable_logic(
-                "FALSE",
-                false,
-                use_assume_utreexo,
-                RED,
-                BonsaiSettingsMessage::UseAssumeUtreexoChanged(false)
-            ),
-        ]
-        .height(Length::Fixed(SECTION_BOX_HEIGHT))
-        .spacing(10),
-    )
-    .style(title_container())
-    .padding(10);
-    let assume_utreexo_section = column![assume_utreexo_title, assume_utreexo_buttons];
-
-    let powfps_title: Container<'_, BonsaiSettingsMessage> =
-        container(text("PROOF-OF-WORK FRAUD PROOFS").size(21));
-    let powfps_buttons = container(
-        row![
-            boolean_button_with_disable_logic(
-                "TRUE",
-                true,
-                use_powfps,
-                GREEN_SHAMROCK,
-                BonsaiSettingsMessage::PowFraudProofsChanged(true)
-            ),
-            boolean_button_with_disable_logic(
-                "FALSE",
-                false,
-                use_powfps,
-                RED,
-                BonsaiSettingsMessage::PowFraudProofsChanged(false)
-            ),
-        ]
-        .height(Length::Fixed(SECTION_BOX_HEIGHT))
-        .spacing(10),
-    )
-    .style(title_container())
-    .padding(10);
-    let powfps_section = column![powfps_title, powfps_buttons];
-
-    let backfill_title: Container<'_, BonsaiSettingsMessage> = container(text("BACKFILL").size(21));
-    let backfill_buttons = container(
-        row![
-            boolean_button_with_disable_logic(
-                "TRUE",
-                true,
-                backfill,
-                GREEN_SHAMROCK,
-                BonsaiSettingsMessage::BackfillChanged(true)
-            ),
-            boolean_button_with_disable_logic(
-                "FALSE",
-                false,
-                backfill,
-                RED,
-                BonsaiSettingsMessage::BackfillChanged(false)
-            ),
-        ]
-        .height(Length::Fixed(SECTION_BOX_HEIGHT))
-        .spacing(10),
-    )
-    .style(title_container())
-    .padding(10);
-    let backfill_section = column![backfill_title, backfill_buttons];
-
-    let v1_fallback_title: Container<'_, BonsaiSettingsMessage> =
-        container(text("ALLOW V1 FALLBACK").size(21));
-    let v1_fallback_buttons = container(
-        row![
-            boolean_button_with_disable_logic(
-                "TRUE",
-                true,
-                allow_v1_fallback,
-                GREEN_SHAMROCK,
-                BonsaiSettingsMessage::AllowV1FallbackChanged(true)
-            ),
-            boolean_button_with_disable_logic(
-                "FALSE",
-                false,
-                allow_v1_fallback,
-                RED,
-                BonsaiSettingsMessage::AllowV1FallbackChanged(false)
-            ),
-        ]
-        .height(Length::Fixed(SECTION_BOX_HEIGHT))
-        .spacing(10),
-    )
-    .style(title_container())
-    .padding(10);
-    let v1_fallback_section = column![v1_fallback_title, v1_fallback_buttons];
-
-    let disable_dns_seeds_title: Container<'_, BonsaiSettingsMessage> =
-        container(text("DISABLE DNS SEEDS").size(21));
-    let disable_dns_seeds_buttons = container(
-        row![
-            boolean_button_with_disable_logic(
-                "TRUE",
-                true,
-                disable_dns_seeds,
-                GREEN_SHAMROCK,
-                BonsaiSettingsMessage::DisableDnsSeedsChanged(true)
-            ),
-            boolean_button_with_disable_logic(
-                "FALSE",
-                false,
-                disable_dns_seeds,
-                RED,
-                BonsaiSettingsMessage::DisableDnsSeedsChanged(false)
-            ),
-        ]
-        .height(Length::Fixed(SECTION_BOX_HEIGHT))
-        .spacing(10),
-    )
-    .style(title_container())
-    .padding(10);
-    let disable_dns_seeds_section = column![disable_dns_seeds_title, disable_dns_seeds_buttons];
-
-    let left = column![
-        network_section,
-        Space::new().height(Length::Fill),
-        auto_start_section,
-        Space::new().height(Length::Fill),
-        assume_utreexo_section,
-        Space::new().height(Length::Fill),
-        powfps_section,
-        Space::new().height(Length::Fill),
-        backfill_section,
-        Space::new().height(Length::Fill),
-        v1_fallback_section,
-        Space::new().height(Length::Fill),
-        disable_dns_seeds_section,
+    column![
+        section_title(title, 21),
+        input,
+        text(error.unwrap_or("")).size(12).color(RED)
     ]
-    .width(FillPortion(1));
+}
 
-    let user_agent_title: Container<'_, BonsaiSettingsMessage> =
-        container(text("USER AGENT").size(21));
-    let user_agent_input = container(
-        text_input(
-            user_agent.as_deref().unwrap_or("NULL"),
-            &settings.user_agent_input,
-        )
-        .on_input(BonsaiSettingsMessage::UserAgentInputChanged)
-        .padding(10)
-        .width(Fill),
-    )
-    .style(title_container())
-    .padding(1);
-    let user_agent_section = column![user_agent_title, user_agent_input];
-
-    let proxy_title: Container<'_, BonsaiSettingsMessage> = container(text("PROXY").size(21));
-    let proxy_input = container(
-        text_input(
-            &proxy
-                .map(|p| p.to_string())
-                .unwrap_or_else(|| "NULL".to_string()),
-            &settings.proxy_input,
-        )
-        .on_input(BonsaiSettingsMessage::ProxyInputChanged)
-        .padding(10)
-        .width(Fill),
-    )
-    .style(title_container())
-    .padding(1);
-    let proxy_section = column![proxy_title, proxy_input];
-
-    let fixed_peer_title: Container<'_, BonsaiSettingsMessage> =
-        container(text("FIXED PEER").size(21));
-    let fixed_peer_input = container(
-        text_input(
-            &fixed_peer.map_or("NULL".to_string(), |addr| addr.to_string()),
-            &settings.fixed_peer_input,
-        )
-        .on_input(BonsaiSettingsMessage::FixedPeerInputChanged)
-        .padding(10)
-        .width(Fill),
-    )
-    .style(title_container())
-    .padding(1);
-    let fixed_peer_section = column![fixed_peer_title, fixed_peer_input];
-
-    let max_banscore_title: Container<'_, BonsaiSettingsMessage> =
-        container(text("MAX BAN SCORE").size(21));
-    let max_banscore_controls = container(
+fn max_banscore_section<'a>(max_banscore: u32) -> Column<'a, BonsaiSettingsMessage> {
+    let controls = container(
         row![
             container(
                 text(max_banscore.to_string())
@@ -352,111 +171,213 @@ pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSett
     )
     .style(title_container())
     .padding(10);
-    let max_banscore_section = column![max_banscore_title, max_banscore_controls];
 
-    let save_button_row = row![
-        text(if settings.unsaved_changes {
-            "UNSAVED CHANGES"
-        } else {
-            ""
-        })
-        .size(12)
-        .color(if settings.unsaved_changes {
-            ORANGE
-        } else {
-            GREEN_SHAMROCK
-        }),
+    column![section_title("MAX BAN SCORE", 21), controls]
+}
+
+fn action_button_row<'a>(
+    status_text: &'static str,
+    is_active: bool,
+    label: &'static str,
+    message: BonsaiSettingsMessage,
+) -> iced::widget::Row<'a, BonsaiSettingsMessage> {
+    row![
+        text(if is_active { status_text } else { "" })
+            .size(12)
+            .color(if is_active { ORANGE } else { GREEN_SHAMROCK }),
         Space::new().width(Fill),
-        button(
-            text("SAVE SETTINGS")
-                .size(20)
-                .align_x(Center)
-                .align_y(Center)
-        )
-        .on_press_maybe(if settings.unsaved_changes {
-            Some(BonsaiSettingsMessage::SaveSettings)
-        } else {
-            None
-        })
-        .style(button_container())
-        .width(Length::Fixed(220.0))
-        .height(Length::Fixed(50.0))
+        button(text(label).size(20).align_x(Center).align_y(Center))
+            .on_press_maybe(if is_active { Some(message) } else { None })
+            .style(button_container())
+            .width(Length::Fixed(220.0))
+            .height(Length::Fixed(50.0))
     ]
     .spacing(10)
-    .align_y(Center);
+    .align_y(Center)
+}
 
-    let restart_button_row = row![
-        text(if settings.node_restart_required {
-            "CHANGED SETTINGS\nREQUIRE A NODE RESTART"
-        } else {
-            ""
-        })
-        .size(12)
-        .color(if settings.node_restart_required {
-            ORANGE
-        } else {
-            GREEN_SHAMROCK
-        }),
-        Space::new().width(Fill),
-        button(
-            text("RESTART NODE")
-                .size(20)
-                .align_x(Center)
-                .align_y(Center)
-        )
-        .on_press_maybe(if settings.node_restart_required {
-            Some(BonsaiSettingsMessage::RestartNode)
-        } else {
-            None
-        })
-        .style(button_container())
-        .width(Length::Fixed(220.0))
-        .height(Length::Fixed(50.0))
-    ]
-    .spacing(10)
-    .align_y(Center);
+fn actions_section(settings: &BonsaiSettings) -> Column<'_, BonsaiSettingsMessage> {
+    let save_button_row = action_button_row(
+        "UNSAVED CHANGES",
+        settings.unsaved_changes,
+        "SAVE SETTINGS",
+        BonsaiSettingsMessage::SaveSettings,
+    );
+    let restart_button_row = action_button_row(
+        "CHANGED SETTINGS\nREQUIRE A NODE RESTART",
+        settings.node_restart_required,
+        "RESTART NODE",
+        BonsaiSettingsMessage::RestartNode,
+    );
 
-    let actions_title: Container<'_, BonsaiSettingsMessage> =
-        container(text("SAVE CHANGES & RESTART").size(21));
-    let actions_container = container(column![save_button_row, restart_button_row].spacing(20))
+    let container = container(column![save_button_row, restart_button_row].spacing(20))
         .padding(15)
         .style(title_container())
         .width(Fill);
-    let actions_section = column![actions_title, actions_container];
 
-    // TODO(@luisschwab): implement data deletion
+    column![section_title("SAVE CHANGES & RESTART", 21), container]
+}
+
+fn danger_section(settings: &BonsaiSettings) -> Column<'_, BonsaiSettingsMessage> {
+    let confirm_delete = settings.delete_node_data_confirm;
+    let button_label = if confirm_delete {
+        "CONFIRM DELETE"
+    } else {
+        "DELETE NODE DATA"
+    };
+    let delete_message = if confirm_delete {
+        BonsaiSettingsMessage::ConfirmDeleteNodeData
+    } else {
+        BonsaiSettingsMessage::RequestDeleteNodeData
+    };
     let delete_data_row = row![
-        text("THIS ACTION IS DESTRUCTIVE\nALL VALIDATION WORK FOR\nTHIS NETWORK WILL BE LOST")
-            .size(12)
-            .color(RED),
+        text(if confirm_delete {
+            "CLICK CONFIRM TO DELETE\nACTIVE NETWORK NODE DATA\nTHIS CANNOT BE UNDONE"
+        } else {
+            "THIS ACTION IS DESTRUCTIVE\nALL VALIDATION WORK FOR\nTHIS NETWORK WILL BE LOST"
+        })
+        .size(12)
+        .color(RED),
         Space::new().width(Fill),
         button(
-            text("DELETE NODE DATA")
+            text(button_label)
                 .color(RED)
                 .size(20)
                 .align_x(Center)
                 .align_y(Center)
         )
+        .on_press(delete_message)
         .style(delete_button_container())
         .width(Length::Fixed(220.0))
         .height(Length::Fixed(50.0))
     ];
-    let danger_container = container(column![delete_data_row])
+    let cancel_row = row![
+        Space::new().width(Fill),
+        button(text("CANCEL").size(16).align_x(Center).align_y(Center))
+            .on_press(BonsaiSettingsMessage::CancelDeleteNodeData)
+            .style(button_container())
+            .width(Length::Fixed(220.0))
+            .height(Length::Fixed(36.0))
+    ];
+    let status_text = text(
+        settings
+            .delete_node_data_error
+            .as_deref()
+            .or(settings.delete_node_data_status.as_deref())
+            .unwrap_or(""),
+    )
+    .size(12)
+    .color(if settings.delete_node_data_error.is_some() {
+        RED
+    } else {
+        GREEN_SHAMROCK
+    });
+    let danger_content = if confirm_delete {
+        column![delete_data_row, cancel_row, status_text].spacing(10)
+    } else {
+        column![delete_data_row, status_text].spacing(10)
+    };
+    let danger_container = container(danger_content)
         .padding(15)
         .style(title_container_red())
         .width(Fill);
     let danger_title: Container<'_, BonsaiSettingsMessage> =
         container(text("DANGER ZONE").size(21).color(RED));
-    let danger_section = column![danger_title, danger_container];
+
+    column![danger_title, danger_container]
+}
+
+fn socket_placeholder(socket: Option<SocketAddr>) -> String {
+    socket.map_or("NULL".to_string(), |addr| addr.to_string())
+}
+
+pub(crate) fn view_settings(settings: &BonsaiSettings) -> Element<'_, BonsaiSettingsMessage> {
+    let auto_start = settings.node.auto_start.unwrap_or(AUTO_START_NODE);
+    let active_network = settings.active_network();
+
+    let node_config = settings.node.get_network_config(active_network);
+
+    let use_assume_utreexo = node_config.use_assume_utreexo.unwrap_or(true);
+    let use_powfps = node_config.enable_powfps.unwrap_or(true);
+    let backfill = node_config.perform_backfill.unwrap_or(true);
+    let allow_v1_fallback = node_config.allow_p2pv1_fallback.unwrap_or(true);
+    let disable_dns_seeds = node_config.disable_dns_seeds.unwrap_or(false);
+    let user_agent = node_config.user_agent.clone();
+    let max_banscore = node_config.max_banscore.unwrap_or_default();
+
+    let left = column![
+        network_section(active_network),
+        Space::new().height(Length::Fill),
+        boolean_section(
+            "AUTO START NODE",
+            auto_start,
+            BonsaiSettingsMessage::AutoStartChanged(true),
+            BonsaiSettingsMessage::AutoStartChanged(false),
+        ),
+        Space::new().height(Length::Fill),
+        boolean_section(
+            "ASSUME UTREEXO",
+            use_assume_utreexo,
+            BonsaiSettingsMessage::UseAssumeUtreexoChanged(true),
+            BonsaiSettingsMessage::UseAssumeUtreexoChanged(false),
+        ),
+        Space::new().height(Length::Fill),
+        boolean_section(
+            "PROOF-OF-WORK FRAUD PROOFS",
+            use_powfps,
+            BonsaiSettingsMessage::PowFraudProofsChanged(true),
+            BonsaiSettingsMessage::PowFraudProofsChanged(false),
+        ),
+        Space::new().height(Length::Fill),
+        boolean_section(
+            "BACKFILL",
+            backfill,
+            BonsaiSettingsMessage::BackfillChanged(true),
+            BonsaiSettingsMessage::BackfillChanged(false),
+        ),
+        Space::new().height(Length::Fill),
+        boolean_section(
+            "ALLOW V1 FALLBACK",
+            allow_v1_fallback,
+            BonsaiSettingsMessage::AllowV1FallbackChanged(true),
+            BonsaiSettingsMessage::AllowV1FallbackChanged(false),
+        ),
+        Space::new().height(Length::Fill),
+        boolean_section(
+            "DISABLE DNS SEEDS",
+            disable_dns_seeds,
+            BonsaiSettingsMessage::DisableDnsSeedsChanged(true),
+            BonsaiSettingsMessage::DisableDnsSeedsChanged(false),
+        ),
+    ]
+    .width(FillPortion(1));
 
     let right = column![
-        user_agent_section,
-        proxy_section,
-        fixed_peer_section,
-        max_banscore_section,
+        text_input_section(
+            "USER AGENT",
+            user_agent.unwrap_or_else(|| "NULL".to_string()),
+            &settings.user_agent_input,
+            BonsaiSettingsMessage::UserAgentInputChanged,
+            None,
+        ),
+        text_input_section(
+            "PROXY",
+            socket_placeholder(node_config.socks5_proxy),
+            &settings.proxy_input,
+            BonsaiSettingsMessage::ProxyInputChanged,
+            settings.proxy_error.as_deref(),
+        ),
+        text_input_section(
+            "FIXED PEER",
+            socket_placeholder(node_config.fixed_peer),
+            &settings.fixed_peer_input,
+            BonsaiSettingsMessage::FixedPeerInputChanged,
+            settings.fixed_peer_error.as_deref(),
+        ),
+        max_banscore_section(max_banscore),
         Space::new().height(Fill),
-        actions_section,
-        danger_section
+        actions_section(settings),
+        danger_section(settings)
     ]
     .spacing(15)
     .width(FillPortion(1));

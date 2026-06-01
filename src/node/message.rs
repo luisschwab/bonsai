@@ -10,6 +10,13 @@ use tokio::sync::RwLock;
 use crate::node::error::BonsaiNodeError;
 use crate::node::stats_fetcher::NodeStatistics;
 
+#[derive(Clone, Copy)]
+pub(crate) enum NodeActionTarget {
+    Blocks,
+    Network,
+    General,
+}
+
 #[derive(Clone)]
 pub(crate) enum NodeMessage {
     #[allow(unused)]
@@ -38,6 +45,7 @@ pub(crate) enum NodeMessage {
     NewBlock(Block),
     ToggleTransactionExpandedIdx(usize),
     Error(BonsaiNodeError),
+    ActionFailed(NodeActionTarget, BonsaiNodeError),
 }
 
 impl Debug for NodeMessage {
@@ -70,11 +78,18 @@ impl Debug for NodeMessage {
                 Some(block) => write!(f, "BlockFetched({})", block.header.block_hash()),
                 None => write!(f, "BlockFetched(Missing)"),
             },
-            Self::NewBlock(block) => write!(f, "NewBlock({})", block.bip34_block_height().unwrap()),
+            Self::NewBlock(block) => write!(
+                f,
+                "NewBlock({})",
+                block
+                    .bip34_block_height()
+                    .map_or_else(|_| "unknown".to_string(), |height| height.to_string())
+            ),
             Self::ToggleTransactionExpandedIdx(idx) => {
                 write!(f, "ToggleTransactionExpandedIdx({idx})")
             }
             Self::Error(_) => write!(f, "Node Error"),
+            Self::ActionFailed(..) => write!(f, "Node Action Failed"),
         }
     }
 }

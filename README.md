@@ -37,6 +37,14 @@ applications with a nice and sleek user interface.
 
 # Running
 
+To run `bonsai`, run:
+
+```console
+~$ cargo run --release
+```
+
+# Developing
+
 This application is written in Rust. You need to have
 [`cargo`](https://doc.rust-lang.org/stable/cargo/) installed.
 

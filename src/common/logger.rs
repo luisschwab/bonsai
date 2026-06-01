@@ -11,7 +11,13 @@ use crate::settings::bonsai_settings::BonsaiSettings;
 pub(crate) fn setup_logger(network: Network) -> LogCapture {
     // Create the data directory, if needed.
     let data_dir = BonsaiSettings::base_dir().join(network.to_string());
-    std::fs::create_dir_all(&data_dir).expect("Failed to create data directory");
+    if let Err(e) = std::fs::create_dir_all(&data_dir) {
+        eprintln!(
+            "Failed to create log directory at {}: {}",
+            data_dir.to_string_lossy(),
+            e
+        );
+    }
 
     let file_appender = tracing_appender::rolling::never(&data_dir, "bonsai.log");
     let (non_blocking_file, _guard) = tracing_appender::non_blocking(file_appender);

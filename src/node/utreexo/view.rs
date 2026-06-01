@@ -22,6 +22,8 @@ use crate::node::style::table_cell;
 use crate::node::style::title_container;
 use crate::node::utreexo::style::ROOT_CELL_HEIGHT;
 
+const UNAVAILABLE: &str = "UNAVAILABLE";
+
 pub fn view_utreexo<'a>(
     statistics: &'a Option<NodeStatistics>,
     qr_data: &'a Option<qr_code::Data>,
@@ -87,7 +89,7 @@ pub fn view_utreexo<'a>(
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
-                container(text("TODO").size(14))
+                container(text(UNAVAILABLE).size(14).color(OFF_WHITE.scale_alpha(0.5)))
                     .padding(10)
                     .width(Length::FillPortion(1))
                     .style(table_cell()),
