@@ -25,7 +25,7 @@ bdk_floresta = { git = "https://github.com/luisschwab/bdk-floresta", rev = "b558
 bdk_wallet = { version = "=3.0.0" }
 bitcoin = { version = "=0.32.8" }
 bitcoin-consensus-encoding = { version = "=1.0.0-rc.3" } # blame: bitcoin-io v0.3.0 (Encodable->Encode/Decodable->Decode)
-chrono = { version = "=0.4.44" }
+chrono = { version = "=0.4.45" }
 dirs = { version = "=6.0.0" }
 hex = { version = "=0.4.3" }
 iced = { version = "=0.14.0", features = ["tokio", "image", "qr_code"] }
