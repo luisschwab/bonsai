@@ -24,7 +24,7 @@ icon = ["assets/icon/bonsai.icns"]
 bdk_floresta = { git = "https://github.com/luisschwab/bdk-floresta", rev = "b558db0ca23f0d358856968f5bc459d541024dcc", default-features = false }
 bdk_wallet = { version = "=3.0.0" }
 bitcoin = { version = "=0.32.8" }
-bitcoin-consensus-encoding = { version = "=1.0.0-rc.3" } # blame: bitcoin-io v0.3.0 (Encodable->Encode/Decodable->Decode)
+bitcoin-consensus-encoding = { version = "=1.0.0" } # blame: bitcoin-io v0.3.0 (Encodable->Encode/Decodable->Decode)
 chrono = { version = "=0.4.44" }
 dirs = { version = "=6.0.0" }
 hex = { version = "=0.4.3" }
