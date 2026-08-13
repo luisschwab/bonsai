@@ -1,16 +1,18 @@
 use core::fmt::Display;
+use std::net::IpAddr;
 use std::net::SocketAddr;
 use std::sync::Arc;
 use std::time::Duration;
 use std::time::Instant;
 
 use bdk_floresta::ConnectionKind;
-use bdk_floresta::Node;
 use bdk_floresta::PeerInfo;
 use bdk_floresta::PeerStatus;
 use bdk_floresta::TransportProtocol;
+use bdk_floresta::node::Node;
 use bdk_floresta::rustreexo::stump::Stump;
 use bitcoin::p2p::ServiceFlags;
+use bitcoin::p2p::address::AddrV2;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use tokio::sync::RwLock;
@@ -116,9 +118,21 @@ fn regex_user_agent(user_agent: &str) -> NodeImpl {
 fn process_peer_infos(peer_infos: Vec<PeerInfo>) -> Vec<PeerInformation> {
     let mut peer_informations: Vec<PeerInformation> = Vec::new();
     for peer_info in peer_infos {
+        let ip = match peer_info.address.as_addrv2() {
+            AddrV2::Ipv4(ip) => IpAddr::V4(*ip),
+            AddrV2::Ipv6(ip) => IpAddr::V6(*ip),
+            _ => continue,
+        };
+        let socket = SocketAddr::new(ip, peer_info.address.get_port());
+        let services = peer_info
+            .services
+            .strip_prefix("0x")
+            .unwrap_or(&peer_info.services);
+        let services = u64::from_str_radix(services, 16).unwrap_or_default();
+
         let peer_information = PeerInformation {
-            socket: peer_info.address,
-            services: peer_info.services,
+            socket,
+            services: ServiceFlags::from(services),
             node_impl: regex_user_agent(&peer_info.user_agent),
             user_agent: peer_info.user_agent,
             initial_height: peer_info.initial_height,
@@ -140,10 +154,10 @@ pub(crate) async fn fetch_stats(
         let node_handle = node_handle.read().await;
 
         let in_ibd = node_handle.in_ibd();
-        let headers = node_handle.get_height().unwrap_or(0);
-        let blocks = node_handle.get_validation_height().unwrap_or(0);
-        let accumulator = node_handle.get_accumulator()?;
-        let user_agent = node_handle.get_config().await?.user_agent;
+        let headers = node_handle.get_chain_height().unwrap_or(0);
+        let blocks = node_handle.get_node_height().unwrap_or(0);
+        let accumulator = node_handle.get_accumulator();
+        let user_agent = node_handle.get_config().user_agent;
         let uptime = start_time
             .map(|t| t.elapsed())
             .unwrap_or(Duration::from_secs(0));

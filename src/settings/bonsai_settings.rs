@@ -122,7 +122,7 @@ impl NodeNetworkSpecific {
     pub(crate) fn to_config(&self, network: Network, data_dir: PathBuf) -> NodeConfig {
         let mut config = NodeConfig {
             network,
-            data_directory: data_dir,
+            datadir: data_dir,
             ..Default::default()
         };
 
@@ -142,7 +142,7 @@ impl NodeNetworkSpecific {
             config.allow_p2pv1_fallback = allow_p2pv1_fallback;
         }
         if let Some(fixed_peer) = self.fixed_peer {
-            config.fixed_peer = Some(fixed_peer);
+            config.fixed_peers = Some(vec![fixed_peer]);
         }
         if let Some(max_banscore) = self.max_banscore {
             config.max_banscore = max_banscore;
@@ -165,7 +165,10 @@ impl NodeNetworkSpecific {
             perform_backfill: Some(config.perform_backfill),
             user_agent: Some(config.user_agent.clone()),
             allow_p2pv1_fallback: Some(config.allow_p2pv1_fallback),
-            fixed_peer: config.fixed_peer,
+            fixed_peer: config
+                .fixed_peers
+                .as_ref()
+                .and_then(|peers| peers.first().copied()),
             max_banscore: Some(config.max_banscore),
             disable_dns_seeds: Some(config.disable_dns_seeds),
             socks5_proxy: config.socks5_proxy,
@@ -635,7 +638,7 @@ mod tests {
         assert!(!node_config.perform_backfill);
         assert_eq!(node_config.user_agent, "bonsai-test");
         assert!(!node_config.allow_p2pv1_fallback);
-        assert_eq!(node_config.fixed_peer, Some(fixed_peer));
+        assert_eq!(node_config.fixed_peers, Some(vec![fixed_peer]));
         assert_eq!(node_config.max_banscore, 42);
         assert!(node_config.disable_dns_seeds);
         assert_eq!(node_config.socks5_proxy, Some(proxy));

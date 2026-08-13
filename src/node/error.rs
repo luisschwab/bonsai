@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use bdk_floresta::error::BuilderError;
 use bdk_floresta::error::NodeError;
 use thiserror::Error;
@@ -8,10 +10,22 @@ pub(crate) enum BonsaiNodeError {
     Generic(String),
 
     #[error(transparent)]
-    NodeBuildError(#[from] BuilderError),
+    NodeBuildError(Arc<BuilderError>),
 
     #[error(transparent)]
-    NodeExecError(#[from] NodeError),
+    NodeExecError(Arc<NodeError>),
+}
+
+impl From<BuilderError> for BonsaiNodeError {
+    fn from(error: BuilderError) -> Self {
+        Self::NodeBuildError(Arc::new(error))
+    }
+}
+
+impl From<NodeError> for BonsaiNodeError {
+    fn from(error: NodeError) -> Self {
+        Self::NodeExecError(Arc::new(error))
+    }
 }
 
 impl From<String> for BonsaiNodeError {
