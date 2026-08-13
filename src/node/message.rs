@@ -2,8 +2,8 @@ use core::fmt::Debug;
 use std::net::SocketAddr;
 use std::sync::Arc;
 
-use bdk_floresta::Node;
 use bdk_floresta::builder::NodeConfig;
+use bdk_floresta::node::Node;
 use bitcoin::Block;
 use tokio::sync::RwLock;
 

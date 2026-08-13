@@ -7,10 +7,10 @@ use std::time::Duration;
 use std::time::Instant;
 
 use bdk_floresta::BlockConsumer;
-use bdk_floresta::Node;
 use bdk_floresta::UtxoData;
 use bdk_floresta::builder::Builder;
 use bdk_floresta::builder::NodeConfig;
+use bdk_floresta::node::Node;
 use bitcoin::Block;
 use bitcoin::Network;
 use bitcoin::OutPoint;
@@ -215,13 +215,7 @@ impl EmbeddedNode {
                 let handle_clone = handle.clone();
                 Task::future(async move {
                     let node = handle_clone.read().await;
-                    match node.get_config().await {
-                        Ok(config) => NodeMessage::ConfigUsed(config),
-                        Err(e) => {
-                            error!("Failed to get node config: {}", e);
-                            NodeMessage::Error(BonsaiNodeError::from(e))
-                        }
-                    }
+                    NodeMessage::ConfigUsed(node.get_config())
                 })
             }
             NodeMessage::ConfigUsed(_config) => {
@@ -340,7 +334,7 @@ impl EmbeddedNode {
                             };
 
                             let node = handle.read().await;
-                            match node.connect_peer(&addr).await {
+                            match node.add_peer(&addr).await {
                                 Ok(true) => NodeMessage::PeerConnected(peer_address),
                                 Ok(false) => NodeMessage::ActionFailed(
                                     NodeActionTarget::Network,
@@ -465,15 +459,9 @@ impl EmbeddedNode {
                             };
 
                             match node.fetch_block(blockhash).await {
-                                Ok(Some(block)) => {
+                                Ok(block) => {
                                     info!("Fetched block of height={height} and hash={blockhash}");
                                     NodeMessage::BlockFetched(Some(block))
-                                }
-                                Ok(None) => {
-                                    error!(
-                                        "Failed to fetch block of height={height} and hash={blockhash}: 404 Not Found"
-                                    );
-                                    NodeMessage::BlockFetched(None)
                                 }
                                 Err(e) => {
                                     error!(
@@ -624,8 +612,8 @@ pub(crate) async fn start_node(node_config: NodeConfig) -> Result<Arc<RwLock<Nod
 
     rt_handle
         .spawn(async {
-            let mut node = Builder::new()
-                .from_config(node_config)
+            let node = Builder::new()
+                .with_config(node_config)
                 .build()
                 .map_err(|e| e.to_string())?;
 
