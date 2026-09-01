@@ -31,7 +31,7 @@ iced = { version = "=0.14.0", features = ["tokio", "image", "qr_code"] }
 maxminddb = { version = "=0.28.1", features = ["mmap"] }
 memmap2 = { version = "=0.9.11" }
 once_cell = { version = "=1.21.4" }
-open = { version = "=5.3.5" }
+open = { version = "=5.4.1" }
 regex = { version = "=1.12.4" }
 rustls-webpki = { version = "=0.103.13" }
 serde = { version = "=1.0.228", features = ["derive"] }
