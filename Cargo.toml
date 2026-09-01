@@ -33,7 +33,7 @@ memmap2 = { version = "=0.9.11" }
 once_cell = { version = "=1.21.4" }
 open = { version = "=5.3.5" }
 regex = { version = "=1.12.4" }
-rustls-webpki = { version = "=0.103.13" }
+rustls-webpki = { version = "=0.103.14" }
 serde = { version = "=1.0.228", features = ["derive"] }
 thiserror = { version = "=2.0.18" }
 tokio = { version = "=1.52.3", features = ["full"] }
