@@ -35,7 +35,7 @@ open = { version = "=5.3.5" }
 regex = { version = "=1.12.4" }
 rustls-webpki = { version = "=0.103.13" }
 serde = { version = "=1.0.228", features = ["derive"] }
-thiserror = { version = "=2.0.18" }
+thiserror = { version = "=2.0.20" }
 tokio = { version = "=1.52.3", features = ["full"] }
 toml = { version = "=1.1.2" }
 tracing = { version = "=0.1.44" }
